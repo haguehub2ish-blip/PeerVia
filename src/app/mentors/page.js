@@ -1,13 +1,30 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "@/Components/Navbar";
-import { mentors, getSubjectStyle, getFlag } from "@/data/mentors";
+import { getSubjectStyle, getFlag } from "@/data/mentors";
+import { supabase } from "@/lib/supabase";
 
 const filters = ["All", "Medicine", "Engineering", "Law", "Computer Science", "Business", "Psychology"];
 
 export default function Mentors() {
+  const [mentors, setMentors] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState("All");
   const [availableOnly, setAvailableOnly] = useState(false);
+  const [fetchError, setFetchError] = useState(null);
+
+  useEffect(() => {
+    async function fetchMentors() {
+      const { data, error } = await supabase.from("mentorss").select("*");
+      if (error) {
+        setFetchError(error.message || JSON.stringify(error));
+      } else {
+        setMentors(data);
+      }
+      setLoading(false);
+    }
+    fetchMentors();
+  }, []);
 
   const filteredMentors = mentors.filter((mentor) => {
     const matchesFilter =
@@ -68,7 +85,12 @@ export default function Mentors() {
           </button>
         </div>
 
-        {/* Mentor cards */}
+       {/* Mentor cards */}
+       {fetchError ? (
+          <p className="text-red-600 font-semibold">Error: {fetchError}</p>
+        ) : loading ? (
+          <p className="text-gray-500">Loading mentors...</p>
+        ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {filteredMentors.map((mentor) => (
             <div
@@ -138,7 +160,8 @@ export default function Mentors() {
               </div>
             </div>
           ))}
-        </div>
+       </div>
+        )}
       </div>
     </div>
   );
