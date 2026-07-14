@@ -1,8 +1,43 @@
 "use client";
 import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 
 export default function Navbar() {
   const pathname = usePathname();
+  const [user, setUser] = useState(null);
+
+  function getInitials(user) {
+    const name = user?.user_metadata?.name;
+    if (name) {
+      return name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2);
+    }
+    return user?.email?.[0]?.toUpperCase() || "?";
+  }
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data?.user || null);
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+    });
+
+    return () => {
+      listener.subscription.unsubscribe();
+    };
+  }, []);
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    window.location.href = "/";
+  }
 
   const linkClass = (href) => {
     const isActive = pathname === href;
@@ -34,14 +69,31 @@ export default function Navbar() {
             Q&amp;A
           </a>
         </nav>
-        
+
         <div className="flex items-center gap-4 text-sm justify-self-end">
-          <a href="/login" className="text-gray-600 hover:text-gray-900">
-            Login
-          </a>
-          <a href="/signup" className="bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition">
-            Sign up
-          </a>
+          {user ? (
+            <>
+              
+                <a href="/settings" className="w-9 h-9 rounded-full bg-green-800 text-white flex items-center justify-center font-bold text-sm hover:bg-green-700 transition">
+                {getInitials(user)}
+              </a>
+              <button
+                onClick={handleLogout}
+                className="bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition"
+              >
+                Log out
+              </button>
+            </>
+          ) : (
+            <>
+              <a href="/login" className="text-gray-600 hover:text-gray-900">
+                Login
+              </a>
+              <a href="/signup" className="bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition">
+                Sign up
+              </a>
+            </>
+          )}
         </div>
       </div>
     </header>
