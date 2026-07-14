@@ -27,11 +27,14 @@ export default function Navbar() {
           <a href="/mentors" className={linkClass("/mentors")}>
             Mentors
           </a>
+          <a href="/universities" className={linkClass("/universities")}>
+            Universities
+          </a>
           <a href="/FAQ" className={linkClass("/FAQ")}>
             Q&amp;A
           </a>
         </nav>
-
+        
         <div className="flex items-center gap-4 text-sm justify-self-end">
           <a href="/login" className="text-gray-600 hover:text-gray-900">
             Login
