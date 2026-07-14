@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Navbar from "@/Components/Navbar";
 import { universities } from "@/data/universities";
+import { getSubjectStyle } from "@/data/mentors";
 
 const countryFlags = { NL: "🇳🇱", UK: "🇬🇧" };
 const countries = ["All", "NL", "UK"];
@@ -67,9 +68,9 @@ export default function Universities() {
                   {uni.popularCourses.map((course) => (
                     <span
                       key={course}
-                      className="text-xs font-medium px-2.5 py-1 rounded-full bg-green-50 text-green-800"
+                      className={`text-xs font-semibold px-2.5 py-1 rounded-full ${getSubjectStyle(course).color}`}
                     >
-                      {course}
+                      {getSubjectStyle(course).icon} {course}
                     </span>
                   ))}
                 </div>

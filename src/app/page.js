@@ -17,6 +17,14 @@ export default function Home() {
   };
 const topMentors = [...mentors].sort((a, b) => b.rating - a.rating).slice(0, 3);
 const topQuestions = [...questions].sort((a, b) => b.helpful - a.helpful).slice(0, 3);
+const verifiedMentorsCount = mentors.filter((m) => m.verified).length;
+  const questionsAnsweredCount = questions.length;
+  const careerPathsCount = new Set(mentors.map((m) => m.subject)).size;
+  const avgRating = (
+    mentors.reduce((sum, m) => sum + m.rating, 0) / mentors.length
+  ).toFixed(1);
+  const languagesCount = new Set(mentors.flatMap((m) => m.languages)).size;
+  const schoolsCount = new Set(mentors.map((m) => m.school)).size;
 const filteredMentors = topMentors.filter((mentor) => {
     const searchTerm = query.toLowerCase();
     const matchesText =
@@ -112,31 +120,31 @@ const filteredMentors = topMentors.filter((mentor) => {
         </div>
   </section>
 
-     {/* Stats */}
-      <section className="bg-white py-6">
+    {/* Stats */}
+      <section className="bg-white pt-6 pb-6">
         <div className="max-w-5xl mx-auto px-6 grid grid-cols-2 md:grid-cols-6 gap-4 text-center">
           <div>
-            <p className="text-4xl font-extrabold text-green-800">184</p>
+            <p className="text-4xl font-extrabold text-green-800">{verifiedMentorsCount}</p>
             <p className="text-gray-600 text-sm mt-0.5">Verified mentors</p>
           </div>
           <div>
-            <p className="text-4xl font-extrabold text-green-800">2.3k</p>
+            <p className="text-4xl font-extrabold text-green-800">{questionsAnsweredCount}</p>
             <p className="text-gray-600 text-sm mt-0.5">Questions answered</p>
           </div>
           <div>
-            <p className="text-4xl font-extrabold text-green-800">14</p>
+            <p className="text-4xl font-extrabold text-green-800">{careerPathsCount}</p>
             <p className="text-gray-600 text-sm mt-0.5">Career paths</p>
           </div>
           <div>
-            <p className="text-4xl font-extrabold text-green-800">4.9★</p>
+            <p className="text-4xl font-extrabold text-green-800">{avgRating}★</p>
             <p className="text-gray-600 text-sm mt-0.5">Average session rating</p>
           </div>
           <div>
-            <p className="text-4xl font-extrabold text-green-800">12</p>
+            <p className="text-4xl font-extrabold text-green-800">{languagesCount}</p>
             <p className="text-gray-600 text-sm mt-0.5">Languages spoken</p>
           </div>
           <div>
-            <p className="text-4xl font-extrabold text-green-800">40+</p>
+            <p className="text-4xl font-extrabold text-green-800">{schoolsCount}</p>
             <p className="text-gray-600 text-sm mt-0.5">Schools represented</p>
           </div>
         </div>

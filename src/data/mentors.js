@@ -64,10 +64,20 @@ export const mentors = [
 export const subjectStyles = {
   Medicine: { color: "bg-red-100 text-red-800", icon: "🩺" },
   "Mechanical Engineering": { color: "bg-blue-100 text-blue-800", icon: "⚙️" },
+  Engineering: { color: "bg-blue-100 text-blue-800", icon: "⚙️" },
+  "Aerospace Engineering": { color: "bg-blue-100 text-blue-800", icon: "🚀" },
   Business: { color: "bg-yellow-100 text-yellow-800", icon: "💼" },
+  "Business Administration": { color: "bg-yellow-100 text-yellow-800", icon: "💼" },
+  "International Business": { color: "bg-yellow-100 text-yellow-800", icon: "💼" },
+  "Business Analytics": { color: "bg-yellow-100 text-yellow-800", icon: "📊" },
   "Computer Science": { color: "bg-purple-100 text-purple-800", icon: "💻" },
   Law: { color: "bg-gray-200 text-gray-800", icon: "⚖️" },
   Psychology: { color: "bg-pink-100 text-pink-800", icon: "🧠" },
+  Economics: { color: "bg-green-100 text-green-800", icon: "📈" },
+  "Political Science": { color: "bg-indigo-100 text-indigo-800", icon: "🏛️" },
+  "International Relations": { color: "bg-indigo-100 text-indigo-800", icon: "🌍" },
+  Architecture: { color: "bg-orange-100 text-orange-800", icon: "🏛️" },
+  "PPE (Philosophy, Politics & Economics)": { color: "bg-indigo-100 text-indigo-800", icon: "📚" },
 };
 
 export function getSubjectStyle(subject) {
