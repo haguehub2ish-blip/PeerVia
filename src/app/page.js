@@ -131,8 +131,7 @@ const verifiedMentorsCount = mentors.filter((m) => m.verified).length;
           Real Answers from the People Living it
         </h2>
         <p className="text-gray-600 mb-10">
-          Search by school, subject, country, or language to connect with
-          students and mentors like you.
+          Get honest career intel from university students who are actually on the path you're considering. No cost. No sales pitch. Just the truth.
         </p>
 
         {/* Search Bar */}
@@ -192,7 +191,7 @@ const verifiedMentorsCount = mentors.filter((m) => m.verified).length;
               onClick={handleExplore}
               className="bg-green-600 text-white px-6 font-medium hover:bg-green-700 transition shrink-0"
             >
-              Explore →
+              Find a Mentor →
             </button>
           </div>
 
@@ -268,8 +267,49 @@ const verifiedMentorsCount = mentors.filter((m) => m.verified).length;
         </div>
       </section>
 
-      {/* Mentor Results */}
-      <section className="bg-orange-50 px-6 py-10">
+     {/* How it works */}
+<section className="bg-orange-50 pt-10 pb-10">
+        <div className="max-w-5xl mx-auto px-6">
+          <h3 className="text-2xl font-bold text-gray-900 text-center mb-2">
+            How it Works
+          </h3>
+          <p className="text-gray-600 text-center mb-10">
+            Getting real answers takes three simple steps — completely free.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-md transition text-center flex flex-col items-center">
+              <div className="w-14 h-14 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-2xl font-bold mb-4">
+                🔍
+              </div>
+              <h4 className="font-bold text-gray-900 text-lg mb-2">1. Search</h4>
+              <p className="text-gray-600 text-sm">
+                Filter mentors by school, subject, country, or language to find someone who's been exactly where you are.
+              </p>
+            </div>
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-md transition text-center flex flex-col items-center">
+              <div className="w-14 h-14 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-2xl font-bold mb-4">
+                💬
+              </div>
+              <h4 className="font-bold text-gray-900 text-lg mb-2">2. Ask or book</h4>
+              <p className="text-gray-600 text-sm">
+                Post a question to the community, or book a 1-on-1 session directly with a verified mentor.
+              </p>
+            </div>
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-md transition text-center flex flex-col items-center">
+              <div className="w-14 h-14 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-2xl font-bold mb-4">
+                ✅
+              </div>
+              <h4 className="font-bold text-gray-900 text-lg mb-2">3. Get real answers</h4>
+              <p className="text-gray-600 text-sm">
+                No brochures, no marketing spin — just honest, first-hand advice from current students.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+{/* Featured Mentors */}
+<section className="bg-orange-50 px-6 pt-6 pb-10">
         <div className="max-w-6xl mx-auto">
         <h3 className="text-xl font-semibold text-gray-900 mb-6">
           Featured Mentors
@@ -358,7 +398,7 @@ const verifiedMentorsCount = mentors.filter((m) => m.verified).length;
       </section>
 
 {/* Q&A */}
-      <section className="bg-orange-50 py-20">
+<section className="bg-orange-50 pt-8 pb-16">
         <div className="max-w-6xl mx-auto px-6">
           <h3 className="text-2xl font-bold text-gray-900 mb-8">
             What high schoolers are actually asking
