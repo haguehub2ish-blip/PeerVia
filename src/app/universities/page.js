@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Navbar from "@/Components/Navbar";
 import { universities } from "@/data/universities";
@@ -9,6 +9,14 @@ const countryFlags = { NL: "🇳🇱", UK: "🇬🇧" };
 const countries = ["All", "NL", "UK"];
 
 export default function Universities() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#FFF9F2]" />}>
+      <UniversitiesContent />
+    </Suspense>
+  );
+}
+
+function UniversitiesContent() {
   const searchParams = useSearchParams();
   const [activeCountries, setActiveCountries] = useState([]);
   const [activeFields, setActiveFields] = useState([]);

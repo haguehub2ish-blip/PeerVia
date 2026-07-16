@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Navbar from "@/Components/Navbar";
 import { getSubjectStyle, getFlag } from "@/data/mentors";
@@ -8,6 +8,14 @@ import { supabase } from "@/lib/supabase";
 const filters = ["All", "Medicine", "Engineering", "Law", "Computer Science", "Business", "Psychology"];
 
 export default function Mentors() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#FFF9F2]" />}>
+      <MentorsContent />
+    </Suspense>
+  );
+}
+
+function MentorsContent() {
   const searchParams = useSearchParams();
   const [mentors, setMentors] = useState([]);
   const [loading, setLoading] = useState(true);
