@@ -161,11 +161,17 @@ const verifiedMentorsCount = mentors.filter((m) => m.verified).length;
             <div className="flex-1 px-4 py-2 flex items-center gap-2 flex-wrap">
               {selectedCategory ? (
                 <>
-                  <span
-                    className={`inline-flex items-center text-sm font-semibold px-3 py-1 rounded-full text-black ${categoryFillStyles[selectedCategory]}`}
-                  >
-                    {selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)}
-                  </span>
+                  <button
+  onClick={() => {
+    setSelectedCategory(null);
+    setSelectedChips({});
+    setActiveDimension("field");
+  }}
+  className={`inline-flex items-center gap-2 text-sm font-semibold px-3 py-1 rounded-full text-black ${categoryFillStyles[selectedCategory]} hover:opacity-80 transition`}
+>
+  {selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)}
+  <span className="font-bold">×</span>
+</button>
                   {Object.entries(selectedChips).flatMap(([dimension, chips]) =>
                     chips.map((chip) => {
                       const style = getChipStyle(dimension, chip);
@@ -239,33 +245,49 @@ const verifiedMentorsCount = mentors.filter((m) => m.verified).length;
 
     {/* Stats */}
       <section className="bg-white pt-6 pb-6">
-        <div className="max-w-5xl mx-auto px-6 grid grid-cols-2 md:grid-cols-6 gap-4 text-center">
+  <div className="max-w-5xl mx-auto px-6 grid grid-cols-2 md:grid-cols-6 gap-4 text-center">
+    {mentorsLoading
+      ? [...Array(6)].map((_, i) => (
+          <div key={i} className="animate-pulse">
+            <div className="h-10 w-16 bg-gray-200 rounded mx-auto mb-2"></div>
+            <div className="h-4 w-24 bg-gray-200 rounded mx-auto"></div>
+          </div>
+        ))
+      : (
+        <>
           <div>
             <p className="text-4xl font-extrabold text-green-800">{verifiedMentorsCount}</p>
             <p className="text-gray-600 text-sm mt-0.5">Verified mentors</p>
           </div>
+
           <div>
             <p className="text-4xl font-extrabold text-green-800">{questionsAnsweredCount}</p>
             <p className="text-gray-600 text-sm mt-0.5">Questions answered</p>
           </div>
+
           <div>
             <p className="text-4xl font-extrabold text-green-800">{careerPathsCount}</p>
             <p className="text-gray-600 text-sm mt-0.5">Career paths</p>
           </div>
+
           <div>
             <p className="text-4xl font-extrabold text-green-800">{avgRating}★</p>
             <p className="text-gray-600 text-sm mt-0.5">Average session rating</p>
           </div>
+
           <div>
             <p className="text-4xl font-extrabold text-green-800">{languagesCount}</p>
             <p className="text-gray-600 text-sm mt-0.5">Languages spoken</p>
           </div>
+
           <div>
             <p className="text-4xl font-extrabold text-green-800">{schoolsCount}</p>
             <p className="text-gray-600 text-sm mt-0.5">Schools represented</p>
           </div>
-        </div>
-      </section>
+        </>
+      )}
+  </div>
+</section>
 
      {/* How it works */}
 <section className="bg-orange-50 pt-10 pb-10">
