@@ -1,37 +1,15 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Navbar from "@/Components/Navbar";
+import { getSubjectStyle, getFlag } from "@/data/mentors";
 
-const subjectStyles = {
-  Medicine: { color: "bg-red-100 text-red-800", icon: "🩺" },
-  "Mechanical Engineering": { color: "bg-blue-100 text-blue-800", icon: "⚙️" },
-  Business: { color: "bg-yellow-100 text-yellow-800", icon: "💼" },
-  "Computer Science": { color: "bg-purple-100 text-purple-800", icon: "💻" },
-  Law: { color: "bg-gray-200 text-gray-800", icon: "⚖️" },
-  Psychology: { color: "bg-pink-100 text-pink-800", icon: "🧠" },
-};
-
-function getSubjectStyle(subject) {
-  return subjectStyles[subject] || { color: "bg-gray-100 text-gray-700", icon: "📘" };
-}
-const countryFlags = {
-  NL: "🇳🇱",
-  UK: "🇬🇧",
-  US: "🇺🇸",
-  DE: "🇩🇪",
-  FR: "🇫🇷",
-  BE: "🇧🇪",
-  CA: "🇨🇦",
-};
-
-function getFlag(country) {
-  return countryFlags[country] || "🌍";
-}
 const fields = ["All fields", "Medicine", "Engineering", "Law", "Business", "Computer Science", "Psychology", "Biology", "Architecture"];
 const countries = ["NL & UK", "Netherlands", "United Kingdom"];
 
 import { questions } from "@/data/questions";
 export default function QAFeed() {
+  const searchParams = useSearchParams();
   const [openIndex, setOpenIndex] = useState(0);
   useEffect(() => {
     const hash = window.location.hash.replace("#", "");
@@ -42,16 +20,48 @@ export default function QAFeed() {
       }
     }
   }, []);
-  const [selectedField, setSelectedField] = useState("All fields");
+  const [selectedFields, setSelectedFields] = useState([]);
   const [selectedCountry, setSelectedCountry] = useState("NL & UK");
+
+ useEffect(() => {
+    const fieldParam = searchParams.get("field");
+    if (fieldParam) {
+      const validFields = fieldParam.split(",").filter((f) => fields.includes(f));
+      if (validFields.length > 0) {
+        setSelectedFields(validFields);
+      }
+    }
+
+    const countryParam = searchParams.get("country");
+    const countryDisplayMap = { NL: "Netherlands", UK: "United Kingdom" };
+    if (countryParam) {
+      const firstCode = countryParam.split(",")[0];
+      if (countryDisplayMap[firstCode]) {
+        setSelectedCountry(countryDisplayMap[firstCode]);
+      }
+    }
+  }, [searchParams]);
   const [search, setSearch] = useState("");
 
-  const filteredQuestions = questions.filter((q) => {
-    const matchesField = selectedField === "All fields" || q.subject === selectedField;
-    const matchesSearch = q.question.toLowerCase().includes(search.toLowerCase());
-    return matchesField && matchesSearch;
-  });
+  const toggleField = (field) => {
+    if (field === "All fields") {
+      setSelectedFields([]);
+      return;
+    }
+    setSelectedFields((prev) =>
+      prev.includes(field) ? prev.filter((f) => f !== field) : [...prev, field]
+    );
+  };
 
+  const countryCodeMap = { "Netherlands": "NL", "United Kingdom": "UK" };
+
+  const filteredQuestions = questions.filter((q) => {
+    const matchesField = selectedFields.length === 0 || selectedFields.includes(q.subject);
+    const matchesCountry =
+      selectedCountry === "NL & UK" || q.country === countryCodeMap[selectedCountry];
+    const matchesSearch = q.question.toLowerCase().includes(search.toLowerCase());
+    return matchesField && matchesCountry && matchesSearch;
+  });
   return (
    <div className="min-h-screen bg-[#FFF9F2]">
       <Navbar />
@@ -59,25 +69,29 @@ export default function QAFeed() {
       {/* Sidebar */}
   <aside className="w-64 bg-white border-r border-gray-300 p-6 hidden md:block">
         <p className="text-xs font-semibold text-gray-500 mb-3 tracking-wide">CAREER FIELD</p>
-        <div className="space-y-1 mb-8">
-          {fields.map((field) => (
-            <button
-              key={field}
-              onClick={() => setSelectedField(field)}
-              className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition ${
-                selectedField === field
-                  ? "bg-green-50 text-green-800 font-semibold"
-                  : "text-gray-600 hover:bg-gray-50"
-              }`}
-            >
-              <span
-                className={`w-1.5 h-1.5 rounded-full ${
-                  selectedField === field ? "bg-green-600" : "bg-gray-300"
+       <div className="space-y-1 mb-8">
+          {fields.map((field) => {
+            const isActive =
+              field === "All fields" ? selectedFields.length === 0 : selectedFields.includes(field);
+            return (
+              <button
+                key={field}
+                onClick={() => toggleField(field)}
+                className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition ${
+                  isActive
+                    ? "bg-green-50 text-green-800 font-semibold"
+                    : "text-gray-600 hover:bg-gray-50"
                 }`}
-              ></span>
-              {field}
-            </button>
-          ))}
+              >
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    isActive ? "bg-green-600" : "bg-gray-300"
+                  }`}
+                ></span>
+                {field}
+              </button>
+            );
+          })}
         </div>
 
         <p className="text-xs font-semibold text-gray-500 mb-3 tracking-wide">COUNTRY</p>

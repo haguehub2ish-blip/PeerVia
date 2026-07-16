@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Navbar from "@/Components/Navbar";
 import { universities } from "@/data/universities";
 import { getSubjectStyle } from "@/data/mentors";
@@ -8,11 +9,42 @@ const countryFlags = { NL: "🇳🇱", UK: "🇬🇧" };
 const countries = ["All", "NL", "UK"];
 
 export default function Universities() {
-  const [activeCountry, setActiveCountry] = useState("All");
+  const searchParams = useSearchParams();
+  const [activeCountries, setActiveCountries] = useState([]);
+  const [activeFields, setActiveFields] = useState([]);
 
-  const filteredUniversities = universities.filter(
-    (uni) => activeCountry === "All" || uni.country === activeCountry
-  );
+  useEffect(() => {
+    const countryParam = searchParams.get("country");
+    if (countryParam) {
+      const validCountries = countryParam.split(",").filter((c) => countries.includes(c));
+      if (validCountries.length > 0) {
+        setActiveCountries(validCountries);
+      }
+    }
+
+    const fieldParam = searchParams.get("field");
+    if (fieldParam) {
+      setActiveFields(fieldParam.split(","));
+    }
+  }, [searchParams]);
+
+  const toggleCountry = (country) => {
+    if (country === "All") {
+      setActiveCountries([]);
+      return;
+    }
+    setActiveCountries((prev) =>
+      prev.includes(country) ? prev.filter((c) => c !== country) : [...prev, country]
+    );
+  };
+
+  const filteredUniversities = universities.filter((uni) => {
+    const matchesCountry = activeCountries.length === 0 || activeCountries.includes(uni.country);
+    const matchesField =
+      activeFields.length === 0 ||
+      activeFields.some((field) => uni.popularCourses.includes(field));
+    return matchesCountry && matchesField;
+  });
 
   return (
     <div className="min-h-screen bg-[#FFF9F2]">
@@ -28,19 +60,22 @@ export default function Universities() {
 
         {/* Country filter */}
         <div className="flex flex-wrap gap-2 mb-8">
-          {countries.map((c) => (
-            <button
-              key={c}
-              onClick={() => setActiveCountry(c)}
-              className={`px-4 py-1.5 rounded-full text-sm font-semibold border transition ${
-                activeCountry === c
-                  ? "border-green-600 text-green-700 bg-green-50"
-                  : "border-gray-300 text-gray-700 bg-white hover:border-gray-400"
-              }`}
-            >
-              {c === "All" ? "All" : `${countryFlags[c]} ${c}`}
-            </button>
-          ))}
+          {countries.map((c) => {
+            const isActive = c === "All" ? activeCountries.length === 0 : activeCountries.includes(c);
+            return (
+              <button
+                key={c}
+                onClick={() => toggleCountry(c)}
+                className={`px-4 py-1.5 rounded-full text-sm font-semibold border transition ${
+                  isActive
+                    ? "border-green-600 text-green-700 bg-green-50"
+                    : "border-gray-300 text-gray-700 bg-white hover:border-gray-400"
+                }`}
+              >
+                {c === "All" ? "All" : `${countryFlags[c]} ${c}`}
+              </button>
+            );
+          })}
         </div>
 
         {/* University cards */}

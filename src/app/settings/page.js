@@ -1,9 +1,15 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Navbar from "@/Components/Navbar";
 import MultiSelect from "@/Components/MultiSelect";
 import { supabase } from "@/lib/supabase";
 import { universities } from "@/data/universities";
+import { getSubjectStyle, getFlag, getLanguageStyle } from "@/data/mentors";
+
+const getCountryStyle = (country) => ({
+  color: "bg-slate-100 text-slate-700",
+  icon: getFlag(country),
+});
 
 export default function Settings() {
   const [user, setUser] = useState(null);
@@ -15,14 +21,33 @@ export default function Settings() {
   const [selectedMentors, setSelectedMentors] = useState([]);
   const [selectedCountries, setSelectedCountries] = useState([]);
 
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [prefsLoading, setPrefsLoading] = useState(true);
+  const savedTimeoutRef = useRef(null);
+
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      setUser(data?.user || null);
-    });
+      const currentUser = data?.user || null;
+      setUser(currentUser);
 
+      const prefs = currentUser?.user_metadata?.emailPreferences;
+      if (prefs) {
+        setSelectedFields(prefs.fields || []);
+        setSelectedLanguages(prefs.languages || []);
+        setSelectedSchools(prefs.schools || []);
+        setSelectedMentors(prefs.mentors || []);
+        setSelectedCountries(prefs.countries || []);
+      }
+      setPrefsLoading(false);
+    });
     supabase.from("mentorss").select("*").then(({ data }) => {
       if (data) setAllMentors(data);
     });
+
+    return () => {
+      if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current);
+    };
   }, []);
 
   // Build option lists dynamically from real data
@@ -43,12 +68,38 @@ export default function Settings() {
     ]),
   ];
   const mentorOptions = allMentors.map((m) => m.name).filter(Boolean);
-  const countryOptions = [
+ const countryOptions = [
     ...new Set([
       ...allMentors.map((m) => m.country).filter(Boolean),
       ...universities.map((u) => u.country),
     ]),
   ];
+
+  async function handleSavePreferences() {
+    setSaving(true);
+    setSaved(false);
+
+    const { data, error } = await supabase.auth.updateUser({
+      data: {
+        emailPreferences: {
+          fields: selectedFields,
+          languages: selectedLanguages,
+          schools: selectedSchools,
+          mentors: selectedMentors,
+          countries: selectedCountries,
+        },
+      },
+    });
+
+    setSaving(false);
+
+    if (!error) {
+      setUser(data.user);
+      setSaved(true);
+      if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current);
+      savedTimeoutRef.current = setTimeout(() => setSaved(false), 3000);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-[#FFF9F2]">
@@ -86,42 +137,64 @@ export default function Settings() {
           </p>
 
           <div className="space-y-4 mb-6">
-            <MultiSelect
-              label="Field"
-              options={fieldOptions}
-              selected={selectedFields}
-              onChange={setSelectedFields}
-            />
-            <MultiSelect
-              label="Language"
-              options={languageOptions}
-              selected={selectedLanguages}
-              onChange={setSelectedLanguages}
-            />
-            <MultiSelect
-              label="School"
-              options={schoolOptions}
-              selected={selectedSchools}
-              onChange={setSelectedSchools}
-            />
-            <MultiSelect
-              label="Specific Mentor"
-              options={mentorOptions}
-              selected={selectedMentors}
-              onChange={setSelectedMentors}
-            />
-            <MultiSelect
-              label="Country"
-              options={countryOptions}
-              selected={selectedCountries}
-              onChange={setSelectedCountries}
-            />
+            {prefsLoading ? (
+              <div className="space-y-3 animate-pulse">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="h-[42px] bg-gray-100 rounded-lg" />
+                ))}
+              </div>
+            ) : (
+              <>
+                <MultiSelect
+                  label="Field"
+                  options={fieldOptions}
+                  selected={selectedFields}
+                  onChange={setSelectedFields}
+                  getOptionStyle={getSubjectStyle}
+                />
+                <MultiSelect
+                  label="Language"
+                  options={languageOptions}
+                  selected={selectedLanguages}
+                  onChange={setSelectedLanguages}
+                   getOptionStyle={getLanguageStyle}
+                />
+                <MultiSelect
+                  label="School"
+                  options={schoolOptions}
+                  selected={selectedSchools}
+                  onChange={setSelectedSchools}
+                />
+                <MultiSelect
+                  label="Specific Mentor"
+                  options={mentorOptions}
+                  selected={selectedMentors}
+                  onChange={setSelectedMentors}
+                />
+                <MultiSelect
+                  label="Country"
+                  options={countryOptions}
+                  selected={selectedCountries}
+                  onChange={setSelectedCountries}
+                  getOptionStyle={getCountryStyle}
+                />
+              </>
+            )}
           </div>
 
-          <button className="bg-green-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-green-700 transition">
-            Save preferences
-          </button>
-        </div>
+          <button
+    onClick={handleSavePreferences}
+    disabled={saving}
+    className="bg-green-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-green-700 transition disabled:opacity-50"
+  >
+    {saving ? "Saving..." : "Save preferences"}
+  </button>
+  {saved && (
+    <span className="text-sm text-green-700 font-medium ml-2">
+      ✓ Preferences saved
+    </span>
+  )}
+</div>
 
         {/* Danger zone */}
         <div className="bg-white border border-red-200 rounded-2xl p-6">

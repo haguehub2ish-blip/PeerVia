@@ -97,3 +97,33 @@ export const countryFlags = {
 export function getFlag(country) {
   return countryFlags[country] || "🌍";
 }
+
+export const languageFlags = {
+  English: "🇬🇧",
+  Dutch: "🇳🇱",
+  German: "🇩🇪",
+  French: "🇫🇷",
+  Polish: "🇵🇱",
+  Spanish: "🇪🇸",
+  Italian: "🇮🇹",
+  Portuguese: "🇵🇹",
+  Mandarin: "🇨🇳",
+  Chinese: "🇨🇳",
+  Arabic: "🇸🇦",
+  Hindi: "🇮🇳",
+  Russian: "🇷🇺",
+  Japanese: "🇯🇵",
+  Korean: "🇰🇷",
+  Turkish: "🇹🇷",
+  Swedish: "🇸🇪",
+  Norwegian: "🇳🇴",
+  Danish: "🇩🇰",
+  Greek: "🇬🇷",
+};
+
+export function getLanguageStyle(language) {
+  return {
+    color: "bg-sky-100 text-sky-700",
+    icon: languageFlags[language] || "🗣️",
+  };
+}

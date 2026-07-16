@@ -1,46 +1,124 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Navbar from "@/Components/Navbar";
 import { questions } from "@/data/questions";
-import { mentors, getSubjectStyle, getFlag } from "@/data/mentors";
+import { getSubjectStyle, getFlag, getLanguageStyle } from "@/data/mentors";
+import { supabase } from "@/lib/supabase";
+
+const categoryFilters = {
+  mentors: {
+    field: ["Medicine", "Engineering", "Law", "Computer Science", "Business", "Psychology"],
+    country: ["NL", "UK"],
+    language: ["English", "Dutch", "German", "French", "Spanish"],
+  },
+  questions: {
+    field: ["Medicine", "Engineering", "Law", "Business", "Computer Science", "Psychology", "Biology", "Architecture"],
+    country: ["NL", "UK"],
+  },
+  universities: {
+    field: ["Medicine", "Engineering", "Law", "Computer Science", "Business", "Psychology"],
+    country: ["NL", "UK"],
+  },
+};
+
+const dimensionLabels = { field: "Field", country: "Country", language: "Language" };
+
+const categoryTargets = {
+  mentors: { path: "/mentors", params: { field: "subject", country: "country", language: "language" } },
+  questions: { path: "/FAQ", params: { field: "field", country: "country" } },
+  universities: { path: "/universities", params: { field: "field", country: "country" } },
+};
 
 export default function Home() {
-  const [query, setQuery] = useState("");
-  const [selectedFilters, setSelectedFilters] = useState([]);
+  const router = useRouter();
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [activeDimension, setActiveDimension] = useState("field");
+  const [selectedChips, setSelectedChips] = useState({});
+  const [mentors, setMentors] = useState([]);
+  const [mentorsLoading, setMentorsLoading] = useState(true);
+  const [mentorsError, setMentorsError] = useState(null);
 
-  const toggleFilter = (filter) => {
-    setSelectedFilters((prev) =>
-      prev.includes(filter)
-        ? prev.filter((f) => f !== filter)
-        : [...prev, filter]
-    );
+  useEffect(() => {
+    async function fetchMentors() {
+      const { data, error } = await supabase.from("mentorss").select("*");
+      if (error) {
+        setMentorsError(error.message || JSON.stringify(error));
+      } else {
+        setMentors(data);
+      }
+      setMentorsLoading(false);
+    }
+    fetchMentors();
+  }, []);
+
+  const handleCategorySelect = (category) => {
+    setSelectedCategory(category === selectedCategory ? null : category);
+    setSelectedChips({});
+    setActiveDimension("field");
+  };
+
+  const handleChipSelect = (dimension, chip) => {
+    setSelectedChips((prev) => {
+      const current = prev[dimension] || [];
+      const updated = current.includes(chip)
+        ? current.filter((c) => c !== chip)
+        : [...current, chip];
+      return { ...prev, [dimension]: updated };
+    });
+  };
+
+  const handleExplore = () => {
+    const target = categoryTargets[selectedCategory] || categoryTargets.mentors;
+    const parts = Object.entries(target.params)
+      .map(([dimension, paramName]) => {
+        const values = selectedChips[dimension];
+        return values && values.length > 0
+          ? `${paramName}=${encodeURIComponent(values.join(","))}`
+          : null;
+      })
+      .filter(Boolean);
+    const query = parts.length > 0 ? `?${parts.join("&")}` : "";
+    router.push(`${target.path}${query}`);
+  };
+
+  const categoryButtonStyles = {
+    mentors: "bg-green-600 text-white border-green-600",
+    questions: "bg-amber-500 text-white border-amber-500",
+    universities: "bg-indigo-600 text-white border-indigo-600",
+  };
+
+  const categoryFillStyles = {
+    mentors: "bg-green-100",
+    questions: "bg-amber-100",
+    universities: "bg-indigo-100",
+  };
+
+  const getChipStyle = (dimension, chip) => {
+    if (dimension === "country") {
+      return { color: "bg-slate-100 text-slate-700", icon: getFlag(chip) };
+    }
+    if (dimension === "language") {
+      return getLanguageStyle(chip);
+    }
+    return getSubjectStyle(chip);
   };
 const topMentors = [...mentors].sort((a, b) => b.rating - a.rating).slice(0, 3);
 const topQuestions = [...questions].sort((a, b) => b.helpful - a.helpful).slice(0, 3);
 const verifiedMentorsCount = mentors.filter((m) => m.verified).length;
   const questionsAnsweredCount = questions.length;
   const careerPathsCount = new Set(mentors.map((m) => m.subject)).size;
-  const avgRating = (
-    mentors.reduce((sum, m) => sum + m.rating, 0) / mentors.length
-  ).toFixed(1);
-  const languagesCount = new Set(mentors.flatMap((m) => m.languages)).size;
+  const avgRating = mentors.length
+    ? (mentors.reduce((sum, m) => sum + m.rating, 0) / mentors.length).toFixed(1)
+    : "—";
+  const languagesCount = new Set(
+    mentors.flatMap((m) =>
+      typeof m.languages === "string"
+        ? m.languages.split(",").map((l) => l.trim())
+        : m.languages || []
+    )
+  ).size;
   const schoolsCount = new Set(mentors.map((m) => m.school)).size;
-const filteredMentors = topMentors.filter((mentor) => {
-    const searchTerm = query.toLowerCase();
-    const matchesText =
-      mentor.name.toLowerCase().includes(searchTerm) ||
-      mentor.school.toLowerCase().includes(searchTerm) ||
-      mentor.subject.toLowerCase().includes(searchTerm) ||
-      mentor.country.toLowerCase().includes(searchTerm);
-
-    const matchesFilters =
-      selectedFilters.length === 0 ||
-      selectedFilters.every(
-        (f) => mentor.subject === f || mentor.country === f
-      );
-
-    return matchesText && matchesFilters;
-  });
   return (
     <main className="min-h-screen bg-white">
       {/* Header */}
@@ -59,63 +137,103 @@ const filteredMentors = topMentors.filter((mentor) => {
 
         {/* Search Bar */}
        <div className="max-w-2xl mx-auto">
+          {/* Category selector */}
+          <div className="flex justify-center gap-2 mb-4">
+            {[
+              { key: "mentors", label: "Mentors" },
+              { key: "questions", label: "Questions" },
+              { key: "universities", label: "Universities" },
+            ].map((cat) => (
+              <button
+                key={cat.key}
+                onClick={() => handleCategorySelect(cat.key)}
+                className={`px-5 py-2 rounded-lg text-sm font-semibold border transition ${
+                  selectedCategory === cat.key
+                    ? categoryButtonStyles[cat.key]
+                    : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
+                }`}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
+
           <div className="flex items-stretch bg-white border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-gray-900">
-            <div className="flex flex-wrap items-center gap-2 flex-1 pl-3 py-2 min-w-0">
-              {selectedFilters.map((filter) => {
-                const isCountry = filter === "NL" || filter === "UK";
-                const style = isCountry
-                  ? { color: "bg-slate-100 text-slate-700", icon: getFlag(filter) }
-                  : getSubjectStyle(filter);
-                return (
+            <div className="flex-1 px-4 py-2 flex items-center gap-2 flex-wrap">
+              {selectedCategory ? (
+                <>
                   <span
-                    key={filter}
-                    className={`flex items-center gap-1 text-sm font-semibold px-3 py-1 rounded-full ${style.color}`}
+                    className={`inline-flex items-center text-sm font-semibold px-3 py-1 rounded-full text-black ${categoryFillStyles[selectedCategory]}`}
                   >
-                    {style.icon} {filter}
-                    <button
-                      onClick={() => toggleFilter(filter)}
-                      className="ml-1 hover:opacity-70"
-                    >
-                      ×
-                    </button>
+                    {selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)}
                   </span>
-                );
-              })}
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={selectedFilters.length === 0 ? "Search by subject, school, or country..." : ""}
-                className="flex-1 min-w-[120px] py-1 text-gray-900 placeholder-gray-400 focus:outline-none"
-              />
+                  {Object.entries(selectedChips).flatMap(([dimension, chips]) =>
+                    chips.map((chip) => {
+                      const style = getChipStyle(dimension, chip);
+                      return (
+                        <button
+                          key={`${dimension}-${chip}`}
+                          onClick={() => handleChipSelect(dimension, chip)}
+                          className={`inline-flex items-center gap-1 text-sm font-semibold px-3 py-1 rounded-full transition hover:opacity-80 ${style.color}`}
+                        >
+                          {style.icon} {chip}
+                        </button>
+                      );
+                    })
+                  )}
+                </>
+              ) : (
+                <span className="text-gray-600 text-sm">
+                  Choose Mentors, Questions, or Universities to get started
+                </span>
+              )}
             </div>
-            <button className="bg-green-600 text-white px-6 font-medium hover:bg-green-600 transition shrink-0">
+            <button
+              onClick={handleExplore}
+              className="bg-green-600 text-white px-6 font-medium hover:bg-green-700 transition shrink-0"
+            >
               Explore →
             </button>
           </div>
 
-          {/* Quick filters */}
-          <div className="flex flex-wrap justify-center gap-2 mt-4">
-            {["Medicine", "Business", "Computer Science", "NL", "UK"].map((filter) => {
-              const isCountry = filter === "NL" || filter === "UK";
-              const style = isCountry
-                ? { color: "bg-slate-100 text-slate-700", icon: getFlag(filter) }
-                : getSubjectStyle(filter);
-              const isSelected = selectedFilters.includes(filter);
+          {/* Filter dimension tabs + chips for the selected category */}
+          {selectedCategory && (
+            <div className="mt-4">
+              <div className="flex justify-center gap-2 mb-3">
+                {Object.keys(categoryFilters[selectedCategory]).map((dimension) => (
+                  <button
+                    key={dimension}
+                    onClick={() => setActiveDimension(dimension)}
+                    className={`px-3 py-1 rounded-md text-xs font-semibold transition ${
+                      activeDimension === dimension
+                        ? "bg-gray-900 text-white"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                  >
+                    {dimensionLabels[dimension]}
+                  </button>
+                ))}
+              </div>
+              <div className="flex flex-wrap justify-center gap-2">
+                {categoryFilters[selectedCategory][activeDimension].map((chip) => {
+                  const style = getChipStyle(activeDimension, chip);
+                  const isSelected = (selectedChips[activeDimension] || []).includes(chip);
 
-              return (
-                <button
-                  key={filter}
-                  onClick={() => toggleFilter(filter)}
-                  className={`text-sm font-semibold px-4 py-1.5 rounded-full transition ${style.color} ${
-                    isSelected ? "ring-2 ring-gray-900" : "hover:opacity-80"
-                  }`}
-                >
-                  {style.icon} {filter}
-                </button>
-              );
-            })}
-          </div>
+                  return (
+                    <button
+                      key={chip}
+                      onClick={() => handleChipSelect(activeDimension, chip)}
+                      className={`text-sm font-semibold px-4 py-1.5 rounded-full transition ${style.color} ${
+                        isSelected ? "ring-2 ring-gray-900" : "hover:opacity-80"
+                      }`}
+                    >
+                      {style.icon} {chip}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
         </div>
   </section>
@@ -156,8 +274,13 @@ const filteredMentors = topMentors.filter((mentor) => {
         <h3 className="text-xl font-semibold text-gray-900 mb-6">
           Featured Mentors
         </h3>
+        {mentorsError ? (
+          <p className="text-red-600 font-semibold">Error: {mentorsError}</p>
+        ) : mentorsLoading ? (
+          <p className="text-gray-500">Loading mentors...</p>
+        ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {filteredMentors.map((mentor) => (
+          {topMentors.map((mentor) => (
             <div
               key={mentor.name}
               className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-md transition flex flex-col h-full"
@@ -230,6 +353,7 @@ const filteredMentors = topMentors.filter((mentor) => {
             </div>
           ))}
       </div>
+        )}
         </div>
       </section>
 

@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Navbar from "@/Components/Navbar";
 import { getSubjectStyle, getFlag } from "@/data/mentors";
 import { supabase } from "@/lib/supabase";
@@ -7,11 +8,36 @@ import { supabase } from "@/lib/supabase";
 const filters = ["All", "Medicine", "Engineering", "Law", "Computer Science", "Business", "Psychology"];
 
 export default function Mentors() {
+  const searchParams = useSearchParams();
   const [mentors, setMentors] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeFilter, setActiveFilter] = useState("All");
+  const [activeFilters, setActiveFilters] = useState([]);
+  const [activeCountries, setActiveCountries] = useState([]);
+  const [activeLanguages, setActiveLanguages] = useState([]);
   const [availableOnly, setAvailableOnly] = useState(false);
   const [fetchError, setFetchError] = useState(null);
+
+  useEffect(() => {
+    const subjectParam = searchParams.get("subject");
+    if (subjectParam) {
+      const validSubjects = subjectParam
+        .split(",")
+        .filter((s) => filters.includes(s));
+      if (validSubjects.length > 0) {
+        setActiveFilters(validSubjects);
+      }
+    }
+
+    const countryParam = searchParams.get("country");
+    if (countryParam) {
+      setActiveCountries(countryParam.split(","));
+    }
+
+    const languageParam = searchParams.get("language");
+    if (languageParam) {
+      setActiveLanguages(languageParam.split(","));
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     async function fetchMentors() {
@@ -26,13 +52,30 @@ export default function Mentors() {
     fetchMentors();
   }, []);
 
+  const toggleFilter = (filter) => {
+    if (filter === "All") {
+      setActiveFilters([]);
+      return;
+    }
+    setActiveFilters((prev) =>
+      prev.includes(filter) ? prev.filter((f) => f !== filter) : [...prev, filter]
+    );
+  };
+
   const filteredMentors = mentors.filter((mentor) => {
     const matchesFilter =
-      activeFilter === "All" ||
-      mentor.subject === activeFilter ||
-      mentor.subject.includes(activeFilter);
+      activeFilters.length === 0 || activeFilters.includes(mentor.subject);
+    const matchesCountry =
+      activeCountries.length === 0 || activeCountries.includes(mentor.country);
+    const mentorLanguages =
+      typeof mentor.languages === "string"
+        ? mentor.languages.split(",").map((l) => l.trim())
+        : mentor.languages || [];
+    const matchesLanguage =
+      activeLanguages.length === 0 ||
+      activeLanguages.some((lang) => mentorLanguages.includes(lang));
     const matchesAvailability = !availableOnly || mentor.available;
-    return matchesFilter && matchesAvailability;
+    return matchesFilter && matchesCountry && matchesLanguage && matchesAvailability;
   });
 
   return (
@@ -50,13 +93,14 @@ export default function Mentors() {
        {/* Filter chips */}
         <div className="flex flex-wrap gap-2 mb-8">
           {filters.map((filter) => {
-            const isActive = activeFilter === filter;
+            const isActive =
+              filter === "All" ? activeFilters.length === 0 : activeFilters.includes(filter);
             const style = filter === "All" ? null : getSubjectStyle(filter);
 
             return (
               <button
                 key={filter}
-                onClick={() => setActiveFilter(filter)}
+                onClick={() => toggleFilter(filter)}
                 className={`px-4 py-1.5 rounded-full text-sm font-semibold border transition ${
                   filter === "All"
                     ? isActive
