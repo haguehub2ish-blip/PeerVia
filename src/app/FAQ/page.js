@@ -1,14 +1,22 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Navbar from "@/Components/Navbar";
 import { getSubjectStyle, getFlag } from "@/data/mentors";
+import { questions } from "@/data/questions";
 
 const fields = ["All fields", "Medicine", "Engineering", "Law", "Business", "Computer Science", "Psychology", "Biology", "Architecture"];
 const countries = ["NL & UK", "Netherlands", "United Kingdom"];
 
-import { questions } from "@/data/questions";
 export default function QAFeed() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#FFF9F2]" />}>
+      <QAFeedContent />
+    </Suspense>
+  );
+}
+
+function QAFeedContent() {
   const searchParams = useSearchParams();
   const [openIndex, setOpenIndex] = useState(0);
   useEffect(() => {
