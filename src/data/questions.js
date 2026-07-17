@@ -1,3 +1,9 @@
+// ⚠️ IMPORTANT: each question's `id` is used as the permanent key linking
+// this question to its likes, comments, and view count in Supabase
+// (question_likes, question_comments, question_views tables).
+// Once a question has real interaction data, NEVER change its `id` —
+// doing so orphans all existing likes/comments/views under the old id.
+// New questions can use any unique, stable slug for `id`.
 export const questions = [
   {
     id: "sara-van-der-berg-medicine-utrecht",

@@ -1,9 +1,20 @@
 "use client";
-import { useState } from "react";
+import { useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Navbar from "@/Components/Navbar";
 import { supabase } from "@/lib/supabase";
 
 export default function Login() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#FFF9F2]" />}>
+      <LoginContent />
+    </Suspense>
+  );
+}
+
+function LoginContent() {
+  const searchParams = useSearchParams();
+  const reason = searchParams.get("reason");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
@@ -39,6 +50,12 @@ export default function Login() {
         <p className="text-gray-600 mb-8">
           Log in to your PeerVia account.
         </p>
+
+        {reason === "interact" && (
+          <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-4 py-3 mb-6 text-sm">
+            You need an account to like or comment on questions. Log in below to continue.
+          </div>
+        )}
 
         <form onSubmit={handleLogin} className="bg-white border border-gray-200 rounded-2xl p-6 space-y-4">
           <div>
