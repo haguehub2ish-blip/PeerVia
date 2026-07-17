@@ -21,8 +21,8 @@ export default function Login() {
 
     setLoading(false);
 
-    if (error) {
-      setError(error.message);
+   if (error) {
+      setError("Incorrect email or password. Please try again.");
     } else {
       window.location.href = "/";
     }

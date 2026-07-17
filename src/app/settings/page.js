@@ -75,6 +75,64 @@ export default function Settings() {
     ]),
   ];
 
+const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [confirmEmail, setConfirmEmail] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [deleteError, setDeleteError] = useState(null);
+
+ function handleDeleteAccount() {
+    const confirmed = window.confirm(
+      "Are you sure you want to permanently delete your account? This cannot be undone."
+    );
+    if (!confirmed) return;
+    setDeleteError(null);
+    setConfirmEmail("");
+    setConfirmPassword("");
+    setShowDeleteConfirm(true);
+  }
+
+  async function handleConfirmDelete(e) {
+    e.preventDefault();
+    setDeleteError(null);
+    setDeleting(true);
+
+    // Step 1: verify the email/password are correct
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: confirmEmail,
+      password: confirmPassword,
+    });
+
+    if (signInError) {
+      setDeleteError("Incorrect email or password.");
+      setDeleting(false);
+      return;
+    }
+
+    if (confirmEmail.trim().toLowerCase() !== user.email.trim().toLowerCase()) {
+      setDeleteError("That email doesn't match your account.");
+      setDeleting(false);
+      return;
+    }
+
+    // Step 2: actually delete the account
+    const res = await fetch("/api/delete-account", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: user.id }),
+    });
+
+    const result = await res.json();
+
+    if (result.error) {
+      setDeleteError(result.error);
+      setDeleting(false);
+    } else {
+      await supabase.auth.signOut();
+      window.location.href = "/";
+    }
+  }
+
   async function handleSavePreferences() {
     setSaving(true);
     setSaved(false);
@@ -196,15 +254,64 @@ export default function Settings() {
   )}
 </div>
 
-        {/* Danger zone */}
+       {/* Danger zone */}
         <div className="bg-white border border-red-200 rounded-2xl p-6">
           <h2 className="text-lg font-bold text-red-700 mb-1">Danger zone</h2>
           <p className="text-sm text-gray-500 mb-4">
             Permanently delete your account and all associated data.
           </p>
-          <button className="border border-red-300 text-red-700 px-5 py-2 rounded-lg text-sm font-semibold hover:bg-red-50 transition">
-            Delete account
-          </button>
+
+          {!showDeleteConfirm ? (
+            <button
+              onClick={handleDeleteAccount}
+              className="border border-red-300 text-red-700 px-5 py-2 rounded-lg text-sm font-semibold hover:bg-red-50 transition"
+            >
+              Delete Account
+            </button>
+          ) : (
+            <form onSubmit={handleConfirmDelete} className="space-y-3 border-t border-red-100 pt-4">
+              <p className="text-sm text-gray-700 font-medium">
+                Confirm your email and password to permanently delete your account.
+              </p>
+              <input
+                type="email"
+                required
+                placeholder="Email"
+                value={confirmEmail}
+                onChange={(e) => setConfirmEmail(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500"
+              />
+              <input
+                type="password"
+                required
+                placeholder="Password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500"
+              />
+
+              {deleteError && (
+                <p className="text-red-600 text-sm font-medium">{deleteError}</p>
+              )}
+
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  disabled={deleting}
+                  className="bg-red-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-red-700 transition disabled:opacity-50"
+                >
+                  {deleting ? "Deleting..." : "Confirm delete"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="border border-gray-300 text-gray-700 px-5 py-2 rounded-lg text-sm font-semibold hover:bg-gray-50 transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          )}
         </div>
       </div>
     </div>

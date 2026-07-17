@@ -35,6 +35,8 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [activeDimension, setActiveDimension] = useState("field");
   const [selectedChips, setSelectedChips] = useState({});
+  const [searchText, setSearchText] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [mentors, setMentors] = useState([]);
   const [mentorsLoading, setMentorsLoading] = useState(true);
   const [mentorsError, setMentorsError] = useState(null);
@@ -82,6 +84,102 @@ export default function Home() {
     router.push(`${target.path}${query}`);
   };
 
+  // --- Recognize typed category/filter words ---
+  const tryRecognizeToken = (token) => {
+    const lower = token.trim().toLowerCase();
+    if (!lower) return false;
+
+    const categoryMatch = Object.keys(categoryFilters).find((cat) => cat === lower);
+    if (categoryMatch) {
+      handleCategorySelect(categoryMatch);
+      return true;
+    }
+
+    const cat = selectedCategory || "mentors";
+    const dimensions = categoryFilters[cat];
+    for (const dimension of Object.keys(dimensions)) {
+      const chipMatch = dimensions[dimension].find((chip) => chip.toLowerCase() === lower);
+      if (chipMatch) {
+        handleChipSelect(dimension, chipMatch);
+        return true;
+      }
+    }
+
+    return false;
+  };
+
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    if (value.endsWith(" ")) {
+      const words = value.trim().split(/\s+/);
+      const lastWord = words[words.length - 1];
+      if (tryRecognizeToken(lastWord)) {
+        setSearchText("");
+        return;
+      }
+    }
+    setSearchText(value);
+  };
+
+  // --- Search index / suggestions ---
+ const buildSearchIndex = () => {
+  const items = [];
+
+  Object.keys(categoryFilters).forEach((cat) => {
+    items.push({ type: "category", label: cat.charAt(0).toUpperCase() + cat.slice(1), value: cat });
+  });
+
+  // Dedupe filters by dimension + value, but remember every category they belong to
+  const filterMap = new Map();
+  Object.entries(categoryFilters).forEach(([cat, dims]) => {
+    Object.entries(dims).forEach(([dimension, chips]) => {
+      chips.forEach((chip) => {
+        const key = `${dimension}:${chip}`;
+        if (!filterMap.has(key)) {
+          filterMap.set(key, { type: "filter", label: chip, value: chip, dimension, categories: [cat] });
+        } else {
+          filterMap.get(key).categories.push(cat);
+        }
+      });
+    });
+  });
+  items.push(...filterMap.values());
+
+  mentors.forEach((m) => {
+    items.push({ type: "mentor", label: m.name, value: m.name, subject: m.subject, school: m.school });
+  });
+
+  questions.forEach((q) => {
+    items.push({ type: "question", label: q.question, value: q.question, id: q.id, subject: q.subject });
+  });
+
+  return items;
+};
+
+  const searchResults = searchText.trim()
+    ? buildSearchIndex()
+        .filter((item) => item.label.toLowerCase().includes(searchText.trim().toLowerCase()))
+        .slice(0, 8)
+    : [];
+
+ const handleSuggestionClick = (item) => {
+  if (item.type === "category") {
+    handleCategorySelect(item.value);
+  } else if (item.type === "filter") {
+    const targetCategory = item.categories.includes(selectedCategory)
+      ? selectedCategory
+      : item.categories[0];
+    if (selectedCategory !== targetCategory) handleCategorySelect(targetCategory);
+    handleChipSelect(item.dimension, item.value);
+  } else if (item.type === "mentor") {
+    router.push(`/mentors?name=${encodeURIComponent(item.value)}`);
+  } else if (item.type === "question") {
+    router.push(`/FAQ#${item.id}`);
+  }
+  setSearchText("");
+  setShowSuggestions(false);
+};
+
   const categoryButtonStyles = {
     mentors: "bg-green-600 text-white border-green-600",
     questions: "bg-amber-500 text-white border-amber-500",
@@ -103,9 +201,10 @@ export default function Home() {
     }
     return getSubjectStyle(chip);
   };
-const topMentors = [...mentors].sort((a, b) => b.rating - a.rating).slice(0, 3);
-const topQuestions = [...questions].sort((a, b) => b.helpful - a.helpful).slice(0, 3);
-const verifiedMentorsCount = mentors.filter((m) => m.verified).length;
+
+  const topMentors = [...mentors].sort((a, b) => b.rating - a.rating).slice(0, 3);
+  const topQuestions = [...questions].sort((a, b) => b.helpful - a.helpful).slice(0, 3);
+  const verifiedMentorsCount = mentors.filter((m) => m.verified).length;
   const questionsAnsweredCount = questions.length;
   const careerPathsCount = new Set(mentors.map((m) => m.subject)).size;
   const avgRating = mentors.length
@@ -119,6 +218,7 @@ const verifiedMentorsCount = mentors.filter((m) => m.verified).length;
     )
   ).size;
   const schoolsCount = new Set(mentors.map((m) => m.school)).size;
+
   return (
     <main className="min-h-screen bg-white">
       {/* Header */}
@@ -127,170 +227,242 @@ const verifiedMentorsCount = mentors.filter((m) => m.verified).length;
       {/* Hero + Search */}
       <section className="bg-orange-50 px-6 py-20 text-center">
         <div className="max-w-4xl mx-auto">
-        <h2 className="text-4xl font-bold text-gray-900 mb-4">
-          Real Answers from the People Living it
-        </h2>
-        <p className="text-gray-600 mb-10">
-          Get honest career intel from university students who are actually on the path you're considering. No cost. No sales pitch. Just the truth.
-        </p>
+          <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            Real Answers from the People Living it
+          </h2>
+          <p className="text-gray-600 mb-10">
+            Get honest career intel from university students who are actually on the path you're considering. No cost. No sales pitch. Just the truth.
+          </p>
 
-        {/* Search Bar */}
-       <div className="max-w-2xl mx-auto">
-          {/* Category selector */}
-          <div className="flex justify-center gap-2 mb-4">
-            {[
-              { key: "mentors", label: "Mentors" },
-              { key: "questions", label: "Questions" },
-              { key: "universities", label: "Universities" },
-            ].map((cat) => (
-              <button
-                key={cat.key}
-                onClick={() => handleCategorySelect(cat.key)}
-                className={`px-5 py-2 rounded-lg text-sm font-semibold border transition ${
-                  selectedCategory === cat.key
-                    ? categoryButtonStyles[cat.key]
-                    : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
-                }`}
-              >
-                {cat.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex items-stretch bg-white border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-gray-900">
-            <div className="flex-1 px-4 py-2 flex items-center gap-2 flex-wrap">
-              {selectedCategory ? (
-                <>
-                  <button
-  onClick={() => {
-    setSelectedCategory(null);
-    setSelectedChips({});
-    setActiveDimension("field");
-  }}
-  className={`inline-flex items-center gap-2 text-sm font-semibold px-3 py-1 rounded-full text-black ${categoryFillStyles[selectedCategory]} hover:opacity-80 transition`}
->
-  {selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)}
-  <span className="font-bold">×</span>
-</button>
-                  {Object.entries(selectedChips).flatMap(([dimension, chips]) =>
-                    chips.map((chip) => {
-                      const style = getChipStyle(dimension, chip);
-                      return (
-                        <button
-                          key={`${dimension}-${chip}`}
-                          onClick={() => handleChipSelect(dimension, chip)}
-                          className={`inline-flex items-center gap-1 text-sm font-semibold px-3 py-1 rounded-full transition hover:opacity-80 ${style.color}`}
-                        >
-                          {style.icon} {chip}
-                        </button>
-                      );
-                    })
-                  )}
-                </>
-              ) : (
-                <span className="text-gray-600 text-sm">
-                  Choose Mentors, Questions, or Universities to get started
-                </span>
-              )}
+          {/* Search Bar */}
+          <div className="max-w-2xl mx-auto">
+            {/* Category selector */}
+            <div className="flex justify-center gap-2 mb-4">
+              {[
+                { key: "mentors", label: "Mentors" },
+                { key: "questions", label: "Questions" },
+                { key: "universities", label: "Universities" },
+              ].map((cat) => (
+                <button
+                  key={cat.key}
+                  onClick={() => handleCategorySelect(cat.key)}
+                  className={`px-5 py-2 rounded-lg text-sm font-semibold border transition ${
+                    selectedCategory === cat.key
+                      ? categoryButtonStyles[cat.key]
+                      : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
             </div>
-            <button
-              onClick={handleExplore}
-              className="bg-green-600 text-white px-6 font-medium hover:bg-green-700 transition shrink-0"
-            >
-              Find a Mentor →
-            </button>
-          </div>
 
-          {/* Filter dimension tabs + chips for the selected category */}
-          {selectedCategory && (
-            <div className="mt-4">
-              <div className="flex justify-center gap-2 mb-3">
-                {Object.keys(categoryFilters[selectedCategory]).map((dimension) => (
-                  <button
-                    key={dimension}
-                    onClick={() => setActiveDimension(dimension)}
-                    className={`px-3 py-1 rounded-md text-xs font-semibold transition ${
-                      activeDimension === dimension
-                        ? "bg-gray-900 text-white"
-                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                    }`}
-                  >
-                    {dimensionLabels[dimension]}
-                  </button>
-                ))}
+            <div className="relative">
+              <div className="flex items-stretch bg-white border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-gray-900">
+                <div className="flex-1 px-4 py-2 flex items-center gap-2 flex-wrap">
+                  {selectedCategory && (
+                    <>
+                      <button
+                        onClick={() => {
+                          setSelectedCategory(null);
+                          setSelectedChips({});
+                          setActiveDimension("field");
+                        }}
+                        className={`inline-flex items-center gap-2 text-sm font-semibold px-3 py-1 rounded-full text-black ${categoryFillStyles[selectedCategory]} hover:opacity-80 transition`}
+                      >
+                        {selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)}
+                        <span className="font-bold">×</span>
+                      </button>
+                      {Object.entries(selectedChips).flatMap(([dimension, chips]) =>
+                        chips.map((chip) => {
+                          const style = getChipStyle(dimension, chip);
+                          return (
+                            <button
+                              key={`${dimension}-${chip}`}
+                              onClick={() => handleChipSelect(dimension, chip)}
+                              className={`inline-flex items-center gap-1 text-sm font-semibold px-3 py-1 rounded-full transition hover:opacity-80 ${style.color}`}
+                            >
+                              {style.icon} {chip}
+                            </button>
+                          );
+                        })
+                      )}
+                    </>
+                  )}
+                  <input
+                    type="text"
+                    value={searchText}
+                    onChange={(e) => {
+                      handleSearchChange(e);
+                      setShowSuggestions(true);
+                    }}
+                    onFocus={() => setShowSuggestions(true)}
+                    onBlur={() => setShowSuggestions(false)}
+                    onKeyDown={(e) => {
+  if (e.key === "Enter") {
+    if (searchResults.length > 0) {
+      handleSuggestionClick(searchResults[0]);
+    } else if (searchText.trim() && tryRecognizeToken(searchText.trim())) {
+      setSearchText("");
+    } else {
+      // No match just show "no results" instead of navigating away
+      setShowSuggestions(true);
+    }
+  }
+}}
+                    placeholder="Choose Mentors, Questions, or Universities to get started"
+                    className="flex-1 min-w-[160px] outline-none text-sm text-gray-600 placeholder-gray-600"
+                  />
+                </div>
+                <button
+                  onClick={handleExplore}
+                  className="bg-green-600 text-white px-6 font-medium hover:bg-green-700 transition shrink-0"
+                >
+                  Find a Mentor →
+                </button>
               </div>
-              <div className="flex flex-wrap justify-center gap-2">
-                {categoryFilters[selectedCategory][activeDimension].map((chip) => {
-                  const style = getChipStyle(activeDimension, chip);
-                  const isSelected = (selectedChips[activeDimension] || []).includes(chip);
 
-                  return (
+             {showSuggestions && searchText.trim() && (
+  <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-20 text-left overflow-hidden">
+    {searchResults.length > 0 ? (
+      searchResults.map((item, i) => {
+        let badgeLabel = "";
+        let badgeStyle = "bg-gray-100 text-gray-500";
+        let icon = "";
+
+        if (item.type === "category") {
+          badgeLabel = "Category";
+          badgeStyle =
+            item.value === "mentors"
+              ? "bg-green-100 text-green-700"
+              : item.value === "questions"
+              ? "bg-amber-100 text-amber-700"
+              : "bg-indigo-100 text-indigo-700";
+        } else if (item.type === "filter") {
+          badgeLabel = dimensionLabels[item.dimension] || item.dimension;
+          const style = getChipStyle(item.dimension, item.value);
+          badgeStyle = style.color;
+          icon = style.icon || "";
+        } else if (item.type === "mentor") {
+          badgeLabel = "Mentor";
+          badgeStyle = "bg-green-100 text-green-700";
+        } else if (item.type === "question") {
+          badgeLabel = "Question";
+          badgeStyle = "bg-amber-100 text-amber-700";
+        }
+
+        return (
+          <button
+            key={`${item.type}-${item.value}-${i}`}
+            onMouseDown={() => handleSuggestionClick(item)}
+            className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-gray-50 transition text-left border-b border-gray-100 last:border-b-0"
+          >
+            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 ${badgeStyle}`}>
+              {icon} {badgeLabel}
+            </span>
+            <span className="text-gray-800 truncate">{item.label}</span>
+          </button>
+        );
+      })
+    ) : (
+      <div className="px-4 py-4 text-sm text-gray-500 text-center">
+        No results for "<span className="font-semibold text-gray-700">{searchText}</span>" — try a category, subject, or mentor name.
+      </div>
+    )}
+  </div>
+)}
+            </div>
+
+            {/* Filter dimension tabs + chips for the selected category */}
+            {selectedCategory && (
+              <div className="mt-4">
+                <div className="flex justify-center gap-2 mb-3">
+                  {Object.keys(categoryFilters[selectedCategory]).map((dimension) => (
                     <button
-                      key={chip}
-                      onClick={() => handleChipSelect(activeDimension, chip)}
-                      className={`text-sm font-semibold px-4 py-1.5 rounded-full transition ${style.color} ${
-                        isSelected ? "ring-2 ring-gray-900" : "hover:opacity-80"
+                      key={dimension}
+                      onClick={() => setActiveDimension(dimension)}
+                      className={`px-3 py-1 rounded-md text-xs font-semibold transition ${
+                        activeDimension === dimension
+                          ? "bg-gray-900 text-white"
+                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                       }`}
                     >
-                      {style.icon} {chip}
+                      {dimensionLabels[dimension]}
                     </button>
-                  );
-                })}
+                  ))}
+                </div>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {categoryFilters[selectedCategory][activeDimension].map((chip) => {
+                    const style = getChipStyle(activeDimension, chip);
+                    const isSelected = (selectedChips[activeDimension] || []).includes(chip);
+
+                    return (
+                      <button
+                        key={chip}
+                        onClick={() => handleChipSelect(activeDimension, chip)}
+                        className={`text-sm font-semibold px-4 py-1.5 rounded-full transition ${style.color} ${
+                          isSelected ? "ring-2 ring-gray-900" : "hover:opacity-80"
+                        }`}
+                      >
+                        {style.icon} {chip}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-        </div>
-  </section>
+      </section>
 
-    {/* Stats */}
+      {/* Stats */}
       <section className="bg-white pt-6 pb-6">
-  <div className="max-w-5xl mx-auto px-6 grid grid-cols-2 md:grid-cols-6 gap-4 text-center">
-    {mentorsLoading
-      ? [...Array(6)].map((_, i) => (
-          <div key={i} className="animate-pulse">
-            <div className="h-10 w-16 bg-gray-200 rounded mx-auto mb-2"></div>
-            <div className="h-4 w-24 bg-gray-200 rounded mx-auto"></div>
-          </div>
-        ))
-      : (
-        <>
-          <div>
-            <p className="text-4xl font-extrabold text-green-800">{verifiedMentorsCount}</p>
-            <p className="text-gray-600 text-sm mt-0.5">Verified mentors</p>
-          </div>
+        <div className="max-w-5xl mx-auto px-6 grid grid-cols-2 md:grid-cols-6 gap-4 text-center">
+          {mentorsLoading
+            ? [...Array(6)].map((_, i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="h-10 w-16 bg-gray-200 rounded mx-auto mb-2"></div>
+                  <div className="h-4 w-24 bg-gray-200 rounded mx-auto"></div>
+                </div>
+              ))
+            : (
+              <>
+                <div>
+                  <p className="text-4xl font-extrabold text-green-800">{verifiedMentorsCount}</p>
+                  <p className="text-gray-600 text-sm mt-0.5">Verified mentors</p>
+                </div>
 
-          <div>
-            <p className="text-4xl font-extrabold text-green-800">{questionsAnsweredCount}</p>
-            <p className="text-gray-600 text-sm mt-0.5">Questions answered</p>
-          </div>
+                <div>
+                  <p className="text-4xl font-extrabold text-green-800">{questionsAnsweredCount}</p>
+                  <p className="text-gray-600 text-sm mt-0.5">Questions answered</p>
+                </div>
 
-          <div>
-            <p className="text-4xl font-extrabold text-green-800">{careerPathsCount}</p>
-            <p className="text-gray-600 text-sm mt-0.5">Career paths</p>
-          </div>
+                <div>
+                  <p className="text-4xl font-extrabold text-green-800">{careerPathsCount}</p>
+                  <p className="text-gray-600 text-sm mt-0.5">Career paths</p>
+                </div>
 
-          <div>
-            <p className="text-4xl font-extrabold text-green-800">{avgRating}★</p>
-            <p className="text-gray-600 text-sm mt-0.5">Average session rating</p>
-          </div>
+                <div>
+                  <p className="text-4xl font-extrabold text-green-800">{avgRating}★</p>
+                  <p className="text-gray-600 text-sm mt-0.5">Average session rating</p>
+                </div>
 
-          <div>
-            <p className="text-4xl font-extrabold text-green-800">{languagesCount}</p>
-            <p className="text-gray-600 text-sm mt-0.5">Languages spoken</p>
-          </div>
+                <div>
+                  <p className="text-4xl font-extrabold text-green-800">{languagesCount}</p>
+                  <p className="text-gray-600 text-sm mt-0.5">Languages spoken</p>
+                </div>
 
-          <div>
-            <p className="text-4xl font-extrabold text-green-800">{schoolsCount}</p>
-            <p className="text-gray-600 text-sm mt-0.5">Schools represented</p>
-          </div>
-        </>
-      )}
-  </div>
-</section>
+                <div>
+                  <p className="text-4xl font-extrabold text-green-800">{schoolsCount}</p>
+                  <p className="text-gray-600 text-sm mt-0.5">Schools represented</p>
+                </div>
+              </>
+            )}
+        </div>
+      </section>
 
-     {/* How it works */}
-<section className="bg-orange-50 pt-10 pb-10">
+      {/* How it works */}
+      <section className="bg-orange-50 pt-10 pb-10">
         <div className="max-w-5xl mx-auto px-6">
           <h3 className="text-2xl font-bold text-gray-900 text-center mb-2">
             How it Works
@@ -330,97 +502,97 @@ const verifiedMentorsCount = mentors.filter((m) => m.verified).length;
         </div>
       </section>
 
-{/* Featured Mentors */}
-<section className="bg-orange-50 px-6 pt-6 pb-10">
+      {/* Featured Mentors */}
+      <section className="bg-orange-50 px-6 pt-6 pb-10">
         <div className="max-w-6xl mx-auto">
-        <h3 className="text-xl font-semibold text-gray-900 mb-6">
-          Featured Mentors
-        </h3>
-        {mentorsError ? (
-          <p className="text-red-600 font-semibold">Error: {mentorsError}</p>
-        ) : mentorsLoading ? (
-          <p className="text-gray-500">Loading mentors...</p>
-        ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {topMentors.map((mentor) => (
-            <div
-              key={mentor.name}
-              className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-md transition flex flex-col h-full"
-            >
-              {/* Top: avatar + name + school */}
-              <div className="flex items-start gap-4 mb-4">
-                <div className="w-14 h-14 rounded-full bg-green-800 text-white flex items-center justify-center font-bold text-lg shrink-0">
-                  {mentor.initials}
-                </div>
-                <div>
-                  <h4 className="font-bold text-gray-900 text-lg leading-tight">
-                    {mentor.name}
-                  </h4>
-                  <p className="text-gray-500 text-sm">
-                    {mentor.school} · {mentor.year}
-                  </p>
-                  {mentor.verified && (
-                    <span className="inline-block mt-1 text-xs font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded-full">
-                      ✓ Verified
-                    </span>
-                  )}
-                </div>
-              </div>
-
-           {/* Subject tag */}
-              <div className="flex flex-wrap gap-2 mb-3">
-                <span
-                  className={`inline-block text-xs font-semibold px-3 py-1 rounded-full ${getSubjectStyle(mentor.subject).color}`}
+          <h3 className="text-xl font-semibold text-gray-900 mb-6">
+            Featured Mentors
+          </h3>
+          {mentorsError ? (
+            <p className="text-red-600 font-semibold">Error: {mentorsError}</p>
+          ) : mentorsLoading ? (
+            <p className="text-gray-500">Loading mentors...</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {topMentors.map((mentor) => (
+                <div
+                  key={mentor.name}
+                  className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-md transition flex flex-col h-full"
                 >
-                  {getSubjectStyle(mentor.subject).icon} {mentor.subject}
-                </span>
-                <span className="inline-block text-xs font-semibold px-3 py-1 rounded-full bg-slate-100 text-slate-700">
-                  {getFlag(mentor.country)} {mentor.country}
-                </span>
-              </div>
+                  {/* Top: avatar + name + school */}
+                  <div className="flex items-start gap-4 mb-4">
+                    <div className="w-14 h-14 rounded-full bg-green-800 text-white flex items-center justify-center font-bold text-lg shrink-0">
+                      {mentor.initials}
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-gray-900 text-lg leading-tight">
+                        {mentor.name}
+                      </h4>
+                      <p className="text-gray-500 text-sm">
+                        {mentor.school} · {mentor.year}
+                      </p>
+                      {mentor.verified && (
+                        <span className="inline-block mt-1 text-xs font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded-full">
+                          ✓ Verified
+                        </span>
+                      )}
+                    </div>
+                  </div>
 
-              {/* Bio */}
-              <p className="text-gray-600 text-sm mb-5">{mentor.bio}</p>
-
-              {/* Stats row */}
-              <div className="grid grid-cols-4 gap-2 pt-4 border-t border-gray-100 text-center mt-auto">
-                <div>
-                  <p className="font-bold text-gray-900">{mentor.sessions}</p>
-                  <p className="text-xs text-gray-500">Sessions</p>
-                </div>
-                <div>
-                  <p className="font-bold text-gray-900">{mentor.answers}</p>
-                  <p className="text-xs text-gray-500">Answers</p>
-                </div>
-                <div>
-                  <p className="font-bold text-gray-900">{mentor.rating}★</p>
-                  <p className="text-xs text-gray-500">Rating</p>
-                </div>
-                <div>
-                  <p
-                    className={`font-bold flex items-center justify-center gap-1 ${
-                      mentor.available ? "text-green-600" : "text-gray-400"
-                    }`}
-                  >
+                  {/* Subject tag */}
+                  <div className="flex flex-wrap gap-2 mb-3">
                     <span
-                      className={`w-2 h-2 rounded-full ${
-                        mentor.available ? "bg-green-600" : "bg-gray-400"
-                      }`}
-                    ></span>
-                    {mentor.available ? "Open" : "Closed"}
-                  </p>
-                  <p className="text-xs text-gray-500">Bookings</p>
+                      className={`inline-block text-xs font-semibold px-3 py-1 rounded-full ${getSubjectStyle(mentor.subject).color}`}
+                    >
+                      {getSubjectStyle(mentor.subject).icon} {mentor.subject}
+                    </span>
+                    <span className="inline-block text-xs font-semibold px-3 py-1 rounded-full bg-slate-100 text-slate-700">
+                      {getFlag(mentor.country)} {mentor.country}
+                    </span>
+                  </div>
+
+                  {/* Bio */}
+                  <p className="text-gray-600 text-sm mb-5">{mentor.bio}</p>
+
+                  {/* Stats row */}
+                  <div className="grid grid-cols-4 gap-2 pt-4 border-t border-gray-100 text-center mt-auto">
+                    <div>
+                      <p className="font-bold text-gray-900">{mentor.sessions}</p>
+                      <p className="text-xs text-gray-500">Sessions</p>
+                    </div>
+                    <div>
+                      <p className="font-bold text-gray-900">{mentor.answers}</p>
+                      <p className="text-xs text-gray-500">Answers</p>
+                    </div>
+                    <div>
+                      <p className="font-bold text-gray-900">{mentor.rating}★</p>
+                      <p className="text-xs text-gray-500">Rating</p>
+                    </div>
+                    <div>
+                      <p
+                        className={`font-bold flex items-center justify-center gap-1 ${
+                          mentor.available ? "text-green-600" : "text-gray-400"
+                        }`}
+                      >
+                        <span
+                          className={`w-2 h-2 rounded-full ${
+                            mentor.available ? "bg-green-600" : "bg-gray-400"
+                          }`}
+                        ></span>
+                        {mentor.available ? "Open" : "Closed"}
+                      </p>
+                      <p className="text-xs text-gray-500">Bookings</p>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
-          ))}
-      </div>
-        )}
+          )}
         </div>
       </section>
 
-{/* Q&A */}
-<section className="bg-orange-50 pt-8 pb-16">
+      {/* Q&A */}
+      <section className="bg-orange-50 pt-8 pb-16">
         <div className="max-w-6xl mx-auto px-6">
           <h3 className="text-2xl font-bold text-gray-900 mb-8">
             What high schoolers are actually asking
@@ -466,6 +638,6 @@ const verifiedMentorsCount = mentors.filter((m) => m.verified).length;
           </div>
         </div>
       </section>
-      </main>
+    </main>
   );
 }

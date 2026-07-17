@@ -26,26 +26,27 @@ function MentorsContent() {
   const [fetchError, setFetchError] = useState(null);
 
   useEffect(() => {
-  const subjectParam = searchParams.get("subject");
-  if (subjectParam) {
-    const validSubjects = subjectParam
-      .split(",")
-      .filter((s) => filters.includes(s));
-    if (validSubjects.length > 0) {
-      setActiveFilters(validSubjects);
+    const subjectParam = searchParams.get("subject");
+    if (subjectParam) {
+      const validSubjects = subjectParam
+        .split(",")
+        .filter((s) => filters.includes(s));
+      if (validSubjects.length > 0) {
+        setActiveFilters(validSubjects);
+      }
     }
-  }
 
-  const countryParam = searchParams.get("country");
-  if (countryParam) {
-    setActiveCountries(countryParam.split(","));
-  }
+    const countryParam = searchParams.get("country");
+    if (countryParam) {
+      setActiveCountries(countryParam.split(","));
+    }
 
-  const languageParam = searchParams.get("language");
-  if (languageParam) {
-    setActiveLanguages(languageParam.split(","));
-  }
-}, [searchParams]);
+    const languageParam = searchParams.get("language");
+    if (languageParam) {
+      setActiveLanguages(languageParam.split(","));
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     async function fetchMentors() {
       const { data, error } = await supabase.from("mentorss").select("*");
