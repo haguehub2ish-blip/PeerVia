@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import Navbar from "@/Components/Navbar";
 import MultiSelect from "@/Components/MultiSelect";
 import { supabase } from "@/lib/supabase";
-import { universities } from "@/data/universities";
+import { courseGuides, allUniversityNames } from "@/data/courseGuides";
 import { getSubjectStyle, getFlag, getLanguageStyle } from "@/data/mentors";
 
 const getCountryStyle = (country) => ({
@@ -65,14 +65,14 @@ const [resent, setResent] = useState(false);
   const schoolOptions = [
     ...new Set([
       ...allMentors.map((m) => m.school).filter(Boolean),
-      ...universities.map((u) => u.name),
+      ...allUniversityNames,
     ]),
   ];
   const mentorOptions = allMentors.map((m) => m.name).filter(Boolean);
   const countryOptions = [
     ...new Set([
       ...allMentors.map((m) => m.country).filter(Boolean),
-      ...universities.map((u) => u.country),
+      ...courseGuides.map((u) => u.country),
     ]),
   ];
 

@@ -16,7 +16,7 @@ const categoryFilters = {
     field: ["Medicine", "Engineering", "Law", "Business", "Computer Science", "Psychology", "Biology", "Architecture"],
     country: ["NL", "UK"],
   },
-  universities: {
+  courseGuides: {
     field: ["Medicine", "Engineering", "Law", "Computer Science", "Business", "Psychology"],
     country: ["NL", "UK"],
   },
@@ -24,10 +24,16 @@ const categoryFilters = {
 
 const dimensionLabels = { field: "Field", country: "Country", language: "Language" };
 
+const categoryDisplayNames = {
+  mentors: "Mentors",
+  questions: "Questions",
+  courseGuides: "Course Guides",
+};
+
 const categoryTargets = {
   mentors: { path: "/mentors", params: { field: "subject", country: "country", language: "language" } },
   questions: { path: "/FAQ", params: { field: "field", country: "country" } },
-  universities: { path: "/universities", params: { field: "field", country: "country" } },
+ courseGuides: { path: "/course-guides", params: { field: "field", country: "country" } },
 };
 
 export default function Home() {
@@ -183,13 +189,13 @@ export default function Home() {
   const categoryButtonStyles = {
     mentors: "bg-green-600 text-white border-green-600",
     questions: "bg-amber-500 text-white border-amber-500",
-    universities: "bg-indigo-600 text-white border-indigo-600",
+    courseGuides: "bg-indigo-600 text-white border-indigo-600",
   };
 
   const categoryFillStyles = {
     mentors: "bg-green-100",
     questions: "bg-amber-100",
-    universities: "bg-indigo-100",
+    courseGuides: "bg-indigo-100",
   };
 
   const getChipStyle = (dimension, chip) => {
@@ -230,9 +236,9 @@ export default function Home() {
           <h2 className="text-4xl font-bold text-gray-900 mb-4">
             Real Answers from the People Living it
           </h2>
-          <p className="text-gray-600 mb-10">
-            Get honest career intel from university students who are actually on the path you're considering. No cost. No sales pitch. Just the truth.
-          </p>
+       <p className="text-gray-600 mb-10">
+  Connect with verified university students for honest, first hand advice about courses, universities, applications and student life - <span className="font-bold text-black">all completely free</span>.
+</p>
 
           {/* Search Bar */}
           <div className="max-w-2xl mx-auto">
@@ -241,7 +247,7 @@ export default function Home() {
               {[
                 { key: "mentors", label: "Mentors" },
                 { key: "questions", label: "Questions" },
-                { key: "universities", label: "Universities" },
+                { key: "courseGuides", label: "Course Guides" },
               ].map((cat) => (
                 <button
                   key={cat.key}
@@ -270,7 +276,7 @@ export default function Home() {
                         }}
                         className={`inline-flex items-center gap-2 text-sm font-semibold px-3 py-1 rounded-full text-black ${categoryFillStyles[selectedCategory]} hover:opacity-80 transition`}
                       >
-                        {selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)}
+                        {categoryDisplayNames[selectedCategory]}
                         <span className="font-bold">×</span>
                       </button>
                       {Object.entries(selectedChips).flatMap(([dimension, chips]) =>
@@ -310,7 +316,7 @@ export default function Home() {
     }
   }
 }}
-                    placeholder="Choose Mentors, Questions, or Universities to get started"
+                    placeholder="Choose Mentors, Questions, or Course Guides to get started"
                     className="flex-1 min-w-[160px] outline-none text-sm text-gray-600 placeholder-gray-600"
                   />
                 </div>
@@ -318,7 +324,7 @@ export default function Home() {
                   onClick={handleExplore}
                   className="bg-green-600 text-white px-6 font-medium hover:bg-green-700 transition shrink-0"
                 >
-                  Find a Mentor →
+                  Find your Mentor →
                 </button>
               </div>
 
@@ -429,32 +435,32 @@ export default function Home() {
               <>
                 <div>
                   <p className="text-4xl font-extrabold text-green-800">{verifiedMentorsCount}</p>
-                  <p className="text-gray-600 text-sm mt-0.5">Verified mentors</p>
+                  <p className="text-gray-600 text-sm mt-0.5">Verified Mentors</p>
                 </div>
 
                 <div>
                   <p className="text-4xl font-extrabold text-green-800">{questionsAnsweredCount}</p>
-                  <p className="text-gray-600 text-sm mt-0.5">Questions answered</p>
+                  <p className="text-gray-600 text-sm mt-0.5"> Student Questions Answered</p>
                 </div>
 
                 <div>
                   <p className="text-4xl font-extrabold text-green-800">{careerPathsCount}</p>
-                  <p className="text-gray-600 text-sm mt-0.5">Career paths</p>
+                  <p className="text-gray-600 text-sm mt-0.5">Career Paths</p>
                 </div>
 
                 <div>
                   <p className="text-4xl font-extrabold text-green-800">{avgRating}★</p>
-                  <p className="text-gray-600 text-sm mt-0.5">Average session rating</p>
+                  <p className="text-gray-600 text-sm mt-0.5">Average Session Rating</p>
                 </div>
 
                 <div>
                   <p className="text-4xl font-extrabold text-green-800">{languagesCount}</p>
-                  <p className="text-gray-600 text-sm mt-0.5">Languages spoken</p>
+                  <p className="text-gray-600 text-sm mt-0.5">Languages Spoken</p>
                 </div>
 
                 <div>
                   <p className="text-4xl font-extrabold text-green-800">{schoolsCount}</p>
-                  <p className="text-gray-600 text-sm mt-0.5">Schools represented</p>
+                  <p className="text-gray-600 text-sm mt-0.5">Universities Represented</p>
                 </div>
               </>
             )}
@@ -468,23 +474,23 @@ export default function Home() {
             How it Works
           </h3>
           <p className="text-gray-600 text-center mb-10">
-            Getting real answers takes three simple steps — completely free.
+           Three simple steps to connect with verified university students for honest, first-hand advice about courses, universities, applications and student life.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-md transition text-center flex flex-col items-center">
               <div className="w-14 h-14 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-2xl font-bold mb-4">
                 🔍
               </div>
-              <h4 className="font-bold text-gray-900 text-lg mb-2">1. Search</h4>
+              <h4 className="font-bold text-gray-900 text-lg mb-2">1. Find the right Mentor</h4>
               <p className="text-gray-600 text-sm">
-                Filter mentors by school, subject, country, or language to find someone who's been exactly where you are.
+                Browse verified mentors by course, university, country, or language to find someone whose journey matches yours.
               </p>
             </div>
             <div className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-md transition text-center flex flex-col items-center">
               <div className="w-14 h-14 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-2xl font-bold mb-4">
                 💬
               </div>
-              <h4 className="font-bold text-gray-900 text-lg mb-2">2. Ask or book</h4>
+              <h4 className="font-bold text-gray-900 text-lg mb-2">2. Reach Out</h4>
               <p className="text-gray-600 text-sm">
                 Post a question to the community, or book a 1-on-1 session directly with a verified mentor.
               </p>
@@ -493,9 +499,70 @@ export default function Home() {
               <div className="w-14 h-14 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-2xl font-bold mb-4">
                 ✅
               </div>
-              <h4 className="font-bold text-gray-900 text-lg mb-2">3. Get real answers</h4>
+              <h4 className="font-bold text-gray-900 text-lg mb-2">3. Get Honest Advice</h4>
               <p className="text-gray-600 text-sm">
-                No brochures, no marketing spin — just honest, first-hand advice from current students.
+                Learn what your future career is really like with advice from current students.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+
+     {/* Why Students Use PeerVia */}
+      <section className="bg-white pt-10 pb-10">
+        <div className="max-w-6xl mx-auto px-6">
+          <h3 className="text-2xl font-bold text-gray-900 text-center mb-2">
+            Why Students Use PeerVia
+          </h3>
+          <p className="text-gray-600 text-center mb-10">
+            No brochures, no sales pitches — just a tool built by students, for students.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-md transition text-center flex flex-col items-center">
+              <div className="w-14 h-14 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-2xl font-bold mb-4">
+                🎓
+              </div>
+              <h4 className="font-bold text-gray-900 text-lg mb-2">Honest Advice</h4>
+              <p className="text-gray-600 text-sm">
+                From real university students, not marketing teams.
+              </p>
+            </div>
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-md transition text-center flex flex-col items-center">
+              <div className="w-14 h-14 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-2xl font-bold mb-4">
+                💸
+              </div>
+              <h4 className="font-bold text-gray-900 text-lg mb-2">Completely Free</h4>
+              <p className="text-gray-600 text-sm">
+                No paywalls, no subscriptions, no hidden costs.
+              </p>
+            </div>
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-md transition text-center flex flex-col items-center">
+              <div className="w-14 h-14 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-2xl font-bold mb-4">
+                ✅
+              </div>
+              <h4 className="font-bold text-gray-900 text-lg mb-2">Verified Mentors</h4>
+              <p className="text-gray-600 text-sm">
+                Every mentor is reviewed before joining the platform.
+              </p>
+            </div>
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-md transition text-center flex flex-col items-center">
+              <div className="w-14 h-14 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-2xl font-bold mb-4">
+                🚫
+              </div>
+              <h4 className="font-bold text-gray-900 text-lg mb-2">No Algorithms</h4>
+              <p className="text-gray-600 text-sm">
+                Real conversations, not content ranked for engagement.
+              </p>
+            </div>
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-md transition text-center flex flex-col items-center">
+              <div className="w-14 h-14 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-2xl font-bold mb-4">
+                🤝
+              </div>
+              <h4 className="font-bold text-gray-900 text-lg mb-2">By Students, for Students</h4>
+              <p className="text-gray-600 text-sm">
+                Built by people who were in your shoes not long ago.
               </p>
             </div>
           </div>
@@ -588,6 +655,12 @@ export default function Home() {
               ))}
             </div>
           )}
+
+          <div className="text-center mt-10">
+            <a href="/mentors" className="inline-block border border-gray-300 rounded-lg px-6 py-2.5 font-medium text-gray-800 hover:bg-white transition">
+              See All Mentors →
+            </a>
+          </div>
         </div>
       </section>
 

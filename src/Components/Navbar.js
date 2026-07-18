@@ -39,14 +39,14 @@ export default function Navbar() {
     window.location.href = "/";
   }
 
-  const linkClass = (href) => {
-    const isActive = pathname === href;
-    return `px-4 py-2 rounded-full text-sm transition ${
-      isActive
-        ? "bg-green-600 text-white font-semibold"
-        : "text-gray-600 font-medium hover:bg-green-600 hover:text-white"
-    }`;
-  };
+ const linkClass = (href) => {
+  const isActive = pathname === href;
+  return `px-4 py-2 rounded-full text-sm transition whitespace-nowrap ${
+    isActive
+      ? "bg-green-600 text-white font-semibold"
+      : "text-gray-600 font-medium hover:bg-green-600 hover:text-white"
+  }`;
+};
 
   return (
     <header className="border-b border-gray-200 bg-white sticky top-0 z-10">
@@ -62,8 +62,8 @@ export default function Navbar() {
           <a href="/mentors" className={linkClass("/mentors")}>
             Mentors
           </a>
-          <a href="/universities" className={linkClass("/universities")}>
-            Universities
+          <a href="/course-guides" className={linkClass("/course-guides")}>
+            Course Guides
           </a>
           <a href="/FAQ" className={linkClass("/FAQ")}>
             Q&amp;A
