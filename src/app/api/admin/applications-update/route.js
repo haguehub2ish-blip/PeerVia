@@ -60,6 +60,10 @@ export async function POST(request) {
 
     const newUserId = inviteData.user.id;
 
+    const applicantLanguages = application.languages
+      ? application.languages.split(",")
+      : ["English"];
+
     const { error: insertError } = await supabaseAdmin.from("mentorss").insert([
       {
         user_id: newUserId,
@@ -70,7 +74,7 @@ export async function POST(request) {
         verified: true,
         subject: application.field,
         country: countryMap[application.country] || application.country,
-        languages: ["English"],
+        languages: applicantLanguages,
         bio: application.why,
         sessions: 0,
         answers: 0,

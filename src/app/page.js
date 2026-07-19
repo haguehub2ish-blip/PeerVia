@@ -36,6 +36,12 @@ const categoryTargets = {
  courseGuides: { path: "/course-guides", params: { field: "field", country: "country" } },
 };
 
+const exploreButtonLabels = {
+  mentors: "Find Your Mentor →",
+  questions: "Find Your Answer →",
+  courseGuides: "Find Your Course →",
+};
+
 export default function Home() {
   const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState("mentors");
@@ -324,7 +330,7 @@ export default function Home() {
                   onClick={handleExplore}
                   className="bg-green-600 text-white px-6 font-medium hover:bg-green-700 transition shrink-0"
                 >
-                  Find your Mentor →
+                  {exploreButtonLabels[selectedCategory] || "Find your Mentor →"}
                 </button>
               </div>
 

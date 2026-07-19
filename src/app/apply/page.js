@@ -3,6 +3,7 @@ import { useState } from "react";
 import Navbar from "@/Components/Navbar";
 import { supabase } from "@/lib/supabase";
 import { courseGuides } from "@/data/courseGuides";
+import { getLanguageStyle, languageFlags } from "@/data/mentors";
 
 const fields = ["Medicine", "Mechanical Engineering", "Business", "Computer Science", "Law", "Psychology", "Other"];
 const years = ["Year 1", "Year 2", "Year 3", "Year 4", "Year 5", "Year 6", "Graduate"];
@@ -10,6 +11,7 @@ const countries = ["Netherlands", "United Kingdom", "Other"];
 const universityOptions = [
   ...new Set(courseGuides.flatMap((c) => c.popularUniversities)),
 ].sort();
+const languageOptions = Object.keys(languageFlags);
 
 export default function Apply() {
   const [form, setForm] = useState({
@@ -23,6 +25,7 @@ export default function Apply() {
     why: "",
     linkedin: "",
   });
+  const [selectedLanguages, setSelectedLanguages] = useState(["English"]);
   const [otherUniversity, setOtherUniversity] = useState(false);
   const [otherField, setOtherField] = useState(false);
   const [otherCountry, setOtherCountry] = useState(false);
@@ -36,11 +39,17 @@ export default function Apply() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+
+    if (selectedLanguages.length === 0) {
+      setError("Please select at least one language.");
+      return;
+    }
+
     setSubmitting(true);
     setError(null);
 
     const { error } = await supabase.from("mentor_applications").insert([
-      { ...form, status: "pending" },
+      { ...form, languages: selectedLanguages.join(","), status: "pending" },
     ]);
 
     setSubmitting(false);
@@ -107,7 +116,7 @@ export default function Apply() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-800 mb-1">University email</label>
+              <label className="block text-sm font-semibold text-gray-800 mb-1">University Email</label>
               <input
                 type="email"
                 required
@@ -228,6 +237,37 @@ export default function Apply() {
                   placeholder="Enter your Country"
                   className="mt-2 w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600"
                 />
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-800 mb-1">
+                Languages you speak <span className="text-gray-400 font-normal">(select at least one)</span>
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {languageOptions.map((lang) => {
+                  const style = getLanguageStyle(lang);
+                  const isSelected = selectedLanguages.includes(lang);
+                  return (
+                    <button
+                      key={lang}
+                      type="button"
+                      onClick={() =>
+                        setSelectedLanguages((prev) =>
+                          isSelected ? prev.filter((l) => l !== lang) : [...prev, lang]
+                        )
+                      }
+                      className={`text-xs font-semibold px-3 py-1 rounded-full transition ${style.color} ${
+                        isSelected ? "ring-2 ring-gray-900" : "hover:opacity-80"
+                      }`}
+                    >
+                      {style.icon} {lang}
+                    </button>
+                  );
+                })}
+              </div>
+              {selectedLanguages.length === 0 && (
+                <p className="text-red-600 text-xs mt-1.5">Select at least one language.</p>
               )}
             </div>
 

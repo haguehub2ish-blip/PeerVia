@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import Navbar from "@/Components/Navbar";
 import { supabase } from "@/lib/supabase";
+import { getLanguageStyle } from "@/data/mentors";
 
 const statusStyles = {
   pending: "bg-yellow-100 text-yellow-800",
@@ -122,6 +123,27 @@ export default function AdminApplications() {
                     <span className="text-gray-500">Country: </span>
                     <span className="text-gray-900 font-medium">{app.country}</span>
                   </div>
+                </div>
+
+                <div className="mb-3">
+                  <span className="text-gray-500 text-sm">Languages: </span>
+                  {app.languages ? (
+                    <span className="inline-flex flex-wrap gap-1.5 mt-1">
+                      {app.languages.split(",").map((lang) => {
+                        const style = getLanguageStyle(lang);
+                        return (
+                          <span
+                            key={lang}
+                            className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full ${style.color}`}
+                          >
+                            {style.icon} {lang}
+                          </span>
+                        );
+                      })}
+                    </span>
+                  ) : (
+                    <span className="text-gray-400 text-sm italic">Not specified</span>
+                  )}
                 </div>
 
                 <p className="text-gray-600 text-sm mb-3">{app.why}</p>
