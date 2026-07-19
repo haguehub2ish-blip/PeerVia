@@ -76,15 +76,19 @@ export default function Navbar() {
         <div className="flex items-center gap-4 text-sm justify-self-end">
           {user ? (
             <>
-              
-                <a href="/settings" className="w-9 h-9 rounded-full bg-green-800 text-white flex items-center justify-center font-bold text-sm hover:bg-green-700 transition">
+              {user.user_metadata?.role === "mentor" && (
+                <a href="/mentor-account/dashboard" className="text-green-700 font-semibold hover:text-green-800 whitespace-nowrap">
+                  Mentor Dashboard
+                </a>
+              )}
+              <a href="/settings" className="w-9 h-9 rounded-full bg-green-800 text-white flex items-center justify-center font-bold text-sm hover:bg-green-700 transition">
                 {getInitials(user)}
               </a>
               <button
                 onClick={handleLogout}
                 className="bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition"
               >
-                Log out
+                Log Out
               </button>
             </>
           ) : (

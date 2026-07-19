@@ -26,6 +26,7 @@ const [user, setUser] = useState(null);
   const [interactionsLoading, setInteractionsLoading] = useState(true);
   const [showMyActivity, setShowMyActivity] = useState(false);
     const [userQuestions, setUserQuestions] = useState([]);
+    const [userQuestionAnswers, setUserQuestionAnswers] = useState([]);
   const [askText, setAskText] = useState("");
   const [showAskFilters, setShowAskFilters] = useState(false);
   const [askSubjects, setAskSubjects] = useState([]);
@@ -89,7 +90,7 @@ const [user, setUser] = useState(null);
       const currentUser = userData?.user || null;
       setUser(currentUser);
 
-      const [{ data: likes }, { data: comments }, { data: views }, { data: askedQuestions }] = await Promise.all([
+      const [{ data: likes }, { data: comments }, { data: views }, { data: askedQuestions }, { data: userQuestionAnswers }] = await Promise.all([
         supabase.from("question_likes").select("question_id, user_id"),
         supabase
           .from("question_comments")
@@ -100,9 +101,13 @@ const [user, setUser] = useState(null);
           .from("user_questions")
           .select("id, user_id, question, author_name, subject, country, created_at")
           .order("created_at", { ascending: false }),
+        supabase
+          .from("question_answers")
+          .select("id, user_question_id, mentor_id, mentor_name, answer, created_at"),
       ]);
 
       setUserQuestions(askedQuestions || []);
+      setUserQuestionAnswers(userQuestionAnswers || []);
 
       const next = {};
       questions.forEach((q) => {
@@ -575,9 +580,26 @@ const [user, setUser] = useState(null);
                         </div>
                       )}
                       <p className="text-sm text-gray-900">{uq.question}</p>
-                      <p className="text-xs text-gray-500">
-                        {uq.author_name} · <span className="text-amber-600">Awaiting an answer</span>
-                      </p>
+                      {(() => {
+                        const answer = userQuestionAnswers.find(
+                          (a) => a.user_question_id === uq.id
+                        );
+                        if (answer) {
+                          return (
+                            <div className="mt-2 bg-green-50 border border-green-100 rounded-lg p-3">
+                              <p className="text-sm text-gray-800 mb-1">{answer.answer}</p>
+                              <p className="text-xs font-semibold text-green-700">
+                                — {answer.mentor_name}, Verified Mentor
+                              </p>
+                            </div>
+                          );
+                        }
+                        return (
+                          <p className="text-xs text-gray-500">
+                            {uq.author_name} · <span className="text-amber-600">Awaiting An Answer</span>
+                          </p>
+                        );
+                      })()}
                     </div>
                   </div>
                   {user && user.id === uq.user_id && (
