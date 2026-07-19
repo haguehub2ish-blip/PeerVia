@@ -32,13 +32,13 @@ const categoryDisplayNames = {
 
 const categoryTargets = {
   mentors: { path: "/mentors", params: { field: "subject", country: "country", language: "language" } },
-  questions: { path: "/FAQ", params: { field: "field", country: "country" } },
+  questions: { path: "/community", params: { field: "field", country: "country" } },
  courseGuides: { path: "/course-guides", params: { field: "field", country: "country" } },
 };
 
 export default function Home() {
   const router = useRouter();
-  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState("mentors");
   const [activeDimension, setActiveDimension] = useState("field");
   const [selectedChips, setSelectedChips] = useState({});
   const [searchText, setSearchText] = useState("");
@@ -180,7 +180,7 @@ export default function Home() {
   } else if (item.type === "mentor") {
     router.push(`/mentors?name=${encodeURIComponent(item.value)}`);
   } else if (item.type === "question") {
-    router.push(`/FAQ#${item.id}`);
+    router.push(`/community#${item.id}`);
   }
   setSearchText("");
   setShowSuggestions(false);
@@ -664,7 +664,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Q&A */}
+      {/* Community */}
       <section className="bg-orange-50 pt-8 pb-16">
         <div className="max-w-6xl mx-auto px-6">
           <h3 className="text-2xl font-bold text-gray-900 mb-8">
@@ -672,7 +672,7 @@ export default function Home() {
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {topQuestions.map((qa, i) => (
-              <a key={i} href={`/FAQ#${qa.id}`} className="bg-white rounded-2xl p-6 flex flex-col h-full border border-gray-200 hover:shadow-md transition">
+              <a key={i} href={`/community#${qa.id}`} className="bg-white rounded-2xl p-6 flex flex-col h-full border border-gray-200 hover:shadow-md transition">
                 <div className="flex flex-wrap gap-2 mb-3">
                   <span
                     className={`inline-block text-xs font-semibold px-3 py-1 rounded-full ${getSubjectStyle(qa.subject).color}`}
@@ -705,8 +705,8 @@ export default function Home() {
           </div>
 
           <div className="text-center mt-10">
-            <a href="/FAQ" className="inline-block border border-gray-300 rounded-lg px-6 py-2.5 font-medium text-gray-800 hover:bg-white transition">
-              See all Q&A →
+           <a href="/community" className="inline-block border border-gray-300 rounded-lg px-6 py-2.5 font-medium text-gray-800 hover:bg-white transition">
+              See all Community Posts →
             </a>
           </div>
         </div>

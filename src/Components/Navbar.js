@@ -65,8 +65,8 @@ export default function Navbar() {
           <a href="/course-guides" className={linkClass("/course-guides")}>
             Course Guides
           </a>
-         <a href="/FAQ" className={linkClass("/FAQ")}>
-            Q&amp;A
+         <a href="/community" className={linkClass("/community")}>
+            Community
           </a>
           <a href="/apply" className={linkClass("/apply")}>
             Become a Mentor

@@ -188,7 +188,7 @@ const [deleting, setDeleting] = useState(false);
         {/* Email preferences section */}
         <div className="bg-white border border-gray-200 rounded-2xl p-6 mb-6">
           <h2 className="text-lg font-bold text-gray-900 mb-1">
-            Email preferences
+            Email Preferences
           </h2>
           <p className="text-sm text-gray-500 mb-4">
             Choose what you'd like to receive email updates about.
