@@ -91,6 +91,10 @@ export default function MentorDashboard() {
       answer: answerText,
     });
 
+    if (error) {
+      alert("Error Posting Answer: " + error.message);
+    }
+
     if (!error) {
       const answeredQuestion = unansweredQuestions.find((q) => q.id === userQuestionId);
 
