@@ -84,20 +84,21 @@ export default function Navbar() {
           <a href="/community" className={linkClass("/community")}>
             Community
           </a>
-          <a href="/apply" className={linkClass("/apply")}>
-            Become a Mentor
-          </a>
+          {user?.user_metadata?.role === "mentor" ? (
+            <a href="/mentor-account/dashboard" className={linkClass("/mentor-account/dashboard")}>
+              Mentor Dashboard
+            </a>
+          ) : (
+            <a href="/apply" className={linkClass("/apply")}>
+              Become a Mentor
+            </a>
+          )}
         </nav>
 
         {/* Right side — desktop only */}
         <div className="hidden lg:flex items-center gap-4 text-sm shrink-0">
           {user ? (
             <>
-              {user.user_metadata?.role === "mentor" && (
-                <a href="/mentor-account/dashboard" className="text-green-700 font-semibold hover:text-green-800 whitespace-nowrap">
-                  Mentor Dashboard
-                </a>
-              )}
               <a href="/settings" className="w-9 h-9 rounded-full bg-green-800 text-white flex items-center justify-center font-bold text-sm hover:bg-green-700 transition shrink-0">
                 {getInitials(user)}
               </a>
@@ -141,17 +142,18 @@ export default function Navbar() {
           <a href="/mentors" className={mobileLinkClass("/mentors")}>Mentors</a>
           <a href="/course-guides" className={mobileLinkClass("/course-guides")}>Course Guides</a>
           <a href="/community" className={mobileLinkClass("/community")}>Community</a>
-          <a href="/apply" className={mobileLinkClass("/apply")}>Become a Mentor</a>
+          {user?.user_metadata?.role === "mentor" ? (
+            <a href="/mentor-account/dashboard" className={mobileLinkClass("/mentor-account/dashboard")}>
+              Mentor Dashboard
+            </a>
+          ) : (
+            <a href="/apply" className={mobileLinkClass("/apply")}>Become a Mentor</a>
+          )}
 
           <div className="border-t border-gray-100 my-2"></div>
 
           {user ? (
             <>
-              {user.user_metadata?.role === "mentor" && (
-                <a href="/mentor-account/dashboard" className={mobileLinkClass("/mentor-account/dashboard")}>
-                  Mentor Dashboard
-                </a>
-              )}
               <a href="/settings" className={mobileLinkClass("/settings")}>
                 Settings
               </a>
