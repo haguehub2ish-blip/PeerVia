@@ -20,7 +20,7 @@ export default function Settings() {
   const [selectedSchools, setSelectedSchools] = useState([]);
   const [selectedMentors, setSelectedMentors] = useState([]);
   const [selectedCountries, setSelectedCountries] = useState([]);
-
+const [notifyOwnQuestions, setNotifyOwnQuestions] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [prefsLoading, setPrefsLoading] = useState(true);
@@ -38,6 +38,7 @@ export default function Settings() {
         setSelectedSchools(prefs.schools || []);
         setSelectedMentors(prefs.mentors || []);
         setSelectedCountries(prefs.countries || []);
+        setNotifyOwnQuestions(prefs.notifyOwnQuestions ?? true);
       }
       setPrefsLoading(false);
     });
@@ -145,6 +146,7 @@ const [deleting, setDeleting] = useState(false);
           schools: selectedSchools,
           mentors: selectedMentors,
           countries: selectedCountries,
+          notifyOwnQuestions,
         },
       },
     });
@@ -193,6 +195,23 @@ const [deleting, setDeleting] = useState(false);
           <p className="text-sm text-gray-500 mb-4">
             Choose what you'd like to receive email updates about.
           </p>
+
+        <label className="flex items-center justify-between mb-5 cursor-pointer">
+            <div>
+              <p className="text-sm font-semibold text-gray-800">
+                Notify Me When A Mentor Answers My Question
+              </p>
+              <p className="text-xs text-gray-500">
+                Get An Email Whenever One Of Your Own Questions Gets A Response.
+              </p>
+            </div>
+            <input
+              type="checkbox"
+              checked={notifyOwnQuestions}
+              onChange={(e) => setNotifyOwnQuestions(e.target.checked)}
+              className="w-5 h-5 accent-green-600 shrink-0 ml-4"
+            />
+          </label>
 
           <div className="space-y-4 mb-6">
             {prefsLoading ? (

@@ -105,6 +105,7 @@ export default function MentorDashboard() {
           mentorName,
           subject: answeredQuestion?.subject,
           country: answeredQuestion?.country,
+          askerUserId: answeredQuestion?.user_id,
         }),
       }).catch((err) => console.error("Notification error:", err));
 

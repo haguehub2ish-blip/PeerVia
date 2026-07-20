@@ -9,7 +9,7 @@ const supabaseAdmin = createClient(
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request) {
-  const { userQuestionId, question, answer, mentorName, subject, country } =
+  const { userQuestionId, question, answer, mentorName, subject, country, askerUserId } =
     await request.json();
 
   if (!userQuestionId || !question || !answer) {
@@ -37,8 +37,43 @@ export async function POST(request) {
   });
 
   const sendResults = [];
+  const notifiedEmails = new Set();
+
+  // Notify the original asker, unless they've turned this off in Settings
+  if (askerUserId) {
+    const { data: askerData, error: askerError } = await supabaseAdmin.auth.admin.getUserById(askerUserId);
+    const notifyOwnQuestions = askerData?.user?.user_metadata?.emailPreferences?.notifyOwnQuestions ?? true;
+
+    if (!askerError && askerData?.user?.email && notifyOwnQuestions) {
+      try {
+        await resend.emails.send({
+          from: "PeerVia <onboarding@resend.dev>",
+          to: askerData.user.email,
+          subject: "A Mentor Answered Your Question On PeerVia",
+          html: `
+            <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto;">
+              <h2 style="color: #166534;">Your Question Was Answered</h2>
+              <p style="color: #374151;"><strong>Your Question:</strong> ${question}</p>
+              <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin: 16px 0;">
+                <p style="color: #1f2937; margin: 0 0 8px 0;">${answer}</p>
+                <p style="color: #166534; font-weight: 600; margin: 0; font-size: 14px;">— ${mentorName}, Verified Mentor</p>
+              </div>
+              <a href="${siteUrl}/community#${userQuestionId}" style="display: inline-block; background: #16a34a; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+                View On PeerVia
+              </a>
+            </div>
+          `,
+        });
+        notifiedEmails.add(askerData.user.email.toLowerCase());
+        sendResults.push({ email: askerData.user.email, success: true, type: "asker" });
+      } catch (err) {
+        sendResults.push({ email: askerData.user.email, success: false, error: err.message, type: "asker" });
+      }
+    }
+  }
 
   for (const u of matchedUsers) {
+    if (notifiedEmails.has(u.email?.toLowerCase())) continue; // don't double-email the asker
     try {
       await resend.emails.send({
         from: "PeerVia <onboarding@resend.dev>",
@@ -58,9 +93,9 @@ export async function POST(request) {
           </div>
         `,
       });
-      sendResults.push({ email: u.email, success: true });
+      sendResults.push({ email: u.email, success: true, type: "preference" });
     } catch (err) {
-      sendResults.push({ email: u.email, success: false, error: err.message });
+      sendResults.push({ email: u.email, success: false, error: err.message, type: "preference" });
     }
   }
 
