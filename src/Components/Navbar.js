@@ -26,6 +26,14 @@ export default function Navbar() {
     supabase.auth.getSession().then(({ data }) => {
       setUser(data?.session?.user || null);
       setUserLoaded(true);
+
+      // Quietly refresh with the latest data from the server in case
+      // metadata (like mentor role) changed since this session was cached.
+      supabase.auth.getUser().then(({ data: freshData }) => {
+        if (freshData?.user) {
+          setUser(freshData.user);
+        }
+      });
     });
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -87,17 +95,19 @@ export default function Navbar() {
           <a href="/community" className={linkClass("/community")}>
             Community
           </a>
-          {userLoaded && (
-            user?.user_metadata?.role === "mentor" ? (
-              <a href="/mentor-account/dashboard" className={linkClass("/mentor-account/dashboard")}>
-                Mentor Dashboard
-              </a>
-            ) : (
-              <a href="/apply" className={linkClass("/apply")}>
-                Become a Mentor
-              </a>
-            )
-          )}
+          <div className="w-[150px] flex justify-center">
+            {userLoaded && (
+              user?.user_metadata?.role === "mentor" ? (
+                <a href="/mentor-account/dashboard" className={linkClass("/mentor-account/dashboard")}>
+                  Mentor Dashboard
+                </a>
+              ) : (
+                <a href="/apply" className={linkClass("/apply")}>
+                  Become a Mentor
+                </a>
+              )
+            )}
+          </div>
         </nav>
 
         {/* Right side — desktop only */}
