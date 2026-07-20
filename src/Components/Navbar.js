@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 export default function Navbar() {
   const pathname = usePathname();
   const [user, setUser] = useState(null);
+  const [userLoaded, setUserLoaded] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   function getInitials(user) {
@@ -24,10 +25,12 @@ export default function Navbar() {
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       setUser(data?.user || null);
+      setUserLoaded(true);
     });
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user || null);
+      setUserLoaded(true);
     });
 
     return () => {
@@ -84,14 +87,16 @@ export default function Navbar() {
           <a href="/community" className={linkClass("/community")}>
             Community
           </a>
-          {user?.user_metadata?.role === "mentor" ? (
-            <a href="/mentor-account/dashboard" className={linkClass("/mentor-account/dashboard")}>
-              Mentor Dashboard
-            </a>
-          ) : (
-            <a href="/apply" className={linkClass("/apply")}>
-              Become a Mentor
-            </a>
+          {userLoaded && (
+            user?.user_metadata?.role === "mentor" ? (
+              <a href="/mentor-account/dashboard" className={linkClass("/mentor-account/dashboard")}>
+                Mentor Dashboard
+              </a>
+            ) : (
+              <a href="/apply" className={linkClass("/apply")}>
+                Become a Mentor
+              </a>
+            )
           )}
         </nav>
 
@@ -142,12 +147,14 @@ export default function Navbar() {
           <a href="/mentors" className={mobileLinkClass("/mentors")}>Mentors</a>
           <a href="/course-guides" className={mobileLinkClass("/course-guides")}>Course Guides</a>
           <a href="/community" className={mobileLinkClass("/community")}>Community</a>
-          {user?.user_metadata?.role === "mentor" ? (
-            <a href="/mentor-account/dashboard" className={mobileLinkClass("/mentor-account/dashboard")}>
-              Mentor Dashboard
-            </a>
-          ) : (
-            <a href="/apply" className={mobileLinkClass("/apply")}>Become a Mentor</a>
+          {userLoaded && (
+            user?.user_metadata?.role === "mentor" ? (
+              <a href="/mentor-account/dashboard" className={mobileLinkClass("/mentor-account/dashboard")}>
+                Mentor Dashboard
+              </a>
+            ) : (
+              <a href="/apply" className={mobileLinkClass("/apply")}>Become a Mentor</a>
+            )
           )}
 
           <div className="border-t border-gray-100 my-2"></div>

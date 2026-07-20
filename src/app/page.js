@@ -219,8 +219,9 @@ export default function Home() {
   const verifiedMentorsCount = mentors.filter((m) => m.verified).length;
   const questionsAnsweredCount = questions.length;
   const careerPathsCount = new Set(mentors.map((m) => m.subject)).size;
-  const avgRating = mentors.length
-    ? (mentors.reduce((sum, m) => sum + m.rating, 0) / mentors.length).toFixed(1)
+ const ratedMentors = mentors.filter((m) => m.rating > 0);
+  const avgRating = ratedMentors.length > 0
+    ? (ratedMentors.reduce((sum, m) => sum + m.rating, 0) / ratedMentors.length).toFixed(1)
     : "—";
   const languagesCount = new Set(
     mentors.flatMap((m) =>
