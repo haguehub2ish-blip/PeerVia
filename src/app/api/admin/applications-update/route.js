@@ -46,6 +46,9 @@ export async function POST(request) {
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || new URL(request.url).origin;
 
+    let newUserId;
+    let isExistingUser = false;
+
     const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
       application.email,
       {
@@ -55,10 +58,47 @@ export async function POST(request) {
     );
 
     if (inviteError) {
-      return Response.json({ error: inviteError.message }, { status: 500 });
-    }
+      // If the email is already registered, upgrade their existing account instead
+      if (inviteError.message?.toLowerCase().includes("already been registered") || inviteError.message?.toLowerCase().includes("already registered")) {
+        const { data: usersList, error: listError } = await supabaseAdmin.auth.admin.listUsers({
+          perPage: 1000,
+        });
 
-    const newUserId = inviteData.user.id;
+        if (listError) {
+          return Response.json({ error: listError.message }, { status: 500 });
+        }
+
+        const existingUser = usersList.users.find(
+          (u) => u.email?.toLowerCase() === application.email.toLowerCase()
+        );
+
+        if (!existingUser) {
+          return Response.json({ error: "Email marked as registered but user not found." }, { status: 500 });
+        }
+
+        const { data: updatedUser, error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+          existingUser.id,
+          {
+            user_metadata: {
+              ...existingUser.user_metadata,
+              name: fullName,
+              role: "mentor",
+            },
+          }
+        );
+
+        if (updateError) {
+          return Response.json({ error: updateError.message }, { status: 500 });
+        }
+
+        newUserId = existingUser.id;
+        isExistingUser = true;
+      } else {
+        return Response.json({ error: inviteError.message }, { status: 500 });
+      }
+    } else {
+      newUserId = inviteData.user.id;
+    }
 
     const applicantLanguages = application.languages
       ? application.languages.split(",")
@@ -83,8 +123,31 @@ export async function POST(request) {
       },
     ]);
 
-    if (insertError) {
+   if (insertError) {
       return Response.json({ error: insertError.message }, { status: 500 });
+    }
+
+    if (isExistingUser) {
+      try {
+        const { Resend } = await import("resend");
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        await resend.emails.send({
+          from: "PeerVia <onboarding@resend.dev>",
+          to: application.email,
+          subject: "You've Been Approved As A PeerVia Mentor 🎉",
+          html: `
+            <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto;">
+              <h2 style="color: #166534;">Congratulations, ${application.first_name}!</h2>
+              <p style="color: #374151;">Your application to become a PeerVia mentor has been approved. Since you already have an account, just log in as usual to access your new Mentor Dashboard.</p>
+              <a href="${siteUrl}/login" style="display: inline-block; background: #16a34a; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 12px;">
+                Log In To PeerVia
+              </a>
+            </div>
+          `,
+        });
+      } catch (emailErr) {
+        console.error("Failed to send existing-user approval email:", emailErr);
+      }
     }
   }
 

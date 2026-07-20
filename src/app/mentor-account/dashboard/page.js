@@ -82,19 +82,37 @@ export default function MentorDashboard() {
 
     setSubmittingId(userQuestionId);
 
+    const mentorName = mentorProfile?.name || user.user_metadata?.name || "Mentor";
+
     const { error } = await supabase.from("question_answers").insert({
       user_question_id: userQuestionId,
       mentor_id: user.id,
-      mentor_name: mentorProfile?.name || user.user_metadata?.name || "Mentor",
+      mentor_name: mentorName,
       answer: answerText,
     });
 
-    setSubmittingId(null);
-
     if (!error) {
+      const answeredQuestion = unansweredQuestions.find((q) => q.id === userQuestionId);
+
+      // Fire off email notifications (don't block the UI on this)
+      fetch("/api/notify-answer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userQuestionId,
+          question: answeredQuestion?.question,
+          answer: answerText,
+          mentorName,
+          subject: answeredQuestion?.subject,
+          country: answeredQuestion?.country,
+        }),
+      }).catch((err) => console.error("Notification error:", err));
+
       setUnansweredQuestions((prev) => prev.filter((q) => q.id !== userQuestionId));
       setAnswerDrafts((prev) => ({ ...prev, [userQuestionId]: "" }));
     }
+
+    setSubmittingId(null);
   }
 
   if (loading) {
