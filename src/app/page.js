@@ -52,6 +52,7 @@ export default function Home() {
   const [mentors, setMentors] = useState([]);
   const [mentorsLoading, setMentorsLoading] = useState(true);
   const [mentorsError, setMentorsError] = useState(null);
+  const [answeredUserQuestionsCount, setAnsweredUserQuestionsCount] = useState(0);
 
   useEffect(() => {
     async function fetchMentors() {
@@ -64,6 +65,16 @@ export default function Home() {
       setMentorsLoading(false);
     }
     fetchMentors();
+
+    async function fetchAnsweredCount() {
+      const { count, error } = await supabase
+        .from("question_answers")
+        .select("*", { count: "exact", head: true });
+      if (!error && count !== null) {
+        setAnsweredUserQuestionsCount(count);
+      }
+    }
+    fetchAnsweredCount();
   }, []);
 
   const handleCategorySelect = (category) => {
@@ -217,7 +228,7 @@ export default function Home() {
   const topMentors = [...mentors].sort((a, b) => b.rating - a.rating).slice(0, 3);
   const topQuestions = [...questions].sort((a, b) => b.helpful - a.helpful).slice(0, 3);
   const verifiedMentorsCount = mentors.filter((m) => m.verified).length;
-  const questionsAnsweredCount = questions.length;
+  const questionsAnsweredCount = questions.length + answeredUserQuestionsCount;
   const careerPathsCount = new Set(mentors.map((m) => m.subject)).size;
  const ratedMentors = mentors.filter((m) => m.rating > 0);
   const avgRating = ratedMentors.length > 0
@@ -607,7 +618,12 @@ export default function Home() {
                       </p>
                       {mentor.verified && (
                         <span className="inline-block mt-1 text-xs font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded-full">
-                          ✓ Verified
+                          ✓ Verified Since{" "}
+                          {mentor.created_at &&
+                            new Date(mentor.created_at).toLocaleDateString("en-GB", {
+                              month: "short",
+                              year: "numeric",
+                            })}
                         </span>
                       )}
                     </div>

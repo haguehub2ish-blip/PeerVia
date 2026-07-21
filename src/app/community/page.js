@@ -6,6 +6,11 @@ import { getSubjectStyle, getFlag } from "@/data/mentors";
 import { questions } from "@/data/questions";
 import { supabase } from "@/lib/supabase";
 
+function formatDate(dateString) {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  return date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
 const fields = ["All fields", "Medicine", "Engineering", "Law", "Business", "Computer Science", "Psychology", "Biology", "Architecture"];
 const countries = ["NL & UK", "Netherlands", "United Kingdom"];
 
@@ -27,6 +32,27 @@ const [user, setUser] = useState(null);
   const [showMyActivity, setShowMyActivity] = useState(false);
     const [userQuestions, setUserQuestions] = useState([]);
     const [userQuestionAnswers, setUserQuestionAnswers] = useState([]);
+    const [openAnsweredUserQuestions, setOpenAnsweredUserQuestions] = useState(new Set());
+
+    function toggleAnsweredUserQuestion(id) {
+      setOpenAnsweredUserQuestions((prev) => {
+        const next = new Set(prev);
+        if (next.has(id)) {
+          next.delete(id);
+        } else {
+          next.add(id);
+        }
+        return next;
+      });
+    }
+    const answeredIds = new Set(userQuestionAnswers.map((a) => a.user_question_id));
+    const unansweredUserQuestions = userQuestions.filter((uq) => !answeredIds.has(uq.id));
+    const answeredUserQuestions = userQuestions
+      .filter((uq) => answeredIds.has(uq.id))
+      .map((uq) => ({
+        ...uq,
+        answerData: userQuestionAnswers.find((a) => a.user_question_id === uq.id),
+      }));
   const [askText, setAskText] = useState("");
   const [showAskFilters, setShowAskFilters] = useState(false);
   const [askSubjects, setAskSubjects] = useState([]);
@@ -110,11 +136,15 @@ const [user, setUser] = useState(null);
       setUserQuestionAnswers(userQuestionAnswers || []);
 
       const next = {};
-      questions.forEach((q) => {
-        const qLikes = (likes || []).filter((l) => l.question_id === q.id);
-        const qComments = (comments || []).filter((c) => c.question_id === q.id);
-        const qViews = (views || []).find((v) => v.question_id === q.id);
-        next[q.id] = {
+      const allQuestionIds = [
+        ...questions.map((q) => q.id),
+        ...(askedQuestions || []).map((uq) => uq.id),
+      ];
+      allQuestionIds.forEach((qid) => {
+        const qLikes = (likes || []).filter((l) => l.question_id === qid);
+        const qComments = (comments || []).filter((c) => c.question_id === qid);
+        const qViews = (views || []).find((v) => v.question_id === qid);
+        next[qid] = {
           likeCount: qLikes.length,
           liked: currentUser ? qLikes.some((l) => l.user_id === currentUser.id) : false,
           comments: qComments,
@@ -546,11 +576,13 @@ const [user, setUser] = useState(null);
             </div>
           )}
 
+         
+
           {/* Recently asked, not yet answered by a mentor */}
-          {userQuestions.length > 0 && (
+          {unansweredUserQuestions.length > 0 && (
             <div className="bg-white border border-gray-300 rounded-xl px-5 py-4 mb-6 space-y-3">
               <p className="text-xs font-semibold text-gray-500 tracking-wide">RECENTLY ASKED</p>
-              {userQuestions.map((uq) => (
+              {unansweredUserQuestions.map((uq) => (
                 <div key={uq.id} className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
                     <div className="w-8 h-8 rounded-full bg-gray-300 text-gray-700 flex items-center justify-center font-bold text-xs shrink-0">
@@ -596,7 +628,8 @@ const [user, setUser] = useState(null);
                         }
                         return (
                           <p className="text-xs text-gray-500">
-                            {uq.author_name} · <span className="text-amber-600">Awaiting An Answer</span>
+                            {uq.author_name} · {formatDate(uq.created_at)} ·{" "}
+                            <span className="text-amber-600">Awaiting An Answer</span>
                           </p>
                         );
                       })()}
@@ -613,6 +646,221 @@ const [user, setUser] = useState(null);
                   )}
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* User-asked questions that have been answered */}
+          {answeredUserQuestions.length > 0 && (
+            <div className="space-y-4 mb-4">
+              {answeredUserQuestions.map((uq) => {
+                const isOpen = openAnsweredUserQuestions.has(uq.id);
+                return (
+                  <div
+                    key={uq.id}
+                    id={uq.id}
+                    className="bg-white border border-gray-300 rounded-xl overflow-hidden scroll-mt-24"
+                  >
+                    <div className="p-5 flex items-start justify-between gap-4 hover:bg-gray-50/60 transition-colors rounded-t-xl">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          {uq.subject &&
+                            uq.subject.split(",").map((s) => (
+                              <span
+                                key={s}
+                                className={`inline-block text-xs font-semibold px-3 py-1 rounded-full ${getSubjectStyle(s).color}`}
+                              >
+                                {getSubjectStyle(s).icon} {s}
+                              </span>
+                            ))}
+                          {uq.country &&
+                            uq.country.split(",").map((c) => (
+                              <span
+                                key={c}
+                                className="inline-block text-xs font-semibold px-3 py-1 rounded-full bg-slate-100 text-slate-700"
+                              >
+                                {getFlag(c)} {c}
+                              </span>
+                            ))}
+                        </div>
+                        <h3 className="font-bold text-gray-900 text-lg mb-2">{uq.question}</h3>
+                        <button
+                          onClick={() => {
+                            toggleAnsweredUserQuestion(uq.id);
+                            if (!isOpen) registerView(uq.id);
+                          }}
+                          className="text-green-700 font-semibold text-sm flex items-center gap-1 hover:text-green-800"
+                        >
+                          {isOpen ? "▲ Hide Answer" : "▼ Show Answer"}
+                        </button>
+                      </div>
+
+                      {!isOpen && (() => {
+                        const data = interactions[uq.id] || {
+                          likeCount: 0,
+                          liked: false,
+                          comments: [],
+                          commentDraft: "",
+                          viewCount: 0,
+                        };
+                        return (
+                          <div className="hidden sm:flex flex-col items-end gap-2 shrink-0 text-right">
+                            <div className="flex items-center gap-2 bg-green-50 rounded-full pl-1 pr-3 py-1">
+                              <div className="w-6 h-6 rounded-full bg-green-800 text-white flex items-center justify-center font-bold text-[10px] shrink-0">
+                                {(uq.answerData?.mentor_name || "?").charAt(0).toUpperCase()}
+                              </div>
+                              <p className="text-xs font-semibold text-green-900">
+                                {uq.answerData?.mentor_name}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                onClick={() => handleLike(uq.id)}
+                                className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border transition ${
+                                  data.liked
+                                    ? "bg-green-600 border-green-600 text-white"
+                                    : "bg-white border-gray-200 text-gray-600 hover:border-green-400 hover:text-green-700"
+                                }`}
+                              >
+                                {data.liked ? "👍" : "🤍"} {data.likeCount}
+                              </button>
+                              <span className="flex items-center gap-1 text-xs font-medium text-gray-400 bg-gray-50 px-2.5 py-1 rounded-full border border-gray-100">
+                                👁 {data.viewCount}
+                              </span>
+                              <span className="flex items-center gap-1 text-xs font-medium text-gray-400 bg-gray-50 px-2.5 py-1 rounded-full border border-gray-100">
+                                💬 {data.comments.length}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-gray-400">
+                              Asked {formatDate(uq.created_at)}
+                            </p>
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                    {isOpen && (
+                      <>
+                        <div className="px-5 pb-5 border-t border-gray-100 pt-4 text-gray-600 leading-relaxed">
+                          {uq.answerData?.answer}
+                        </div>
+                        <div className="bg-gray-50 px-5 py-3 flex items-center justify-between flex-wrap gap-2">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-green-800 text-white flex items-center justify-center font-bold text-xs shrink-0">
+                              {(uq.answerData?.mentor_name || "?").charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-green-800 text-sm">
+                                {uq.answerData?.mentor_name}
+                              </p>
+                              <p className="text-gray-500 text-xs">
+                                Verified Mentor · Answered {formatDate(uq.answerData?.created_at)}
+                              </p>
+                            </div>
+                          </div>
+                          {(() => {
+                            const data = interactions[uq.id] || {
+                              likeCount: 0,
+                              liked: false,
+                              comments: [],
+                              commentDraft: "",
+                              viewCount: 0,
+                            };
+                            return (
+                              <div className="flex items-center gap-4 text-sm">
+                                <button
+                                  onClick={() => handleLike(uq.id)}
+                                  className={`flex items-center gap-1 font-medium transition ${
+                                    data.liked ? "text-green-700" : "text-gray-500 hover:text-green-700"
+                                  }`}
+                                >
+                                  {data.liked ? "👍" : "🤍"} {data.likeCount} Found Helpful
+                                </button>
+                                <span className="text-gray-500">👁 {data.viewCount} Views</span>
+                                <span className="text-gray-500">💬 {data.comments.length}</span>
+                              </div>
+                            );
+                          })()}
+                        </div>
+
+                        {/* Comments */}
+                        <div className="px-5 py-4 border-t border-gray-100 space-y-3">
+                          {(() => {
+                            const data = interactions[uq.id] || {
+                              likeCount: 0,
+                              liked: false,
+                              comments: [],
+                              commentDraft: "",
+                              viewCount: 0,
+                            };
+                            return (
+                              <>
+                                <button
+                                  onClick={() => toggleComments(uq.id)}
+                                  className="text-sm font-medium text-gray-600 hover:text-gray-900"
+                                >
+                                  {commentsVisible[uq.id]
+                                    ? "▲ Hide Comments"
+                                    : `▼ Show Comments (${data.comments.length})`}
+                                </button>
+
+                                {commentsVisible[uq.id] && (
+                                  <>
+                                    {data.comments.length > 0 && (
+                                      <div className="space-y-3">
+                                        {data.comments.map((c) => (
+                                          <div key={c.id} className="flex items-start gap-2">
+                                            <div className="w-7 h-7 rounded-full bg-gray-300 text-gray-700 flex items-center justify-center font-bold text-xs shrink-0">
+                                              {(c.author_name || "?").charAt(0).toUpperCase()}
+                                            </div>
+                                            <div className="bg-gray-50 rounded-lg px-3 py-2 flex-1 flex items-start justify-between gap-2">
+                                              <div>
+                                                <p className="text-xs font-semibold text-gray-800">{c.author_name}</p>
+                                                <p className="text-sm text-gray-600">{c.content}</p>
+                                              </div>
+                                              {user && user.id === c.user_id && (
+                                                <button
+                                                  onClick={() => handleDeleteComment(uq.id, c.id, c.user_id)}
+                                                  title="Delete Your Comment"
+                                                  className="text-gray-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-md transition shrink-0"
+                                                >
+                                                  🗑️ Delete
+                                                </button>
+                                              )}
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+
+                                    <div className="flex items-center gap-2">
+                                      <input
+                                        type="text"
+                                        value={data.commentDraft}
+                                        onChange={(e) => handleCommentDraftChange(uq.id, e.target.value)}
+                                        onKeyDown={(e) => {
+                                          if (e.key === "Enter") handleCommentSubmit(uq.id);
+                                        }}
+                                        placeholder={user ? "Add A Comment..." : "Log In To Comment..."}
+                                        className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600"
+                                      />
+                                      <button
+                                        onClick={() => handleCommentSubmit(uq.id)}
+                                        className="bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-800 transition shrink-0"
+                                      >
+                                        Post
+                                      </button>
+                                    </div>
+                                  </>
+                                )}
+                              </>
+                            );
+                          })()}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
 
@@ -634,24 +882,56 @@ const [user, setUser] = useState(null);
                   id={q.id}
                   className="bg-white border border-gray-300 rounded-xl overflow-hidden scroll-mt-24"
                 >
-                  <div className="p-5">
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      <span
-                        className={`inline-block text-xs font-semibold px-3 py-1 rounded-full ${getSubjectStyle(q.subject).color}`}
+                  <div className="p-5 flex items-start justify-between gap-4 hover:bg-gray-50/60 transition-colors rounded-t-xl">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        <span
+                          className={`inline-block text-xs font-semibold px-3 py-1 rounded-full ${getSubjectStyle(q.subject).color}`}
+                        >
+                          {getSubjectStyle(q.subject).icon} {q.subject}
+                        </span>
+                        <span className="inline-block text-xs font-semibold px-3 py-1 rounded-full bg-slate-100 text-slate-700">
+                          {getFlag(q.country)} {q.country}
+                        </span>
+                      </div>
+                      <h3 className="font-bold text-gray-900 text-lg mb-2">{q.question}</h3>
+                      <button
+                        onClick={() => handleToggleOpen(q.id, i, isOpen)}
+                        className="text-green-700 font-semibold text-sm flex items-center gap-1 hover:text-green-800"
                       >
-                        {getSubjectStyle(q.subject).icon} {q.subject}
-                      </span>
-                      <span className="inline-block text-xs font-semibold px-3 py-1 rounded-full bg-slate-100 text-slate-700">
-                        {getFlag(q.country)} {q.country}
-                      </span>
+                        {isOpen ? "▲ Hide answer" : "▼ Show answer"}
+                      </button>
                     </div>
-                    <h3 className="font-bold text-gray-900 text-lg mb-2">{q.question}</h3>
-                    <button
-                      onClick={() => handleToggleOpen(q.id, i, isOpen)}
-                      className="text-green-700 font-semibold text-sm flex items-center gap-1 hover:text-green-800"
-                    >
-                      {isOpen ? "▲ Hide answer" : "▼ Show answer"}
-                    </button>
+
+                    {!isOpen && (
+                      <div className="hidden sm:flex flex-col items-end gap-2 shrink-0 text-right">
+                        <div className="flex items-center gap-2 bg-green-50 rounded-full pl-1 pr-3 py-1">
+                          <div className="w-6 h-6 rounded-full bg-green-800 text-white flex items-center justify-center font-bold text-[10px] shrink-0">
+                            {q.initials}
+                          </div>
+                          <p className="text-xs font-semibold text-green-900">{q.name}</p>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => handleLike(q.id)}
+                            className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border transition ${
+                              data.liked
+                                ? "bg-green-600 border-green-600 text-white"
+                                : "bg-white border-gray-200 text-gray-600 hover:border-green-400 hover:text-green-700"
+                            }`}
+                          >
+                            {data.liked ? "👍" : "🤍"} {data.likeCount}
+                          </button>
+                          <span className="flex items-center gap-1 text-xs font-medium text-gray-400 bg-gray-50 px-2.5 py-1 rounded-full border border-gray-100">
+                            👁 {data.viewCount}
+                          </span>
+                          <span className="flex items-center gap-1 text-xs font-medium text-gray-400 bg-gray-50 px-2.5 py-1 rounded-full border border-gray-100">
+                            💬 {data.comments.length}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-gray-400">{formatDate(q.date)}</p>
+                      </div>
+                    )}
                   </div>
 
                   {isOpen && (
@@ -667,7 +947,7 @@ const [user, setUser] = useState(null);
                           <div>
                             <p className="font-semibold text-green-800 text-sm">{q.name}</p>
                             <p className="text-gray-500 text-xs">
-                              {q.school} · {q.year}
+                              {q.school} · {q.year} · {formatDate(q.date)}
                             </p>
                           </div>
                         </div>

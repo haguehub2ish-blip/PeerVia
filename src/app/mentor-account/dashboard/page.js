@@ -96,6 +96,17 @@ export default function MentorDashboard() {
     }
 
     if (!error) {
+      // Increment this mentor's answer count on their profile
+      const newAnswerCount = (mentorProfile?.answers || 0) + 1;
+      const { error: countError } = await supabase
+        .from("mentorss")
+        .update({ answers: newAnswerCount })
+        .eq("user_id", user.id);
+
+      if (!countError) {
+        setMentorProfile((prev) => (prev ? { ...prev, answers: newAnswerCount } : prev));
+      }
+
       const answeredQuestion = unansweredQuestions.find((q) => q.id === userQuestionId);
 
       // Fire off email notifications (don't block the UI on this)

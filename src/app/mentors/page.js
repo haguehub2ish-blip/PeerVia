@@ -249,7 +249,12 @@ const sortedMentors = [...filteredMentors].sort((a, b) => {
                   </p>
                   {mentor.verified && (
                     <span className="inline-block mt-1 text-xs font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded-full">
-                      ✓ Verified
+                      ✓ Verified Since{" "}
+                      {mentor.created_at &&
+                        new Date(mentor.created_at).toLocaleDateString("en-GB", {
+                          month: "short",
+                          year: "numeric",
+                        })}
                     </span>
                   )}
                 </div>
