@@ -107,7 +107,10 @@ async function handleSubmitBooking(e) {
             </div>
             <div>
               <h1 className="text-2xl font-extrabold text-gray-900">{mentor.name}</h1>
-              <p className="text-gray-500">{mentor.school} · {mentor.year}</p>
+              <p className="text-gray-500">
+                {mentor.school} · {mentor.year}
+                {mentor.age ? ` · Age ${mentor.age}` : ""}
+              </p>
               {mentor.verified && (
                 <span className="inline-block mt-2 text-xs font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded-full">
                   ✓ Verified
@@ -132,7 +135,34 @@ async function handleSubmitBooking(e) {
           </div>
 
           {/* Bio */}
-          <p className="text-gray-700 mb-8 leading-relaxed">{mentor.bio}</p>
+          <p className="text-gray-700 mb-4 leading-relaxed">{mentor.bio}</p>
+
+          {mentor.about_me && (
+            <div className="mb-4">
+              <h3 className="text-sm font-bold text-gray-900 mb-1">About Me</h3>
+              <p className="text-gray-700 leading-relaxed">{mentor.about_me}</p>
+            </div>
+          )}
+
+          {mentor.happy_to_chat_about && (
+            <div className="mb-4">
+              <h3 className="text-sm font-bold text-gray-900 mb-1">Happy to Chat About</h3>
+              <p className="text-gray-700 leading-relaxed">{mentor.happy_to_chat_about}</p>
+            </div>
+          )}
+
+          {mentor.linkedin && (
+            <a
+              href={mentor.linkedin}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block text-sm font-semibold text-green-700 hover:text-green-800 underline mb-6"
+            >
+              View LinkedIn Profile →
+            </a>
+          )}
+
+          <div className="mb-2" />
 
           {/* Stats */}
           <div className="grid grid-cols-4 gap-2 pt-6 border-t border-gray-100 text-center mb-8">
