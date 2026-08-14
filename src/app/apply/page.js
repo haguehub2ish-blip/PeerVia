@@ -23,6 +23,7 @@ export default function Apply() {
     field: "",
     country: "",
     why: "",
+    support_guidance: "",
     linkedin: "",
   });
   const [selectedLanguages, setSelectedLanguages] = useState(["English"]);
@@ -88,7 +89,7 @@ export default function Apply() {
             Apply to be a PeerVia Mentor
           </h1>
           <p className="text-gray-600 mb-8">
-            It takes 5 minutes. We review every application and aim to get back within 48 hours.
+            It takes just 5 minutes of your time. We review every application and aim to get back within 48 hours.
           </p>
 
           <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-2xl p-6 space-y-5">
@@ -281,6 +282,20 @@ export default function Apply() {
                 value={form.why}
                 onChange={(e) => updateField("why", e.target.value)}
                 placeholder="What do you wish you knew before starting your degree? What would you tell your 16-year-old self?"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600 resize-y"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-800 mb-1">
+                How Can You Support And Guide The Students Through Their Journey?
+              </label>
+              <textarea
+                required
+                rows={3}
+                value={form.support_guidance}
+                onChange={(e) => updateField("support_guidance", e.target.value)}
+                placeholder="What topics, questions, or experiences could you help a student with?"
                 className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600 resize-y"
               />
             </div>

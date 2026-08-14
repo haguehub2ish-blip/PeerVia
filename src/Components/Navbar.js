@@ -2,6 +2,7 @@
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import Image from "next/image";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -77,9 +78,10 @@ export default function Navbar() {
     <header className="border-b border-gray-200 bg-white sticky top-0 z-20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
         {/* Logo */}
-        <a href="/" className="text-xl font-bold text-gray-900 shrink-0">
-          PeerVia
-        </a>
+       <a href="/" className="flex items-center gap-2 shrink-0">
+  <Image src="/logo.png" alt="PeerVia logo" width={36} height={36} priority />
+  <span className="text-xl font-bold text-gray-900">PeerVia</span>
+</a>
 
         {/* Centered nav links — desktop only */}
         <nav className="hidden lg:flex items-center gap-2 absolute left-1/2 -translate-x-1/2">
@@ -94,6 +96,9 @@ export default function Navbar() {
           </a>
           <a href="/community" className={linkClass("/community")}>
             Community
+          </a>
+          <a href="/about" className={linkClass("/about")}>
+            About Us
           </a>
           <div className="w-[150px] flex justify-center">
             {userLoaded && (
@@ -157,6 +162,7 @@ export default function Navbar() {
           <a href="/mentors" className={mobileLinkClass("/mentors")}>Mentors</a>
           <a href="/course-guides" className={mobileLinkClass("/course-guides")}>Course Guides</a>
           <a href="/community" className={mobileLinkClass("/community")}>Community</a>
+          <a href="/about" className={mobileLinkClass("/about")}>About Us</a>
           {userLoaded && (
             user?.user_metadata?.role === "mentor" ? (
               <a href="/mentor-account/dashboard" className={mobileLinkClass("/mentor-account/dashboard")}>
