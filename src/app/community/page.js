@@ -5,6 +5,7 @@ import Navbar from "@/Components/Navbar";
 import { getSubjectStyle, getFlag } from "@/data/mentors";
 import { questions } from "@/data/questions";
 import { supabase } from "@/lib/supabase";
+import Link from "next/link";
 
 function formatDate(dateString) {
   if (!dateString) return "";
@@ -621,7 +622,7 @@ const [user, setUser] = useState(null);
                             <div className="mt-2 bg-green-50 border border-green-100 rounded-lg p-3">
                               <p className="text-sm text-gray-800 mb-1">{answer.answer}</p>
                               <p className="text-xs font-semibold text-green-700">
-                                — {answer.mentor_name}, Verified Mentor
+                                — <Link href={`/mentors/${answer.mentor_id}`} className="font-semibold text-green-700 hover:underline">{answer.mentor_name}</Link>, Verified Mentor
                               </p>
                             </div>
                           );

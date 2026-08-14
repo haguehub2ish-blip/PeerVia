@@ -5,6 +5,7 @@ import Navbar from "@/Components/Navbar";
 import { questions } from "@/data/questions";
 import { getSubjectStyle, getFlag, getLanguageStyle } from "@/data/mentors";
 import { supabase } from "@/lib/supabase";
+import Link from "next/link";
 
 const categoryFilters = {
   mentors: {
@@ -600,8 +601,9 @@ export default function Home() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {topMentors.map((mentor) => (
-                <div
-                  key={mentor.name}
+                <Link
+                  key={mentor.id}
+                  href={`/mentors/${mentor.id}`}
                   className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-md transition flex flex-col h-full"
                 >
                   {/* Top: avatar + name + school */}
@@ -674,7 +676,7 @@ export default function Home() {
                       <p className="text-xs text-gray-500">Bookings</p>
                     </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           )}

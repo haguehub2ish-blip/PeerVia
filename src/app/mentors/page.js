@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import Navbar from "@/Components/Navbar";
 import { getSubjectStyle, getFlag } from "@/data/mentors";
 import { supabase } from "@/lib/supabase";
+import Link from "next/link";
 
 const filters = ["All", "Medicine", "Engineering", "Law", "Computer Science", "Business", "Psychology"];
 const countries = ["All", "NL", "UK"];
@@ -232,10 +233,11 @@ const sortedMentors = [...filteredMentors].sort((a, b) => {
         ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {sortedMentors.map((mentor) => (
-            <div
-              key={mentor.name}
-              className="bg-white border border-gray-200 rounded-2xl p-6 flex flex-col h-full"
-            >
+           <Link
+  key={mentor.id}
+  href={`/mentors/${mentor.id}`}
+  className="bg-white border border-gray-200 rounded-2xl p-6 flex flex-col h-full hover:shadow-md transition"
+>
               <div className="flex items-start gap-4 mb-4">
                 <div className="w-14 h-14 rounded-full bg-green-800 text-white flex items-center justify-center font-bold text-lg shrink-0">
                   {mentor.initials}
@@ -302,7 +304,7 @@ const sortedMentors = [...filteredMentors].sort((a, b) => {
                   <p className="text-xs text-gray-500">Bookings</p>
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
        </div>
         )}
