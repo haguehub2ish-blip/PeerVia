@@ -101,10 +101,12 @@ async function handleSubmitBooking(e) {
     <div className="min-h-screen bg-[#FFF9F2]">
       <Navbar />
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
-        <div className="bg-white border border-gray-200 rounded-2xl p-8">
+        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+          <div className="h-1.5 bg-gradient-to-r from-green-600 via-green-500 to-emerald-400" />
+          <div className="p-8">
           {/* Header */}
           <div className="flex items-start gap-5 mb-6">
-            <div className="w-20 h-20 rounded-full bg-green-800 text-white flex items-center justify-center font-bold text-2xl shrink-0">
+            <div className="w-20 h-20 rounded-full bg-green-800 text-white flex items-center justify-center font-bold text-2xl shrink-0 ring-4 ring-green-50">
               {mentor.initials}
             </div>
             <div>
@@ -140,15 +142,21 @@ async function handleSubmitBooking(e) {
           <p className="text-gray-700 mb-4 leading-relaxed">{mentor.bio}</p>
 
           {mentor.about_me && (
-            <div className="mb-4">
-              <h3 className="text-sm font-bold text-gray-900 mb-1">About Me</h3>
+            <div className="mb-4 bg-gray-50 border border-gray-100 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="w-6 h-6 rounded-md bg-green-100 text-green-700 flex items-center justify-center text-xs">👤</span>
+                <h3 className="text-sm font-bold text-gray-900">About Me</h3>
+              </div>
               <p className="text-gray-700 leading-relaxed">{mentor.about_me}</p>
             </div>
           )}
 
           {mentor.happy_to_chat_about && (
-            <div className="mb-4">
-              <h3 className="text-sm font-bold text-gray-900 mb-1">Happy to Chat About</h3>
+            <div className="mb-4 bg-gray-50 border border-gray-100 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="w-6 h-6 rounded-md bg-amber-100 text-amber-700 flex items-center justify-center text-xs">💬</span>
+                <h3 className="text-sm font-bold text-gray-900">Happy to Chat About</h3>
+              </div>
               <p className="text-gray-700 leading-relaxed">{mentor.happy_to_chat_about}</p>
             </div>
           )}
@@ -158,9 +166,10 @@ async function handleSubmitBooking(e) {
               href={mentor.linkedin}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block text-sm font-semibold text-green-700 hover:text-green-800 underline mb-6"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-green-700 hover:text-green-800 mb-6"
             >
-              View LinkedIn Profile →
+              View LinkedIn Profile
+              <span aria-hidden>→</span>
             </a>
           )}
 
@@ -260,6 +269,7 @@ async function handleSubmitBooking(e) {
     )}
   </>
 )}
+          </div>
         </div>
       </div>
     </div>

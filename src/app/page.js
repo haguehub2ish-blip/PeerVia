@@ -604,17 +604,25 @@ export default function Home() {
                 <Link
                   key={mentor.id}
                   href={`/mentors/${mentor.id}`}
-                  className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-md transition flex flex-col h-full"
+                  className="bg-white border border-gray-200 rounded-2xl flex flex-col h-full overflow-hidden hover:shadow-md hover:border-green-200 hover:-translate-y-0.5 transition"
                 >
+                  <div className={`h-1.5 ${mentor.available ? "bg-gradient-to-r from-green-600 via-green-500 to-emerald-400" : "bg-gray-200"}`} />
+                  <div className="p-6 flex flex-col h-full">
                   {/* Top: avatar + name + school */}
                   <div className="flex items-start gap-4 mb-4">
-                    <div className="w-14 h-14 rounded-full bg-green-800 text-white flex items-center justify-center font-bold text-lg shrink-0">
+                    <div className="w-14 h-14 rounded-full bg-green-800 text-white flex items-center justify-center font-bold text-lg shrink-0 ring-4 ring-green-50">
                       {mentor.initials}
                     </div>
-                    <div>
-                      <h4 className="font-bold text-gray-900 text-lg leading-tight">
-                        {mentor.name}
-                      </h4>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <h4 className="font-bold text-gray-900 text-lg leading-tight">
+                          {mentor.name}
+                        </h4>
+                        <span className={`flex items-center gap-1 text-xs font-semibold shrink-0 ${mentor.available ? "text-green-600" : "text-gray-400"}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${mentor.available ? "bg-green-600" : "bg-gray-400"}`}></span>
+                          {mentor.available ? "Open" : "Closed"}
+                        </span>
+                      </div>
                       <p className="text-gray-500 text-sm">
                         {mentor.school} · {mentor.year}
                       </p>
@@ -647,7 +655,7 @@ export default function Home() {
                   <p className="text-gray-600 text-sm mb-5">{mentor.bio}</p>
 
                   {/* Stats row */}
-                  <div className="grid grid-cols-4 gap-2 pt-4 border-t border-gray-100 text-center mt-auto">
+                  <div className="grid grid-cols-3 gap-2 pt-4 border-t border-gray-100 text-center mt-auto">
                     <div>
                       <p className="font-bold text-gray-900">{mentor.sessions}</p>
                       <p className="text-xs text-gray-500">Sessions</p>
@@ -660,21 +668,7 @@ export default function Home() {
                       <p className="font-bold text-gray-900">{mentor.rating}★</p>
                       <p className="text-xs text-gray-500">Rating</p>
                     </div>
-                    <div>
-                      <p
-                        className={`font-bold flex items-center justify-center gap-1 ${
-                          mentor.available ? "text-green-600" : "text-gray-400"
-                        }`}
-                      >
-                        <span
-                          className={`w-2 h-2 rounded-full ${
-                            mentor.available ? "bg-green-600" : "bg-gray-400"
-                          }`}
-                        ></span>
-                        {mentor.available ? "Open" : "Closed"}
-                      </p>
-                      <p className="text-xs text-gray-500">Bookings</p>
-                    </div>
+                  </div>
                   </div>
                 </Link>
               ))}

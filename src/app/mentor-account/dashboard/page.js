@@ -61,7 +61,13 @@ export default function MentorDashboard() {
         setCalendarVisible(profile.calendar_visible ?? false);
         setSubject(profile.subject || "");
         setCountry(profile.country || "");
-        setLanguages(profile.languages ? profile.languages.split(",").map((l) => l.trim()) : []);
+        setLanguages(
+          typeof profile.languages === "string"
+            ? profile.languages.split(",").map((l) => l.trim()).filter(Boolean)
+            : Array.isArray(profile.languages)
+            ? profile.languages
+            : []
+        );
       }
 
       const [{ data: userQuestions }, { data: answers }] = await Promise.all([
