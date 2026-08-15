@@ -119,6 +119,11 @@ export default function Navbar() {
         <div className="hidden lg:flex items-center gap-4 text-sm shrink-0">
           {user ? (
             <>
+              {user.email === "leotweeling@gmail.com" && (
+                <a href="/admin" className="text-gray-600 font-semibold hover:text-gray-900 whitespace-nowrap">
+                  Admin
+                </a>
+              )}
               <a href="/settings" className="w-9 h-9 rounded-full bg-green-800 text-white flex items-center justify-center font-bold text-sm hover:bg-green-700 transition shrink-0">
                 {getInitials(user)}
               </a>
@@ -177,6 +182,11 @@ export default function Navbar() {
 
           {user ? (
             <>
+              {user.email === "leotweeling@gmail.com" && (
+                <a href="/admin" className={mobileLinkClass("/admin")}>
+                  Admin
+                </a>
+              )}
               <a href="/settings" className={mobileLinkClass("/settings")}>
                 Settings
               </a>
