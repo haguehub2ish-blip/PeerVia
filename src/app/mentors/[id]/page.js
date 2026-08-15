@@ -204,7 +204,7 @@ async function handleSubmitBooking(e) {
         required
         value={formEmail}
         onChange={(e) => setFormEmail(e.target.value)}
-        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900"
       />
     </div>
     <div>
@@ -214,7 +214,7 @@ async function handleSubmitBooking(e) {
         rows={4}
         value={formMessage}
         onChange={(e) => setFormMessage(e.target.value)}
-        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900"
       />
     </div>
     {bookError && <p className="text-red-600 text-sm">{bookError}</p>}

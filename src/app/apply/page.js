@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "@/Components/Navbar";
 import { supabase } from "@/lib/supabase";
 import { courseGuides } from "@/data/courseGuides";
@@ -14,6 +14,9 @@ const universityOptions = [
 const languageOptions = Object.keys(languageFlags);
 
 export default function Apply() {
+  const [checkingStatus, setCheckingStatus] = useState(true);
+  const [existingApplication, setExistingApplication] = useState(null);
+
   const [form, setForm] = useState({
     first_name: "",
     last_name: "",
@@ -33,6 +36,43 @@ export default function Apply() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    async function checkExistingApplication() {
+      const { data: userData } = await supabase.auth.getUser();
+      const currentUser = userData?.user;
+
+      if (!currentUser?.email) {
+        setCheckingStatus(false);
+        return;
+      }
+
+      setForm((prev) => ({
+        ...prev,
+        email: currentUser.email,
+        first_name: currentUser.user_metadata?.name?.split(" ")[0] || prev.first_name,
+        last_name: currentUser.user_metadata?.name?.split(" ").slice(1).join(" ") || prev.last_name,
+      }));
+
+      const { data, error } = await supabase
+        .from("mentor_applications")
+        .select("*")
+        .eq("email", currentUser.email)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        console.error("Application status check failed:", error);
+      }
+
+      if (data) {
+        setExistingApplication(data);
+      }
+      setCheckingStatus(false);
+    }
+    checkExistingApplication();
+  }, []);
 
   function updateField(key, value) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -62,6 +102,58 @@ export default function Apply() {
     }
   }
 
+  if (checkingStatus) {
+    return (
+      <div className="min-h-screen bg-[#FFF9F2]">
+        <Navbar />
+        <div className="max-w-2xl mx-auto px-6 py-24 text-center text-gray-500">
+          Checking Your Application Status...
+        </div>
+      </div>
+    );
+  }
+
+  if (existingApplication?.status === "pending") {
+    return (
+      <div className="min-h-screen bg-[#FFF9F2]">
+        <Navbar />
+        <div className="max-w-2xl mx-auto px-6 py-24 text-center">
+          <div className="text-5xl mb-4">⏳</div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            Your Application Is Pending Approval
+          </h1>
+          <p className="text-gray-600">
+            Thank you for applying! We review every application and aim to get back within 48 hours.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (existingApplication?.status === "rejected") {
+    return (
+      <div className="min-h-screen bg-[#FFF9F2]">
+        <Navbar />
+        <div className="max-w-2xl mx-auto px-6 py-24 text-center">
+          <div className="text-5xl mb-4">✉️</div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            Your Application Wasn't Approved This Time
+          </h1>
+          <p className="text-gray-600 mb-6">
+            Thank you for your interest in becoming a PeerVia mentor. Unfortunately, we couldn't
+            approve your application at this time.
+          </p>
+          <button
+            onClick={() => setExistingApplication(null)}
+            className="bg-green-600 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-green-700 transition"
+          >
+            Apply Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (submitted) {
     return (
       <div className="min-h-screen bg-[#FFF9F2]">
@@ -72,7 +164,7 @@ export default function Apply() {
             Application Submitted
           </h1>
           <p className="text-gray-600">
-            Thanks for applying! We review every application and aim to get back within 48 hours.
+            Thank you for applying! We review every application and aim to get back within 48 hours.
           </p>
         </div>
       </div>
@@ -162,7 +254,7 @@ export default function Apply() {
                 )}
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-1">Year of study</label>
+                <label className="block text-sm font-semibold text-gray-800 mb-1">Year of Study</label>
                 <select
                   required
                   value={form.year}

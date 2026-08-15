@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import Navbar from "@/Components/Navbar";
 import { supabase } from "@/lib/supabase";
 import { getSubjectStyle, getFlag } from "@/data/mentors";
+import MentorCalendarEditor from "@/Components/MentorCalendarEditor";
 
 export default function MentorDashboard() {
   const [user, setUser] = useState(null);
@@ -359,6 +360,11 @@ export default function MentorDashboard() {
             </span>
           )}
         </div>
+        {/* Calendar section */}
+<div className="bg-white border border-gray-200 rounded-2xl p-6 mb-6">
+  <h2 className="text-lg font-bold text-gray-900 mb-4">Your Calendar</h2>
+  {mentorProfile?.id && <MentorCalendarEditor mentorId={mentorProfile.id} />}
+</div>
 
         {/* Unanswered questions */}
         <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
