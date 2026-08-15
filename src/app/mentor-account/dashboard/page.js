@@ -2,15 +2,16 @@
 import { useState, useEffect } from "react";
 import Navbar from "@/Components/Navbar";
 import { supabase } from "@/lib/supabase";
-import { getSubjectStyle, getFlag } from "@/data/mentors";
+import { getSubjectStyle, getFlag, subjectStyles, countryFlags, languageFlags, getLanguageStyle } from "@/data/mentors";
 import MentorCalendarEditor from "@/Components/MentorCalendarEditor";
+import MultiSelect from "@/Components/MultiSelect";
 
 export default function MentorDashboard() {
   const [user, setUser] = useState(null);
   const [mentorProfile, setMentorProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notAuthorized, setNotAuthorized] = useState(false);
-const [calendarVisible, setCalendarVisible] = useState(false);
+  const [calendarVisible, setCalendarVisible] = useState(false);
   const [bio, setBio] = useState("");
   const [aboutMe, setAboutMe] = useState("");
   const [age, setAge] = useState("");
@@ -20,6 +21,11 @@ const [calendarVisible, setCalendarVisible] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [calendarExpanded, setCalendarExpanded] = useState(true);
+
+  const [subject, setSubject] = useState("");
+  const [country, setCountry] = useState("");
+  const [languages, setLanguages] = useState([]);
 
   const [unansweredQuestions, setUnansweredQuestions] = useState([]);
   const [answerDrafts, setAnswerDrafts] = useState({});
@@ -53,6 +59,9 @@ const [calendarVisible, setCalendarVisible] = useState(false);
         setLinkedin(profile.linkedin || "");
         setAvailable(profile.available ?? true);
         setCalendarVisible(profile.calendar_visible ?? false);
+        setSubject(profile.subject || "");
+        setCountry(profile.country || "");
+        setLanguages(profile.languages ? profile.languages.split(",").map((l) => l.trim()) : []);
       }
 
       const [{ data: userQuestions }, { data: answers }] = await Promise.all([
@@ -88,23 +97,27 @@ const [calendarVisible, setCalendarVisible] = useState(false);
       return;
     }
 
-   const { error } = await supabase
-  .from("mentorss")
-  .update({
-    bio,
-    about_me: aboutMe,
-    age: age === "" ? null : Number(age),
-    happy_to_chat_about: happyToChat,
-    linkedin: linkedin.trim(),
-    available,
-    calendar_visible: calendarVisible,
-  })
-  .eq("user_id", user.id);
+    const { error } = await supabase
+      .from("mentorss")
+      .update({
+        bio,
+        about_me: aboutMe,
+        age: age === "" ? null : Number(age),
+        happy_to_chat_about: happyToChat,
+        linkedin: linkedin.trim(),
+        available,
+        calendar_visible: calendarVisible,
+        subject,
+        country,
+        languages: languages.join(","),
+      })
+      .eq("user_id", user.id);
     setSaving(false);
 
     if (error) {
       setSaveError(error.message);
     } else {
+      setMentorProfile((prev) => (prev ? { ...prev, subject, country, languages: languages.join(",") } : prev));
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     }
@@ -130,7 +143,6 @@ const [calendarVisible, setCalendarVisible] = useState(false);
     }
 
     if (!error) {
-      // Increment this mentor's answer count on their profile
       const newAnswerCount = (mentorProfile?.answers || 0) + 1;
       const { error: countError } = await supabase
         .from("mentorss")
@@ -143,7 +155,6 @@ const [calendarVisible, setCalendarVisible] = useState(false);
 
       const answeredQuestion = unansweredQuestions.find((q) => q.id === userQuestionId);
 
-      // Fire off email notifications (don't block the UI on this)
       fetch("/api/notify-answer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -274,6 +285,45 @@ const [calendarVisible, setCalendarVisible] = useState(false);
 
           <div className="grid sm:grid-cols-2 gap-4 mb-4">
             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Field of Study</label>
+              <select
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-green-600"
+              >
+                <option value="">Select a field...</option>
+                {Object.keys(subjectStyles).map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+              <select
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-green-600"
+              >
+                <option value="">Select a country...</option>
+                {Object.keys(countryFlags).map((c) => (
+                  <option key={c} value={c}>{countryFlags[c]} {c}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <MultiSelect
+              label="Languages"
+              options={Object.keys(languageFlags)}
+              selected={languages}
+              onChange={setLanguages}
+              getOptionStyle={getLanguageStyle}
+            />
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-4 mb-4">
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
               <input
                 type="text"
@@ -334,24 +384,28 @@ const [calendarVisible, setCalendarVisible] = useState(false);
             />
           </div>
 
-          <label className="flex items-center gap-2 text-sm text-gray-700 mb-4 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={available}
-              onChange={(e) => setAvailable(e.target.checked)}
-              className="w-4 h-4 accent-green-600"
-            />
-            Available For Bookings
-          </label>
-<label className="flex items-center gap-2 text-sm text-gray-700 mb-4 cursor-pointer">
-  <input
-    type="checkbox"
-    checked={calendarVisible}
-    onChange={(e) => setCalendarVisible(e.target.checked)}
-    className="w-4 h-4 accent-green-600"
-  />
-  Show Calendar On My Public Profile
-</label>
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mb-4">
+            <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={available}
+                onChange={(e) => setAvailable(e.target.checked)}
+                className="w-4 h-4 accent-green-600"
+              />
+              Available For Bookings
+            </label>
+
+            <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={calendarVisible}
+                onChange={(e) => setCalendarVisible(e.target.checked)}
+                className="w-4 h-4 accent-green-600"
+              />
+              Show Calendar On My Public Profile
+            </label>
+          </div>
+
           {saveError && (
             <p className="text-sm text-red-600 mb-3">{saveError}</p>
           )}
@@ -369,11 +423,28 @@ const [calendarVisible, setCalendarVisible] = useState(false);
             </span>
           )}
         </div>
+
         {/* Calendar section */}
-<div className="bg-white border border-gray-200 rounded-2xl p-6 mb-6">
-  <h2 className="text-lg font-bold text-gray-900 mb-4">Your Calendar</h2>
-  {mentorProfile?.id && <MentorCalendarEditor mentorId={mentorProfile.id} />}
-</div>
+        <div className="bg-white border border-gray-200 rounded-2xl p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <button
+              onClick={() => setCalendarExpanded(!calendarExpanded)}
+              className="flex items-center gap-2 text-lg font-bold text-gray-900"
+            >
+              <span className={`transition-transform ${calendarExpanded ? "rotate-90" : ""}`}>›</span>
+              Your Calendar
+            </button>
+          </div>
+
+          {calendarExpanded && (
+            <>
+              <p className="text-xs text-gray-500 mb-4">
+                Students will only see this calendar on your public profile page if it's turned on.
+              </p>
+              {mentorProfile?.id && <MentorCalendarEditor mentorId={mentorProfile.id} />}
+            </>
+          )}
+        </div>
 
         {/* Unanswered questions */}
         <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">

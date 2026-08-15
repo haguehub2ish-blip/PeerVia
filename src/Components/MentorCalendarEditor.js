@@ -1,20 +1,15 @@
 "use client";
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
-
 // Predefined event types — mentors pick one instead of typing everything
 // from scratch. The `key` is what gets saved in the `color` column.
-const EVENT_TYPES = {
-  session: { label: "Mentoring Session", icon: "💬", bg: "bg-green-100", border: "border-green-300", text: "text-green-900", dot: "bg-green-600" },
-  exam: { label: "Exam", icon: "📝", bg: "bg-rose-100", border: "border-rose-300", text: "text-rose-900", dot: "bg-rose-600" },
-  deadline: { label: "Deadline", icon: "⏰", bg: "bg-amber-100", border: "border-amber-300", text: "text-amber-900", dot: "bg-amber-600" },
-  office_hours: { label: "Office Hours", icon: "🗓️", bg: "bg-blue-100", border: "border-blue-300", text: "text-blue-900", dot: "bg-blue-600" },
-  study_group: { label: "Study Group", icon: "👥", bg: "bg-purple-100", border: "border-purple-300", text: "text-purple-900", dot: "bg-purple-600" },
-  other: { label: "Other", icon: "•", bg: "bg-gray-100", border: "border-gray-300", text: "text-gray-900", dot: "bg-gray-500" },
-};
+import { EVENT_TYPES } from "@/lib/eventTypes";
 
 function toDateKey(date) {
-  return date.toISOString().split("T")[0];
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function isSameDay(a, b) {
@@ -26,7 +21,7 @@ export default function MentorCalendarEditor({ mentorId }) {
   const [loading, setLoading] = useState(true);
   const [monthCursor, setMonthCursor] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
-
+const [confirmingDeleteId, setConfirmingDeleteId] = useState(null);
   const [formType, setFormType] = useState("session");
   const [formTitle, setFormTitle] = useState("");
   const [formDescription, setFormDescription] = useState("");
@@ -195,28 +190,53 @@ export default function MentorCalendarEditor({ mentorId }) {
             {selectedEvents.length === 0 && (
               <p className="text-sm text-gray-400 italic">No events yet — add one below.</p>
             )}
-            {selectedEvents.map((ev) => {
-              const style = EVENT_TYPES[ev.color] || EVENT_TYPES.other;
-              return (
-                <div key={ev.id} className={`border-2 rounded-xl p-3 flex items-start justify-between ${style.bg} ${style.border}`}>
-                  <div className="flex items-start gap-2">
-                    <span className="text-lg leading-none">{style.icon}</span>
-                    <div>
-                      <p className={`font-semibold text-sm ${style.text}`}>
-                        {ev.title}{ev.time_label && <span className="font-normal"> · {ev.time_label}</span>}
-                      </p>
-                      {ev.description && <p className={`text-xs mt-0.5 ${style.text} opacity-80`}>{ev.description}</p>}
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => handleDeleteEvent(ev.id)}
-                    className={`text-xs ${style.text} opacity-50 hover:opacity-100 ml-3 shrink-0`}
-                  >
-                    ✕
-                  </button>
-                </div>
-              );
-            })}
+           {selectedEvents.map((ev) => {
+  const style = EVENT_TYPES[ev.color] || EVENT_TYPES.other;
+  const isConfirming = confirmingDeleteId === ev.id;
+
+  return (
+    <div key={ev.id} className={`border-2 rounded-xl p-3 flex items-start justify-between gap-2 ${style.bg} ${style.border}`}>
+      <div className="flex items-start gap-2">
+        <span className="text-lg leading-none">{style.icon}</span>
+        <div>
+          <p className={`font-semibold text-sm ${style.text}`}>
+            {ev.title}{ev.time_label && <span className="font-normal"> · {ev.time_label}</span>}
+          </p>
+          {ev.description && <p className={`text-xs mt-0.5 ${style.text} opacity-80`}>{ev.description}</p>}
+        </div>
+      </div>
+
+      {isConfirming ? (
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className={`text-xs font-medium ${style.text}`}>Delete?</span>
+          <button
+            onClick={() => {
+              handleDeleteEvent(ev.id);
+              setConfirmingDeleteId(null);
+            }}
+            className="text-xs font-semibold bg-red-600 text-white px-2.5 py-1 rounded-md hover:bg-red-700 transition"
+          >
+            Yes
+          </button>
+          <button
+            onClick={() => setConfirmingDeleteId(null)}
+            className="text-xs font-semibold bg-white text-gray-600 border border-gray-300 px-2.5 py-1 rounded-md hover:bg-gray-50 transition"
+          >
+            Cancel
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={() => setConfirmingDeleteId(ev.id)}
+          className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg bg-white/70 hover:bg-white text-gray-500 hover:text-red-600 transition"
+          title="Delete event"
+        >
+          🗑️
+        </button>
+      )}
+    </div>
+  );
+})}
           </div>
 
           <form onSubmit={handleAddEvent} className="bg-gray-50 rounded-xl p-4 space-y-3">

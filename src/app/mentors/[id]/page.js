@@ -19,6 +19,7 @@ const [formMessage, setFormMessage] = useState("");
 const [bookError, setBookError] = useState("");
 const [submitting, setSubmitting] = useState(false);
 const [submitted, setSubmitted] = useState(false);
+const [calendarExpanded, setCalendarExpanded] = useState(true);
 
 async function handleBookClick() {
   setBookError("");
@@ -188,13 +189,19 @@ async function handleSubmitBooking(e) {
             </div>
           </div>
 
-          {/* Calendar — only shown if this mentor made it public */}
-          {mentor.calendar_visible && (
-            <div className="border-t border-gray-100 pt-6 mb-8">
-              <h2 className="font-bold text-gray-900 mb-4">Upcoming Availability</h2>
-              <MentorCalendarView mentorId={mentor.id} />
-            </div>
-          )}
+        {/* Calendar — only shown if this mentor made it public */}
+{mentor.calendar_visible && (
+  <div className="border-t border-gray-100 pt-6 mb-8">
+    <button
+      onClick={() => setCalendarExpanded(!calendarExpanded)}
+      className="flex items-center gap-2 font-bold text-gray-900 mb-4"
+    >
+      <span className={`transition-transform ${calendarExpanded ? "rotate-90" : ""}`}>›</span>
+      Upcoming Availability
+    </button>
+    {calendarExpanded && <MentorCalendarView mentorId={mentor.id} />}
+  </div>
+)}
 
          {submitted ? (
   <p className="text-center text-green-700 font-semibold bg-green-50 py-3 rounded-lg">
