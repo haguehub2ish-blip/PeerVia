@@ -2,7 +2,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Navbar from "@/Components/Navbar";
-import { courseGuides } from "@/data/courseGuides";
+import { supabase } from "@/lib/supabase";
 import { getSubjectStyle } from "@/data/mentors";
 
 const countryFlags = { NL: "🇳🇱", UK: "🇬🇧" };
@@ -20,6 +20,28 @@ function CourseGuidesContent() {
   const searchParams = useSearchParams();
   const [activeCountries, setActiveCountries] = useState([]);
   const [activeSubjects, setActiveSubjects] = useState([]);
+  const [courseGuides, setCourseGuides] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadGuides() {
+      const { data } = await supabase
+        .from("course_guides")
+        .select("*")
+        .order("subject", { ascending: true });
+      setCourseGuides(
+        (data || []).map((g) => ({
+          ...g,
+          countryLabel: g.country_label,
+          popularUniversities: g.popular_universities,
+          languageRequirement: g.language_requirement,
+          writtenBy: g.written_by,
+        }))
+      );
+      setLoading(false);
+    }
+    loadGuides();
+  }, []);
 
   const subjects = ["All", ...new Set(courseGuides.map((g) => g.subject))];
 
@@ -118,6 +140,9 @@ function CourseGuidesContent() {
         </div>
 
         {/* Course guide cards */}
+        {loading ? (
+          <p className="text-gray-500">Loading course guides...</p>
+        ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {filteredGuides.map((guide) => (
             <div
@@ -208,6 +233,7 @@ function CourseGuidesContent() {
             </div>
           ))}
         </div>
+        )}
       </div>
     </div>
   );
