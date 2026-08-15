@@ -2,16 +2,23 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 
-const COLORS = {
-  green: "bg-green-100 text-green-800 border-green-300",
-  blue: "bg-blue-100 text-blue-800 border-blue-300",
-  purple: "bg-purple-100 text-purple-800 border-purple-300",
-  amber: "bg-amber-100 text-amber-800 border-amber-300",
-  rose: "bg-rose-100 text-rose-800 border-rose-300",
+// Predefined event types — mentors pick one instead of typing everything
+// from scratch. The `key` is what gets saved in the `color` column.
+const EVENT_TYPES = {
+  session: { label: "Mentoring Session", icon: "💬", bg: "bg-green-100", border: "border-green-300", text: "text-green-900", dot: "bg-green-600" },
+  exam: { label: "Exam", icon: "📝", bg: "bg-rose-100", border: "border-rose-300", text: "text-rose-900", dot: "bg-rose-600" },
+  deadline: { label: "Deadline", icon: "⏰", bg: "bg-amber-100", border: "border-amber-300", text: "text-amber-900", dot: "bg-amber-600" },
+  office_hours: { label: "Office Hours", icon: "🗓️", bg: "bg-blue-100", border: "border-blue-300", text: "text-blue-900", dot: "bg-blue-600" },
+  study_group: { label: "Study Group", icon: "👥", bg: "bg-purple-100", border: "border-purple-300", text: "text-purple-900", dot: "bg-purple-600" },
+  other: { label: "Other", icon: "•", bg: "bg-gray-100", border: "border-gray-300", text: "text-gray-900", dot: "bg-gray-500" },
 };
 
 function toDateKey(date) {
   return date.toISOString().split("T")[0];
+}
+
+function isSameDay(a, b) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
 export default function MentorCalendarEditor({ mentorId }) {
@@ -20,11 +27,13 @@ export default function MentorCalendarEditor({ mentorId }) {
   const [monthCursor, setMonthCursor] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
 
+  const [formType, setFormType] = useState("session");
   const [formTitle, setFormTitle] = useState("");
   const [formDescription, setFormDescription] = useState("");
   const [formTime, setFormTime] = useState("");
-  const [formColor, setFormColor] = useState("green");
   const [saving, setSaving] = useState(false);
+
+  const today = new Date();
 
   useEffect(() => {
     async function loadEvents() {
@@ -64,7 +73,11 @@ export default function MentorCalendarEditor({ mentorId }) {
 
   function changeMonth(delta) {
     setMonthCursor(new Date(monthCursor.getFullYear(), monthCursor.getMonth() + delta, 1));
-    setSelectedDate(null);
+  }
+
+  function goToToday() {
+    setMonthCursor(new Date());
+    setSelectedDate(toDateKey(new Date()));
   }
 
   async function handleAddEvent(e) {
@@ -80,7 +93,7 @@ export default function MentorCalendarEditor({ mentorId }) {
         title: formTitle.trim(),
         description: formDescription.trim() || null,
         time_label: formTime.trim() || null,
-        color: formColor,
+        color: formType,
       })
       .select()
       .single();
@@ -91,7 +104,7 @@ export default function MentorCalendarEditor({ mentorId }) {
       setFormTitle("");
       setFormDescription("");
       setFormTime("");
-      setFormColor("green");
+      setFormType("session");
     }
   }
 
@@ -109,41 +122,57 @@ export default function MentorCalendarEditor({ mentorId }) {
     <div>
       {/* Month nav */}
       <div className="flex items-center justify-between mb-4">
-        <button onClick={() => changeMonth(-1)} className="px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 text-sm">
-          ← Prev
+        <button onClick={() => changeMonth(-1)} className="w-9 h-9 flex items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:bg-gray-100 transition">
+          ‹
         </button>
-        <p className="font-semibold text-gray-900">{monthLabel}</p>
-        <button onClick={() => changeMonth(1)} className="px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 text-sm">
-          Next →
+        <div className="flex items-center gap-3">
+          <p className="font-semibold text-gray-900 text-lg">{monthLabel}</p>
+          <button onClick={goToToday} className="text-xs font-medium text-green-700 border border-green-300 rounded-full px-2.5 py-1 hover:bg-green-50 transition">
+            Today
+          </button>
+        </div>
+        <button onClick={() => changeMonth(1)} className="w-9 h-9 flex items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:bg-gray-100 transition">
+          ›
         </button>
       </div>
 
       {/* Weekday header */}
-      <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-gray-500 mb-1">
+      <div className="grid grid-cols-7 gap-1.5 text-center text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wide">
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
           <div key={d}>{d}</div>
         ))}
       </div>
 
       {/* Day grid */}
-      <div className="grid grid-cols-7 gap-1 mb-6">
+      <div className="grid grid-cols-7 gap-1.5 mb-6">
         {days.map((date, i) => {
-          if (!date) return <div key={i} />;
+          if (!date) return <div key={`blank-${i}`} />;
           const key = toDateKey(date);
           const dayEvents = eventsByDate[key] || [];
           const isSelected = selectedDate === key;
+          const isToday = isSameDay(date, today);
 
           return (
             <button
               key={key}
               onClick={() => setSelectedDate(key)}
-              className={`aspect-square rounded-lg border text-sm p-1 flex flex-col items-center justify-start gap-0.5 transition ${
-                isSelected ? "border-green-600 bg-green-50" : "border-gray-200 hover:bg-gray-50"
+              className={`aspect-square rounded-xl border-2 text-sm p-1 flex flex-col items-center justify-center gap-1 transition ${
+                isSelected
+                  ? "border-green-600 bg-green-50 shadow-sm"
+                  : isToday
+                  ? "border-green-300 bg-white"
+                  : "border-transparent hover:bg-gray-50"
               }`}
             >
-              <span className="font-medium text-gray-700">{date.getDate()}</span>
+              <span className={`font-medium ${isSelected ? "text-green-800" : isToday ? "text-green-700 font-bold" : "text-gray-700"}`}>
+                {date.getDate()}
+              </span>
               {dayEvents.length > 0 && (
-                <span className="w-1.5 h-1.5 rounded-full bg-green-600"></span>
+                <div className="flex gap-0.5">
+                  {dayEvents.slice(0, 3).map((ev) => (
+                    <span key={ev.id} className={`w-1.5 h-1.5 rounded-full ${EVENT_TYPES[ev.color]?.dot || EVENT_TYPES.other.dot}`}></span>
+                  ))}
+                </div>
               )}
             </button>
           );
@@ -153,68 +182,91 @@ export default function MentorCalendarEditor({ mentorId }) {
       {/* Selected day panel */}
       {selectedDate && (
         <div className="border-t border-gray-100 pt-5">
-          <h3 className="font-semibold text-gray-900 mb-3">
-            Events on {new Date(selectedDate + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
-          </h3>
-
-          <div className="space-y-2 mb-4">
-            {selectedEvents.length === 0 && (
-              <p className="text-sm text-gray-400">No events yet.</p>
-            )}
-            {selectedEvents.map((ev) => (
-              <div key={ev.id} className={`border rounded-lg p-3 flex items-start justify-between ${COLORS[ev.color] || COLORS.green}`}>
-                <div>
-                  <p className="font-semibold text-sm">{ev.title}{ev.time_label && ` · ${ev.time_label}`}</p>
-                  {ev.description && <p className="text-xs mt-0.5">{ev.description}</p>}
-                </div>
-                <button
-                  onClick={() => handleDeleteEvent(ev.id)}
-                  className="text-xs opacity-60 hover:opacity-100 ml-3 shrink-0"
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-semibold text-gray-900">
+              {new Date(selectedDate + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
+            </h3>
+            <button onClick={() => setSelectedDate(null)} className="text-gray-400 hover:text-gray-600 text-sm">
+              Close ✕
+            </button>
           </div>
 
-          <form onSubmit={handleAddEvent} className="space-y-2 bg-gray-50 rounded-lg p-4">
+          <div className="space-y-2 mb-5">
+            {selectedEvents.length === 0 && (
+              <p className="text-sm text-gray-400 italic">No events yet — add one below.</p>
+            )}
+            {selectedEvents.map((ev) => {
+              const style = EVENT_TYPES[ev.color] || EVENT_TYPES.other;
+              return (
+                <div key={ev.id} className={`border-2 rounded-xl p-3 flex items-start justify-between ${style.bg} ${style.border}`}>
+                  <div className="flex items-start gap-2">
+                    <span className="text-lg leading-none">{style.icon}</span>
+                    <div>
+                      <p className={`font-semibold text-sm ${style.text}`}>
+                        {ev.title}{ev.time_label && <span className="font-normal"> · {ev.time_label}</span>}
+                      </p>
+                      {ev.description && <p className={`text-xs mt-0.5 ${style.text} opacity-80`}>{ev.description}</p>}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleDeleteEvent(ev.id)}
+                    className={`text-xs ${style.text} opacity-50 hover:opacity-100 ml-3 shrink-0`}
+                  >
+                    ✕
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+
+          <form onSubmit={handleAddEvent} className="bg-gray-50 rounded-xl p-4 space-y-3">
+            {/* Event type chips */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Event Type</label>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(EVENT_TYPES).map(([key, style]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setFormType(key)}
+                    className={`text-xs font-medium px-3 py-1.5 rounded-full border-2 transition ${
+                      formType === key
+                        ? `${style.bg} ${style.border} ${style.text}`
+                        : "bg-white border-gray-200 text-gray-500 hover:border-gray-300"
+                    }`}
+                  >
+                    {style.icon} {style.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <input
               type="text"
-              placeholder="Event title"
+              placeholder="Event title (e.g. Calculus Q&A)"
               required
               value={formTitle}
               onChange={(e) => setFormTitle(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
             />
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="Time (e.g. 3:00 PM)"
-                value={formTime}
-                onChange={(e) => setFormTime(e.target.value)}
-                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm"
-              />
-              <select
-                value={formColor}
-                onChange={(e) => setFormColor(e.target.value)}
-                className="border border-gray-300 rounded-lg px-2 py-2 text-sm"
-              >
-                {Object.keys(COLORS).map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            </div>
+            <input
+              type="text"
+              placeholder="Time (e.g. 3:00 PM) — optional"
+              value={formTime}
+              onChange={(e) => setFormTime(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
             <textarea
               placeholder="Description (optional)"
               rows={2}
               value={formDescription}
               onChange={(e) => setFormDescription(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm resize-y"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-green-500"
             />
             <button
               type="submit"
-              disabled={saving}
-              className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-700 transition disabled:opacity-50"
+              disabled={saving || !formTitle.trim()}
+              className="w-full bg-green-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-green-700 transition disabled:opacity-50"
             >
               {saving ? "Adding..." : "Add Event"}
             </button>
