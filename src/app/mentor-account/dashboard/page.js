@@ -10,7 +10,7 @@ export default function MentorDashboard() {
   const [mentorProfile, setMentorProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notAuthorized, setNotAuthorized] = useState(false);
-
+const [calendarVisible, setCalendarVisible] = useState(false);
   const [bio, setBio] = useState("");
   const [aboutMe, setAboutMe] = useState("");
   const [age, setAge] = useState("");
@@ -52,6 +52,7 @@ export default function MentorDashboard() {
         setHappyToChat(profile.happy_to_chat_about || "");
         setLinkedin(profile.linkedin || "");
         setAvailable(profile.available ?? true);
+        setCalendarVisible(profile.calendar_visible ?? false);
       }
 
       const [{ data: userQuestions }, { data: answers }] = await Promise.all([
@@ -87,18 +88,18 @@ export default function MentorDashboard() {
       return;
     }
 
-    const { error } = await supabase
-      .from("mentorss")
-      .update({
-        bio,
-        about_me: aboutMe,
-        age: age === "" ? null : Number(age),
-        happy_to_chat_about: happyToChat,
-        linkedin: linkedin.trim(),
-        available,
-      })
-      .eq("user_id", user.id);
-
+   const { error } = await supabase
+  .from("mentorss")
+  .update({
+    bio,
+    about_me: aboutMe,
+    age: age === "" ? null : Number(age),
+    happy_to_chat_about: happyToChat,
+    linkedin: linkedin.trim(),
+    available,
+    calendar_visible: calendarVisible,
+  })
+  .eq("user_id", user.id);
     setSaving(false);
 
     if (error) {
@@ -342,7 +343,15 @@ export default function MentorDashboard() {
             />
             Available For Bookings
           </label>
-
+<label className="flex items-center gap-2 text-sm text-gray-700 mb-4 cursor-pointer">
+  <input
+    type="checkbox"
+    checked={calendarVisible}
+    onChange={(e) => setCalendarVisible(e.target.checked)}
+    className="w-4 h-4 accent-green-600"
+  />
+  Show Calendar On My Public Profile
+</label>
           {saveError && (
             <p className="text-sm text-red-600 mb-3">{saveError}</p>
           )}

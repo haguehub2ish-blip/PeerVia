@@ -5,6 +5,7 @@ import Navbar from "@/Components/Navbar";
 import { getSubjectStyle, getFlag } from "@/data/mentors";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
+import MentorCalendarView from "@/Components/MentorCalendarView";
 
 export default function MentorProfile() {
   const { id } = useParams();
@@ -164,7 +165,7 @@ async function handleSubmitBooking(e) {
 
           <div className="mb-2" />
 
-          {/* Stats */}
+         {/* Stats */}
           <div className="grid grid-cols-4 gap-2 pt-6 border-t border-gray-100 text-center mb-8">
             <div>
               <p className="font-bold text-gray-900 text-lg">{mentor.sessions}</p>
@@ -186,6 +187,14 @@ async function handleSubmitBooking(e) {
               <p className="text-xs text-gray-500">Bookings</p>
             </div>
           </div>
+
+          {/* Calendar — only shown if this mentor made it public */}
+          {mentor.calendar_visible && (
+            <div className="border-t border-gray-100 pt-6 mb-8">
+              <h2 className="font-bold text-gray-900 mb-4">Upcoming Availability</h2>
+              <MentorCalendarView mentorId={mentor.id} />
+            </div>
+          )}
 
          {submitted ? (
   <p className="text-center text-green-700 font-semibold bg-green-50 py-3 rounded-lg">

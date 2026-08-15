@@ -247,21 +247,21 @@ export default function MentorCalendarEditor({ mentorId }) {
               required
               value={formTitle}
               onChange={(e) => setFormTitle(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+             className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-black focus:outline-none focus:ring-2 focus:ring-green-500"
             />
             <input
               type="text"
               placeholder="Time (e.g. 3:00 PM) — optional"
               value={formTime}
               onChange={(e) => setFormTime(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-black focus:outline-none focus:ring-2 focus:ring-green-500"
             />
             <textarea
               placeholder="Description (optional)"
               rows={2}
               value={formDescription}
               onChange={(e) => setFormDescription(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-black resize-y focus:outline-none focus:ring-2 focus:ring-green-500"
             />
             <button
               type="submit"
