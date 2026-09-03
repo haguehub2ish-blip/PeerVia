@@ -205,13 +205,13 @@ export default function Home() {
 };
 
   const categoryButtonStyles = {
-    mentors: "bg-green-600 text-white border-green-600",
+    mentors: "bg-primary text-white border-primary",
     questions: "bg-amber-500 text-white border-amber-500",
     courseGuides: "bg-indigo-600 text-white border-indigo-600",
   };
 
   const categoryFillStyles = {
-    mentors: "bg-green-100",
+    mentors: "bg-primary/70 text-black",
     questions: "bg-amber-100",
     courseGuides: "bg-indigo-100",
   };
@@ -250,12 +250,12 @@ export default function Home() {
       <Navbar />
 
       {/* Hero + Search */}
-      <section className="bg-orange-50 px-6 py-20 text-center">
+      <section className="bg-cream px-6 py-20 text-center">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">
+          <h2 className="text-4xl font-bold text-primary mb-4">
             Real Answers from the People Living it
           </h2>
-       <p className="text-gray-600 mb-10">
+       <p className="text-ink mb-10">
   Connect with verified university students for honest, first hand advice about courses, universities, applications and student life - <span className="font-bold text-black">all completely free</span>.
 </p>
 
@@ -341,7 +341,7 @@ export default function Home() {
                 </div>
                 <button
                   onClick={handleExplore}
-                  className="bg-green-600 text-white px-6 font-medium hover:bg-green-700 transition shrink-0"
+                  className="bg-secondary text-white px-6 font-medium hover:bg-primary transition shrink-0"
                 >
                   {exploreButtonLabels[selectedCategory] || "Find your Mentor →"}
                 </button>
@@ -442,7 +442,7 @@ export default function Home() {
 
       {/* Stats */}
       <section className="bg-white pt-6 pb-6">
-        <div className="max-w-5xl mx-auto px-6 grid grid-cols-2 md:grid-cols-6 gap-4 text-center">
+  <div className="max-w-5xl mx-auto px-6 py-5 rounded-2xl bg-highlight grid grid-cols-2 md:grid-cols-6 gap-4 text-center">
           {mentorsLoading
             ? [...Array(6)].map((_, i) => (
                 <div key={i} className="animate-pulse">
@@ -454,32 +454,32 @@ export default function Home() {
               <>
                 <div>
                   <p className="text-4xl font-extrabold text-green-800">{verifiedMentorsCount}</p>
-                  <p className="text-gray-600 text-sm mt-0.5">Verified Mentors</p>
+                  <p className="text-ink text-sm mt-0.5">Verified Mentors</p>
                 </div>
 
                 <div>
                   <p className="text-4xl font-extrabold text-green-800">{questionsAnsweredCount}</p>
-                  <p className="text-gray-600 text-sm mt-0.5"> Student Questions Answered</p>
+                  <p className="text-ink text-sm mt-0.5"> Student Questions Answered</p>
                 </div>
 
                 <div>
                   <p className="text-4xl font-extrabold text-green-800">{careerPathsCount}</p>
-                  <p className="text-gray-600 text-sm mt-0.5">Career Paths</p>
+                  <p className="text-ink text-sm mt-0.5">Career Paths</p>
                 </div>
 
                 <div>
                   <p className="text-4xl font-extrabold text-green-800">{avgRating}★</p>
-                  <p className="text-gray-600 text-sm mt-0.5">Average Session Rating</p>
+                  <p className="text-ink text-sm mt-0.5">Average Session Rating</p>
                 </div>
 
                 <div>
                   <p className="text-4xl font-extrabold text-green-800">{languagesCount}</p>
-                  <p className="text-gray-600 text-sm mt-0.5">Languages Spoken</p>
+                  <p className="text-ink text-sm mt-0.5">Languages Spoken</p>
                 </div>
 
                 <div>
                   <p className="text-4xl font-extrabold text-green-800">{schoolsCount}</p>
-                  <p className="text-gray-600 text-sm mt-0.5">Universities Represented</p>
+                  <p className="text-ink text-sm mt-0.5">Universities Represented</p>
                 </div>
               </>
             )}

@@ -44,7 +44,7 @@ export async function POST(request) {
       admission: guide.admission,
       language_requirement: guide.languageRequirement || null,
       extracurriculars: guide.extracurriculars || [],
-      written_by: guide.writtenBy || null,
+      date_published: guide.datePublished || null,
     })
     .eq("id", guide.id);
 

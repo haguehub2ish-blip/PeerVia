@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import Navbar from "@/Components/Navbar";
 import { supabase } from "@/lib/supabase";
 import { getSubjectStyle } from "@/data/mentors";
+import Link from "next/link";
 
 const countryFlags = { NL: "🇳🇱", UK: "🇬🇧" };
 const countries = ["All", "NL", "UK"];
@@ -35,7 +36,7 @@ function CourseGuidesContent() {
           countryLabel: g.country_label,
           popularUniversities: g.popular_universities,
           languageRequirement: g.language_requirement,
-          writtenBy: g.written_by,
+         datePublished: g.date_published,
         }))
       );
       setLoading(false);
@@ -145,10 +146,11 @@ function CourseGuidesContent() {
         ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {filteredGuides.map((guide) => (
-            <div
-              key={guide.id}
-              className="bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-md hover:border-gray-300 hover:-translate-y-0.5 transition flex flex-col h-full"
-            >
+            <Link
+  key={guide.id}
+  href={`/course-guides/${guide.id}`}
+  className="bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-md hover:border-gray-300 hover:-translate-y-0.5 transition flex flex-col h-full"
+>
               <div className={`px-6 py-4 flex items-center justify-between gap-3 ${getSubjectStyle(guide.subject).color}`}>
                 <div className="flex items-center gap-2.5">
                   <span className="w-8 h-8 rounded-lg bg-white/60 flex items-center justify-center text-base shrink-0">
@@ -186,7 +188,8 @@ function CourseGuidesContent() {
                     </div>
                   </div>
                 )}
-
+          
+   
                 <div className="mb-4 pb-4 border-b border-gray-100">
                   <div className="flex items-center gap-1.5 mb-1.5">
                     <span className="text-xs">📋</span>
@@ -224,13 +227,13 @@ function CourseGuidesContent() {
                   </div>
                 )}
 
-                {guide.writtenBy && (
-                  <p className="text-xs text-gray-400 italic mt-auto pt-3 border-t border-gray-100">
-                    {guide.writtenBy}
-                  </p>
-                )}
+                {guide.datePublished && (
+  <p className="text-xs text-gray-400 italic mt-auto pt-3 border-t border-gray-100">
+    Published {new Date(guide.datePublished + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+  </p>
+)}
               </div>
-            </div>
+            </Link>
           ))}
         </div>
         )}

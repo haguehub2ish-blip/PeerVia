@@ -385,7 +385,14 @@ const [user, setUser] = useState(null);
       <Navbar />
       <div className="flex">
         {/* Sidebar */}
-        <aside className="w-64 bg-white border-r border-gray-300 p-6 hidden md:block">
+        <aside className="w-64 bg-white border-r border-gray-200 p-6 hidden md:block shadow-[2px_0_8px_-4px_rgba(0,0,0,0.05)]">
+          <div className="flex items-center gap-2.5 mb-1">
+            <span className="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-base shrink-0">
+              💬
+            </span>
+            <p className="font-bold text-gray-900 text-sm">Community</p>
+          </div>
+          <div className="h-1 w-10 rounded-full bg-amber-400 mb-6"></div>
           <p className="text-xs font-semibold text-gray-500 mb-3 tracking-wide">CAREER FIELD</p>
           <div className="space-y-1 mb-8">
             {fields.map((field) => {
@@ -397,13 +404,13 @@ const [user, setUser] = useState(null);
                   onClick={() => toggleField(field)}
                   className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition ${
                     isActive
-                      ? "bg-green-50 text-green-800 font-semibold"
+                      ? "bg-amber-50 text-amber-800 font-semibold"
                       : "text-gray-600 hover:bg-gray-50"
                   }`}
                 >
                   <span
                     className={`w-1.5 h-1.5 rounded-full ${
-                      isActive ? "bg-green-600" : "bg-gray-300"
+                      isActive ? "bg-amber-600" : "bg-gray-300"
                     }`}
                   ></span>
                   {field}
@@ -420,13 +427,13 @@ const [user, setUser] = useState(null);
                 onClick={() => setSelectedCountry(country)}
                 className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition ${
                   selectedCountry === country
-                    ? "bg-green-50 text-green-800 font-semibold"
+                    ? "bg-amber-50 text-amber-800 font-semibold"
                     : "text-gray-600 hover:bg-gray-50"
                 }`}
               >
                 <span
                   className={`w-1.5 h-1.5 rounded-full ${
-                    selectedCountry === country ? "bg-green-600" : "bg-gray-300"
+                    selectedCountry === country ? "bg-amber-600" : "bg-gray-300"
                   }`}
                 ></span>
                 {country}
@@ -438,9 +445,19 @@ const [user, setUser] = useState(null);
         {/* Main content */}
         <main className="flex-1 p-6 md:p-10">
           {/* Top bar */}
-          <div className="flex flex-col md:flex-row gap-3 md:items-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-900 shrink-0">Community</h1>
-            <div className="flex-1 bg-white border border-gray-300 rounded-lg px-4 py-2.5 flex items-center gap-2">
+          <div className="mb-1 flex items-center gap-3">
+            <span className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-lg shrink-0">
+              🔥
+            </span>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Community</h1>
+              <p className="text-sm text-gray-500">
+                Real questions from students, answered by verified mentors who've been there.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-col md:flex-row gap-3 md:items-center mb-6 mt-4">
+            <div className="flex-1 bg-white border border-gray-300 rounded-lg px-4 py-2.5 flex items-center gap-2 focus-within:ring-2 focus-within:ring-amber-500 focus-within:border-amber-500">
               <span>🔍</span>
               <input
                 type="text"
@@ -460,7 +477,7 @@ const [user, setUser] = useState(null);
               }}
               className={`px-4 py-2.5 rounded-lg text-sm font-semibold border transition shrink-0 ${
                 showMyActivity
-                  ? "bg-green-600 text-white border-green-600"
+                  ? "bg-amber-500 text-white border-amber-500"
                   : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
               }`}
             >
@@ -469,8 +486,8 @@ const [user, setUser] = useState(null);
           </div>
 
           {/* Ask a question box */}
-          <div className="bg-white border border-gray-300 rounded-xl px-5 py-4 flex items-center gap-3 mb-6">
-            <div className="w-9 h-9 rounded-full bg-green-800 text-white flex items-center justify-center font-bold text-sm shrink-0">
+          <div className="bg-white border border-amber-200 rounded-xl px-5 py-4 flex items-center gap-3 mb-6 shadow-sm">
+            <div className="w-9 h-9 rounded-full bg-amber-600 text-white flex items-center justify-center font-bold text-sm shrink-0 ring-4 ring-amber-50">
               You
             </div>
             <input
@@ -490,7 +507,7 @@ const [user, setUser] = useState(null);
             />
             <button
               onClick={handleAskClick}
-              className="bg-green-700 text-white px-5 py-2 rounded-lg font-medium hover:bg-green-800 transition shrink-0"
+              className="bg-amber-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-amber-700 transition shrink-0"
             >
               Ask
             </button>
@@ -502,7 +519,7 @@ const [user, setUser] = useState(null);
           )}
 
           {showAskFilters && (
-            <div className="bg-white border border-gray-300 rounded-xl px-5 py-4 mb-6 space-y-3">
+            <div className="bg-white border border-amber-100 rounded-xl px-5 py-4 mb-6 space-y-3 shadow-sm">
               <p className="text-sm font-medium text-gray-700">
                 Want to tag your question so it's easier to find? (optional)
               </p>
@@ -559,7 +576,7 @@ const [user, setUser] = useState(null);
               <div className="flex items-center gap-2 pt-1">
                 <button
                   onClick={handleAskPost}
-                  className="bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-800 transition"
+                  className="bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-amber-700 transition"
                 >
                   Post question
                 </button>
@@ -581,8 +598,8 @@ const [user, setUser] = useState(null);
 
           {/* Recently asked, not yet answered by a mentor */}
           {unansweredUserQuestions.length > 0 && (
-            <div className="bg-white border border-gray-300 rounded-xl px-5 py-4 mb-6 space-y-3">
-              <p className="text-xs font-semibold text-gray-500 tracking-wide">RECENTLY ASKED</p>
+            <div className="bg-white border border-amber-200 rounded-xl px-5 py-4 mb-6 space-y-3 shadow-sm">
+              <p className="text-xs font-semibold text-amber-700 tracking-wide flex items-center gap-1.5">🕒 RECENTLY ASKED</p>
               {unansweredUserQuestions.map((uq) => (
                 <div key={uq.id} className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
@@ -659,7 +676,7 @@ const [user, setUser] = useState(null);
                   <div
                     key={uq.id}
                     id={uq.id}
-                    className="bg-white border border-gray-300 rounded-xl overflow-hidden scroll-mt-24"
+                    className="bg-white border border-gray-200 rounded-xl overflow-hidden scroll-mt-24 hover:border-amber-200 hover:shadow-sm transition"
                   >
                     <div className="p-5 flex items-start justify-between gap-4 hover:bg-gray-50/60 transition-colors rounded-t-xl">
                       <div className="flex-1 min-w-0">
@@ -689,7 +706,7 @@ const [user, setUser] = useState(null);
                             toggleAnsweredUserQuestion(uq.id);
                             if (!isOpen) registerView(uq.id);
                           }}
-                          className="text-green-700 font-semibold text-sm flex items-center gap-1 hover:text-green-800"
+                          className="text-amber-700 font-semibold text-sm flex items-center gap-1 hover:text-amber-800"
                         >
                           {isOpen ? "▲ Hide Answer" : "▼ Show Answer"}
                         </button>
@@ -718,8 +735,8 @@ const [user, setUser] = useState(null);
                                 onClick={() => handleLike(uq.id)}
                                 className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border transition ${
                                   data.liked
-                                    ? "bg-green-600 border-green-600 text-white"
-                                    : "bg-white border-gray-200 text-gray-600 hover:border-green-400 hover:text-green-700"
+                                    ? "bg-amber-500 border-amber-500 text-white"
+                                    : "bg-white border-gray-200 text-gray-600 hover:border-amber-400 hover:text-amber-700"
                                 }`}
                               >
                                 {data.liked ? "👍" : "🤍"} {data.likeCount}
@@ -771,7 +788,7 @@ const [user, setUser] = useState(null);
                                 <button
                                   onClick={() => handleLike(uq.id)}
                                   className={`flex items-center gap-1 font-medium transition ${
-                                    data.liked ? "text-green-700" : "text-gray-500 hover:text-green-700"
+                                    data.liked ? "text-amber-700" : "text-gray-500 hover:text-amber-700"
                                   }`}
                                 >
                                   {data.liked ? "👍" : "🤍"} {data.likeCount} Found Helpful
@@ -842,11 +859,11 @@ const [user, setUser] = useState(null);
                                           if (e.key === "Enter") handleCommentSubmit(uq.id);
                                         }}
                                         placeholder={user ? "Add A Comment..." : "Log In To Comment..."}
-                                        className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600"
+                                        className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
                                       />
                                       <button
                                         onClick={() => handleCommentSubmit(uq.id)}
-                                        className="bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-800 transition shrink-0"
+                                        className="bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-amber-700 transition shrink-0"
                                       >
                                         Post
                                       </button>
@@ -881,7 +898,7 @@ const [user, setUser] = useState(null);
                 <div
                   key={i}
                   id={q.id}
-                  className="bg-white border border-gray-300 rounded-xl overflow-hidden scroll-mt-24"
+                  className="bg-white border border-gray-200 rounded-xl overflow-hidden scroll-mt-24 hover:border-amber-200 hover:shadow-sm transition"
                 >
                   <div className="p-5 flex items-start justify-between gap-4 hover:bg-gray-50/60 transition-colors rounded-t-xl">
                     <div className="flex-1 min-w-0">
@@ -898,7 +915,7 @@ const [user, setUser] = useState(null);
                       <h3 className="font-bold text-gray-900 text-lg mb-2">{q.question}</h3>
                       <button
                         onClick={() => handleToggleOpen(q.id, i, isOpen)}
-                        className="text-green-700 font-semibold text-sm flex items-center gap-1 hover:text-green-800"
+                        className="text-amber-700 font-semibold text-sm flex items-center gap-1 hover:text-amber-800"
                       >
                         {isOpen ? "▲ Hide answer" : "▼ Show answer"}
                       </button>
@@ -917,8 +934,8 @@ const [user, setUser] = useState(null);
                             onClick={() => handleLike(q.id)}
                             className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border transition ${
                               data.liked
-                                ? "bg-green-600 border-green-600 text-white"
-                                : "bg-white border-gray-200 text-gray-600 hover:border-green-400 hover:text-green-700"
+                                ? "bg-amber-500 border-amber-500 text-white"
+                                : "bg-white border-gray-200 text-gray-600 hover:border-amber-400 hover:text-amber-700"
                             }`}
                           >
                             {data.liked ? "👍" : "🤍"} {data.likeCount}
@@ -963,7 +980,7 @@ const [user, setUser] = useState(null);
                             <button
                               onClick={() => handleLike(q.id)}
                               className={`flex items-center gap-1 font-medium transition ${
-                                data.liked ? "text-green-700" : "text-gray-500 hover:text-green-700"
+                                data.liked ? "text-amber-700" : "text-gray-500 hover:text-amber-700"
                               }`}
                             >
                               {data.liked ? "👍" : "🤍"} {data.likeCount} found helpful
@@ -1038,11 +1055,11 @@ const [user, setUser] = useState(null);
                                       if (e.key === "Enter") handleCommentSubmit(q.id);
                                     }}
                                     placeholder={user ? "Add a comment..." : "Log in to comment..."}
-                                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600"
+                                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
                                   />
                                   <button
                                     onClick={() => handleCommentSubmit(q.id)}
-                                    className="bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-800 transition shrink-0"
+                                    className="bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-amber-700 transition shrink-0"
                                   >
                                     Post
                                   </button>

@@ -8,6 +8,14 @@ const countries = ["NL", "UK"];
 const countryLabels = { NL: "The Netherlands", UK: "The UK" };
 const countryFlags = { NL: "🇳🇱", UK: "🇬🇧" };
 
+function getTodayDateString() {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 const emptyForm = {
   subject: "",
   country: "",
@@ -16,7 +24,7 @@ const emptyForm = {
   admission: "",
   languageRequirement: "",
   extracurriculars: "",
-  writtenBy: "",
+  datePublished: "",
 };
 
 export default function AdminCourseGuides() {
@@ -100,14 +108,14 @@ export default function AdminCourseGuides() {
       admission: guide.admission,
       languageRequirement: guide.language_requirement || "",
       extracurriculars: (guide.extracurriculars || []).join(", "),
-      writtenBy: guide.written_by || "",
+      datePublished: guide.date_published || getTodayDateString(),
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function handleCancelEdit() {
     setEditingId(null);
-    setForm(emptyForm);
+    setForm({ ...emptyForm, datePublished: getTodayDateString() });
     setSubmitError(null);
     setSuccess(false);
   }
@@ -153,7 +161,7 @@ export default function AdminCourseGuides() {
     } else {
       setWasEditing(!!editingId);
       setSuccess(true);
-      setForm(emptyForm);
+      setForm({ ...emptyForm, datePublished: getTodayDateString() });
       setEditingId(null);
       loadGuides();
     }
@@ -321,19 +329,21 @@ export default function AdminCourseGuides() {
           </div>
 
           <div className="pt-5 border-t border-gray-100">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
-              Attribution
-            </p>
-            <label className="block text-sm font-semibold text-gray-800 mb-1">
-              Written by <span className="text-gray-400 font-normal">(optional attribution)</span>
-            </label>
-            <input
-              value={form.writtenBy}
-              onChange={(e) => updateField("writtenBy", e.target.value)}
-              placeholder="e.g. Written by a 2nd-year student at..."
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600"
-            />
-          </div>
+  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+    Publishing
+  </p>
+  <label className="block text-sm font-semibold text-gray-800 mb-1">
+    Date Published
+  </label>
+  <input
+    type="date"
+    required
+    value={form.datePublished}
+    onChange={(e) => updateField("datePublished", e.target.value)}
+    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-600"
+  />
+  <p className="text-xs text-gray-400 mt-1">Defaults to today — change it only if you're backdating an older guide.</p>
+</div>
 
           {submitError && (
             <p className="text-red-600 text-sm font-medium">⚠️ {submitError}</p>
@@ -449,11 +459,11 @@ export default function AdminCourseGuides() {
                     </div>
                   )}
 
-                  {form.writtenBy.trim() && (
-                    <p className="text-xs text-gray-400 italic mt-auto pt-3 border-t border-gray-100">
-                      {form.writtenBy}
-                    </p>
-                  )}
+                  {form.datePublished && (
+  <p className="text-xs text-gray-400 italic mt-auto pt-3 border-t border-gray-100">
+    Published {new Date(form.datePublished + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+  </p>
+)}
                 </div>
               </div>
             </div>
