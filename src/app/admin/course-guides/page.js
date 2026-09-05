@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import Navbar from "@/Components/Navbar";
 import { supabase } from "@/lib/supabase";
 import { getSubjectStyle } from "@/data/mentors";
+import RepeatableFieldGroup from "@/Components/RepeatableFieldGroup";
 
 const countries = ["NL", "UK"];
 const countryLabels = { NL: "The Netherlands", UK: "The UK" };
@@ -23,8 +24,15 @@ const emptyForm = {
   popularUniversities: "",
   admission: "",
   languageRequirement: "",
-  extracurriculars: "",
   datePublished: "",
+  journeySteps: [],
+  applicationRules: [],
+  entryPaths: [],
+  pipelineStages: [],
+  specializations: [],
+  careerSteps: [],
+  glossary: [],
+  officialLinks: [],
 };
 
 export default function AdminCourseGuides() {
@@ -107,7 +115,14 @@ export default function AdminCourseGuides() {
       popularUniversities: (guide.popular_universities || []).join(", "),
       admission: guide.admission,
       languageRequirement: guide.language_requirement || "",
-      extracurriculars: (guide.extracurriculars || []).join(", "),
+      journeySteps: guide.journey_steps || [],
+      applicationRules: guide.application_rules || [],
+      entryPaths: (guide.entry_paths || []).map((p) => ({ ...p, points: Array.isArray(p.points) ? p.points.join("\n") : p.points || "" })),
+      pipelineStages: guide.pipeline_stages || [],
+      specializations: guide.specializations || [],
+      careerSteps: guide.career_steps || [],
+      glossary: guide.glossary || [],
+      officialLinks: guide.official_links || [],
       datePublished: guide.date_published || getTodayDateString(),
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -146,10 +161,14 @@ export default function AdminCourseGuides() {
           .split(",")
           .map((u) => u.trim())
           .filter(Boolean),
-        extracurriculars: form.extracurriculars
-          .split(",")
-          .map((a) => a.trim())
-          .filter(Boolean),
+        journeySteps: form.journeySteps,
+        applicationRules: form.applicationRules,
+        entryPaths: form.entryPaths.map((p) => ({ ...p, points: (p.points || "").split("\n").map((s) => s.trim()).filter(Boolean) })),
+        pipelineStages: form.pipelineStages,
+        specializations: form.specializations,
+        careerSteps: form.careerSteps,
+        glossary: form.glossary,
+        officialLinks: form.officialLinks,
       }),
     });
 
@@ -273,7 +292,7 @@ export default function AdminCourseGuides() {
 
           <div className="pt-5 border-t border-gray-100">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
-              Admission &amp; Activities
+              Admission
             </p>
             <div className="space-y-4">
               <div>
@@ -313,37 +332,131 @@ export default function AdminCourseGuides() {
                   className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600"
                 />
               </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-1">
-                  Extracurriculars <span className="text-gray-400 font-normal">(comma-separated)</span>
-                </label>
-                <input
-                  value={form.extracurriculars}
-                  onChange={(e) => updateField("extracurriculars", e.target.value)}
-                  placeholder="e.g. Debating society, Honours College"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600"
-                />
-              </div>
             </div>
           </div>
 
+          <RepeatableFieldGroup
+            title="Journey / Timeline Steps"
+            description='e.g. "Years 1–3: Bachelor of Medicine" — shown as a quick step-by-step summary at the top of the guide.'
+            items={form.journeySteps}
+            onChange={(items) => updateField("journeySteps", items)}
+            fields={[
+              { key: "title", label: "Step Title", placeholder: "e.g. Years 1–3: Bachelor of Medicine" },
+              { key: "description", label: "Description", type: "textarea", placeholder: "Learn the basics of science and human anatomy..." },
+            ]}
+            emptyItem={{ title: "", description: "" }}
+            addLabel="Add Step"
+          />
+
+          <RepeatableFieldGroup
+            title="Application Rules"
+            description='Key rules students need to know, e.g. "One Portal", "Early Deadline".'
+            items={form.applicationRules}
+            onChange={(items) => updateField("applicationRules", items)}
+            fields={[
+              { key: "title", label: "Rule Title", placeholder: "e.g. Early Deadline" },
+              { key: "description", label: "Description", type: "textarea", placeholder: "Applications close exceptionally early on..." },
+            ]}
+            emptyItem={{ title: "", description: "" }}
+            addLabel="Add Rule"
+          />
+
+          <RepeatableFieldGroup
+            title="Entry Paths"
+            description='Different ways to qualify for entry, e.g. "Entry via VWO" vs "Entry via IB".'
+            items={form.entryPaths}
+            onChange={(items) => updateField("entryPaths", items)}
+            fields={[
+              { key: "title", label: "Path Title", placeholder: "e.g. Entry via the International Baccalaureate (IB)" },
+              { key: "points", label: "Requirements (one per line)", type: "list", placeholder: "Biology, Chemistry, and Physics at HL...\nDeficiency exams via Boswell-Bèta..." },
+            ]}
+            emptyItem={{ title: "", points: "" }}
+            addLabel="Add Entry Path"
+          />
+
+          <RepeatableFieldGroup
+            title="Pipeline Stages"
+            description='The detailed academic stages, e.g. "The Bachelor Stage (Years 1–3)".'
+            items={form.pipelineStages}
+            onChange={(items) => updateField("pipelineStages", items)}
+            fields={[
+              { key: "title", label: "Stage Title", placeholder: "e.g. The Master Stage (Years 4–6)" },
+              { key: "description", label: "Description", type: "textarea", placeholder: "This is where you step out of the classroom..." },
+            ]}
+            emptyItem={{ title: "", description: "" }}
+            addLabel="Add Stage"
+          />
+
+          <RepeatableFieldGroup
+            title="Specializations Table"
+            description="The specialty/career track breakdown table."
+            items={form.specializations}
+            onChange={(items) => updateField("specializations", items)}
+            fields={[
+              { key: "category", label: "Category", placeholder: "e.g. Cluster 2: Acute & Hospital Care" },
+              { key: "examples", label: "Examples", placeholder: "e.g. General Surgery, Cardiology, Pediatrics" },
+              { key: "duration", label: "Duration", placeholder: "e.g. 5 to 6 years" },
+              { key: "competitiveness", label: "Competitiveness", placeholder: "e.g. High to Extreme" },
+            ]}
+            emptyItem={{ category: "", examples: "", duration: "", competitiveness: "" }}
+            addLabel="Add Specialization Row"
+          />
+
+          <RepeatableFieldGroup
+            title="Career Path Steps"
+            description='Post-graduation career steps, e.g. "Step 1 - The ANIOS Phase".'
+            items={form.careerSteps}
+            onChange={(items) => updateField("careerSteps", items)}
+            fields={[
+              { key: "title", label: "Step Title", placeholder: "e.g. Step 2 - The AIOS Phase (Residency)" },
+              { key: "description", label: "Description", type: "textarea", placeholder: "When your resume is strong, you apply for..." },
+            ]}
+            emptyItem={{ title: "", description: "" }}
+            addLabel="Add Career Step"
+          />
+
+          <RepeatableFieldGroup
+            title="Glossary"
+            description="Key terms and their definitions."
+            items={form.glossary}
+            onChange={(items) => updateField("glossary", items)}
+            fields={[
+              { key: "term", label: "Term", placeholder: "e.g. Numerus Fixus" },
+              { key: "definition", label: "Definition", type: "textarea", placeholder: "A cap on student spots to keep classes from getting overcrowded." },
+            ]}
+            emptyItem={{ term: "", definition: "" }}
+            addLabel="Add Term"
+          />
+
+          <RepeatableFieldGroup
+            title="Official Links"
+            description="External resources students should check out."
+            items={form.officialLinks}
+            onChange={(items) => updateField("officialLinks", items)}
+            fields={[
+              { key: "label", label: "Link Label", placeholder: "e.g. Studielink Portal" },
+              { key: "url", label: "URL", placeholder: "https://..." },
+            ]}
+            emptyItem={{ label: "", url: "" }}
+            addLabel="Add Link"
+          />
+
           <div className="pt-5 border-t border-gray-100">
-  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
-    Publishing
-  </p>
-  <label className="block text-sm font-semibold text-gray-800 mb-1">
-    Date Published
-  </label>
-  <input
-    type="date"
-    required
-    value={form.datePublished}
-    onChange={(e) => updateField("datePublished", e.target.value)}
-    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-600"
-  />
-  <p className="text-xs text-gray-400 mt-1">Defaults to today — change it only if you're backdating an older guide.</p>
-</div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+              Publishing
+            </p>
+            <label className="block text-sm font-semibold text-gray-800 mb-1">
+              Date Published
+            </label>
+            <input
+              type="date"
+              required
+              value={form.datePublished}
+              onChange={(e) => updateField("datePublished", e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-600"
+            />
+            <p className="text-xs text-gray-400 mt-1">Defaults to today — change it only if you're backdating an older guide.</p>
+          </div>
 
           {submitError && (
             <p className="text-red-600 text-sm font-medium">⚠️ {submitError}</p>
@@ -393,30 +506,38 @@ export default function AdminCourseGuides() {
                 </div>
 
                 <div className="p-6 flex flex-col flex-1">
-                  <p className="text-sm text-gray-600 mb-4">
+                  <p className="text-sm text-gray-600 mb-4 line-clamp-3 whitespace-pre-line">
                     {form.description || "Description will appear here..."}
                   </p>
 
-                  {form.popularUniversities.trim() && (
-                    <div className="mb-4 pb-4 border-b border-gray-100">
-                      <div className="flex items-center gap-1.5 mb-1.5">
-                        <span className="text-xs">🏛️</span>
-                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                          Popular universities
-                        </p>
+                  {form.popularUniversities.trim() && (() => {
+                    const unis = form.popularUniversities.split(",").map((u) => u.trim()).filter(Boolean);
+                    return (
+                      <div className="mb-4 pb-4 border-b border-gray-100">
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                          <span className="text-xs">🏛️</span>
+                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                            Popular universities
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {unis.slice(0, 3).map((uni) => (
+                            <span
+                              key={uni}
+                              className="text-xs font-semibold px-2.5 py-1 rounded-full bg-orange-100 text-orange-800"
+                            >
+                              {uni}
+                            </span>
+                          ))}
+                          {unis.length > 3 && (
+                            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-500">
+                              +{unis.length - 3} more
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {form.popularUniversities.split(",").map((u) => u.trim()).filter(Boolean).map((uni) => (
-                          <span
-                            key={uni}
-                            className="text-xs font-semibold px-2.5 py-1 rounded-full bg-orange-100 text-orange-800"
-                          >
-                            {uni}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                    );
+                  })()}
 
                   <div className="mb-4 pb-4 border-b border-gray-100">
                     <div className="flex items-center gap-1.5 mb-1.5">
@@ -425,29 +546,10 @@ export default function AdminCourseGuides() {
                         Admission requirements
                       </p>
                     </div>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-600 line-clamp-2 whitespace-pre-line">
                       {form.admission || "Admission details will appear here..."}
                     </p>
                   </div>
-
-                  {form.extracurriculars.trim() && (
-                    <div className="mb-4">
-                      <div className="flex items-center gap-1.5 mb-1.5">
-                        <span className="text-xs">🎯</span>
-                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                          Extracurriculars
-                        </p>
-                      </div>
-                      <ul className="text-sm text-gray-600 space-y-1">
-                        {form.extracurriculars.split(",").map((a) => a.trim()).filter(Boolean).map((activity) => (
-                          <li key={activity} className="flex items-start gap-2">
-                            <span className="text-green-600 mt-0.5">•</span>
-                            <span>{activity}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
 
                   {form.languageRequirement.trim() && (
                     <div className="mb-4">
@@ -460,10 +562,10 @@ export default function AdminCourseGuides() {
                   )}
 
                   {form.datePublished && (
-  <p className="text-xs text-gray-400 italic mt-auto pt-3 border-t border-gray-100">
-    Published {new Date(form.datePublished + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
-  </p>
-)}
+                    <p className="text-xs text-gray-400 italic mt-auto pt-3 border-t border-gray-100">
+                      Published {new Date(form.datePublished + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

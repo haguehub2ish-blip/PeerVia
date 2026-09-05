@@ -442,7 +442,7 @@ export default function Home() {
 
       {/* Stats */}
       <section className="bg-white pt-6 pb-6">
-  <div className="max-w-5xl mx-auto px-6 py-5 rounded-2xl bg-highlight grid grid-cols-2 md:grid-cols-6 gap-4 text-center">
+  <div className="max-w-5xl mx-auto px-6 py-5 rounded-2xl grid grid-cols-2 md:grid-cols-6 gap-4 text-center">
           {mentorsLoading
             ? [...Array(6)].map((_, i) => (
                 <div key={i} className="animate-pulse">
@@ -453,32 +453,32 @@ export default function Home() {
             : (
               <>
                 <div>
-                  <p className="text-4xl font-extrabold text-green-800">{verifiedMentorsCount}</p>
+                  <p className="text-4xl font-extrabold text-highlight">{verifiedMentorsCount}</p>
                   <p className="text-ink text-sm mt-0.5">Verified Mentors</p>
                 </div>
 
                 <div>
-                  <p className="text-4xl font-extrabold text-green-800">{questionsAnsweredCount}</p>
+                  <p className="text-4xl font-extrabold text-highlight">{questionsAnsweredCount}</p>
                   <p className="text-ink text-sm mt-0.5"> Student Questions Answered</p>
                 </div>
 
                 <div>
-                  <p className="text-4xl font-extrabold text-green-800">{careerPathsCount}</p>
+                  <p className="text-4xl font-extrabold text-highlight">{careerPathsCount}</p>
                   <p className="text-ink text-sm mt-0.5">Career Paths</p>
                 </div>
 
                 <div>
-                  <p className="text-4xl font-extrabold text-green-800">{avgRating}★</p>
+                  <p className="text-4xl font-extrabold text-highlight">{avgRating}★</p>
                   <p className="text-ink text-sm mt-0.5">Average Session Rating</p>
                 </div>
 
                 <div>
-                  <p className="text-4xl font-extrabold text-green-800">{languagesCount}</p>
+                  <p className="text-4xl font-extrabold text-highlight">{languagesCount}</p>
                   <p className="text-ink text-sm mt-0.5">Languages Spoken</p>
                 </div>
 
                 <div>
-                  <p className="text-4xl font-extrabold text-green-800">{schoolsCount}</p>
+                  <p className="text-4xl font-extrabold text-highlight">{schoolsCount}</p>
                   <p className="text-ink text-sm mt-0.5">Universities Represented</p>
                 </div>
               </>
@@ -487,12 +487,12 @@ export default function Home() {
       </section>
 
       {/* How it works */}
-      <section className="bg-orange-50 pt-10 pb-10">
+      <section className="bg-cream pt-10 pb-10">
         <div className="max-w-5xl mx-auto px-6">
           <h3 className="text-2xl font-bold text-gray-900 text-center mb-2">
             How it Works
           </h3>
-          <p className="text-gray-600 text-center mb-10">
+          <p className="text-ink text-center mb-10">
            Three simple steps to connect with verified university students for honest, first-hand advice about courses, universities, applications and student life.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -535,7 +535,7 @@ export default function Home() {
           <h3 className="text-2xl font-bold text-gray-900 text-center mb-2">
             Why Students Use PeerVia
           </h3>
-          <p className="text-gray-600 text-center mb-10">
+          <p className="text-ink text-center mb-10">
             No brochures, no sales pitches — just a tool built by students, for students.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
@@ -589,7 +589,7 @@ export default function Home() {
       </section>
 
       {/* Featured Mentors */}
-      <section className="bg-orange-50 px-6 pt-6 pb-10">
+      <section className="bg-cream px-6 pt-6 pb-10">
         <div className="max-w-6xl mx-auto">
           <h3 className="text-xl font-semibold text-gray-900 mb-6">
             Featured Mentors
@@ -684,10 +684,10 @@ export default function Home() {
       </section>
 
       {/* Community */}
-      <section className="bg-orange-50 pt-8 pb-16">
+      <section className="bg-cream pt-8 pb-16">
         <div className="max-w-6xl mx-auto px-6">
           <h3 className="text-2xl font-bold text-gray-900 mb-8">
-            What high schoolers are actually asking
+            What High Schoolers are Actually Asking
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {topQuestions.map((qa, i) => (

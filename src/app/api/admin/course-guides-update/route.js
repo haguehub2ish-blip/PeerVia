@@ -33,20 +33,27 @@ export async function POST(request) {
   }
 
   const { error: updateError } = await supabaseAdmin
-    .from("course_guides")
-    .update({
-      subject: guide.subject,
-      country: guide.country,
-      country_label: guide.countryLabel || countryLabels[guide.country] || guide.country,
-      flag: guide.flag || countryFlags[guide.country] || "🌍",
-      description: guide.description,
-      popular_universities: guide.popularUniversities || [],
-      admission: guide.admission,
-      language_requirement: guide.languageRequirement || null,
-      extracurriculars: guide.extracurriculars || [],
-      date_published: guide.datePublished || null,
-    })
-    .eq("id", guide.id);
+  .from("course_guides")
+  .update({
+    subject: guide.subject,
+    country: guide.country,
+    country_label: guide.countryLabel || countryLabels[guide.country] || guide.country,
+    flag: guide.flag || countryFlags[guide.country] || "🌍",
+    description: guide.description,
+    popular_universities: guide.popularUniversities || [],
+    admission: guide.admission,
+    language_requirement: guide.languageRequirement || null,
+    date_published: guide.datePublished || null,
+    journey_steps: guide.journeySteps || [],
+    application_rules: guide.applicationRules || [],
+    entry_paths: guide.entryPaths || [],
+    pipeline_stages: guide.pipelineStages || [],
+    specializations: guide.specializations || [],
+    career_steps: guide.careerSteps || [],
+    glossary: guide.glossary || [],
+    official_links: guide.officialLinks || [],
+  })
+  .eq("id", guide.id);
 
   if (updateError) {
     return Response.json({ error: updateError.message }, { status: 500 });

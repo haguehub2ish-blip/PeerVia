@@ -84,7 +84,7 @@ function CourseGuidesContent() {
   });
 
   return (
-    <div className="min-h-screen bg-[#FFF9F2]">
+    <div className="min-h-screen bg-cream">
       <Navbar />
 
       <div className="max-w-6xl mx-auto px-6 py-10">
@@ -166,29 +166,33 @@ function CourseGuidesContent() {
               </div>
 
               <div className="p-6 flex flex-col flex-1">
-                <p className="text-sm text-gray-600 mb-4">{guide.description}</p>
+                <p className="text-sm text-gray-600 mb-4 line-clamp-3 whitespace-pre-line">{guide.description}</p>
 
-                {guide.popularUniversities?.length > 0 && (
-                  <div className="mb-4 pb-4 border-b border-gray-100">
-                    <div className="flex items-center gap-1.5 mb-1.5">
-                      <span className="text-xs">🏛️</span>
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                        Popular universities
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {guide.popularUniversities.map((uni) => (
-                        <span
-                          key={uni}
-                          className="text-xs font-semibold px-2.5 py-1 rounded-full bg-orange-100 text-orange-800"
-                        >
-                          {uni}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-          
+              {guide.popularUniversities?.length > 0 && (
+  <div className="mb-4 pb-4 border-b border-gray-100">
+    <div className="flex items-center gap-1.5 mb-1.5">
+      <span className="text-xs">🏛️</span>
+      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+        Popular universities
+      </p>
+    </div>
+    <div className="flex flex-wrap gap-1.5">
+      {guide.popularUniversities.slice(0, 3).map((uni) => (
+        <span
+          key={uni}
+          className="text-xs font-semibold px-2.5 py-1 rounded-full bg-orange-100 text-orange-800"
+        >
+          {uni}
+        </span>
+      ))}
+      {guide.popularUniversities.length > 3 && (
+        <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-500">
+          +{guide.popularUniversities.length - 3} more
+        </span>
+      )}
+    </div>
+  </div>
+)}
    
                 <div className="mb-4 pb-4 border-b border-gray-100">
                   <div className="flex items-center gap-1.5 mb-1.5">
@@ -197,7 +201,7 @@ function CourseGuidesContent() {
                       Admission requirements
                     </p>
                   </div>
-                  <p className="text-sm text-gray-600">{guide.admission}</p>
+                  <p className="text-sm text-gray-600 line-clamp-2 whitespace-pre-line">{guide.admission}</p>
                 </div>
 
                 <div className="mb-4">

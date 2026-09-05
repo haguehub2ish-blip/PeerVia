@@ -118,7 +118,7 @@ const sortedMentors = [...filteredMentors].sort((a, b) => {
   });
 
   return (
-    <div className="min-h-screen bg-[#FFF9F2]">
+    <div className="min-h-screen bg-cream">
       <Navbar />
 
       <div className="max-w-6xl mx-auto px-6 py-10">

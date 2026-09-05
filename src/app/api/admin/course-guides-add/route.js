@@ -5,7 +5,10 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-export async function GET(request) {
+const countryLabels = { NL: "The Netherlands", UK: "the UK" };
+const countryFlags = { NL: "🇳🇱", UK: "🇬🇧" };
+
+export async function POST(request) {
   const authHeader = request.headers.get("authorization");
   const token = authHeader?.replace("Bearer ", "");
 
@@ -23,14 +26,35 @@ export async function GET(request) {
     return Response.json({ error: "Not authorized" }, { status: 403 });
   }
 
-  const { data, error } = await supabaseAdmin
-    .from("course_guides")
-    .select("*")
-    .order("created_at", { ascending: false });
+  const guide = await request.json();
 
-  if (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+  if (!guide.subject || !guide.country || !guide.description || !guide.admission) {
+    return Response.json({ error: "Missing required fields" }, { status: 400 });
   }
 
-  return Response.json({ data });
+  const { error: insertError } = await supabaseAdmin.from("course_guides").insert({
+    subject: guide.subject,
+    country: guide.country,
+    country_label: guide.countryLabel || countryLabels[guide.country] || guide.country,
+    flag: guide.flag || countryFlags[guide.country] || "🌍",
+    description: guide.description,
+    popular_universities: guide.popularUniversities || [],
+    admission: guide.admission,
+    language_requirement: guide.languageRequirement || null,
+    date_published: guide.datePublished || null,
+    journey_steps: guide.journeySteps || [],
+    application_rules: guide.applicationRules || [],
+    entry_paths: guide.entryPaths || [],
+    pipeline_stages: guide.pipelineStages || [],
+    specializations: guide.specializations || [],
+    career_steps: guide.careerSteps || [],
+    glossary: guide.glossary || [],
+    official_links: guide.officialLinks || [],
+  });
+
+  if (insertError) {
+    return Response.json({ error: insertError.message }, { status: 500 });
+  }
+
+  return Response.json({ success: true });
 }
