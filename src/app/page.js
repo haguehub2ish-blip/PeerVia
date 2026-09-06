@@ -500,7 +500,7 @@ export default function Home() {
               <div className="w-14 h-14 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-2xl font-bold mb-4">
                 🔍
               </div>
-              <h4 className="font-bold text-gray-900 text-lg mb-2">1. Find the right Mentor</h4>
+              <h4 className="font-bold text-gray-900 text-lg mb-2">1. Find the Right Mentor</h4>
               <p className="text-gray-600 text-sm">
                 Browse verified mentors by course, university, country, or language to find someone whose journey matches yours.
               </p>

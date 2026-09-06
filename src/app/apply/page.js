@@ -27,6 +27,8 @@ export default function Apply() {
     country: "",
     why: "",
     support_guidance: "",
+    extracurriculars: "",
+    final_grade: "",
     linkedin: "",
   });
   const [selectedLanguages, setSelectedLanguages] = useState(["English"]);
@@ -389,6 +391,33 @@ export default function Apply() {
                 onChange={(e) => updateField("support_guidance", e.target.value)}
                 placeholder="What topics, questions, or experiences could you help a student with?"
                 className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600 resize-y"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-800 mb-1">
+                Extracurriculars
+              </label>
+              <textarea
+                required
+                rows={2}
+                value={form.extracurriculars}
+                onChange={(e) => updateField("extracurriculars", e.target.value)}
+                placeholder="Clubs, sports, volunteering, leadership roles, or other activities you were involved in."
+                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600 resize-y"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-800 mb-1">
+                Final High School Grade
+              </label>
+              <input
+                required
+                value={form.final_grade}
+                onChange={(e) => updateField("final_grade", e.target.value)}
+                placeholder="e.g. A-Level: AAB, IB: 38, VWO: 7.8 Average"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600"
               />
             </div>
 
