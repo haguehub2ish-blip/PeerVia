@@ -36,6 +36,8 @@ const emptyForm = {
 };
 
 export default function AdminCourseGuides() {
+  const [pdfParsing, setPdfParsing] = useState(false);
+const [pdfParseError, setPdfParseError] = useState(null);
   const [guides, setGuides] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -45,6 +47,56 @@ export default function AdminCourseGuides() {
   const [success, setSuccess] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [wasEditing, setWasEditing] = useState(false);
+
+  async function handlePdfUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  if (form.subject || form.description) {
+    const confirmed = window.confirm(
+      "This will replace the current form content with what's extracted from the PDF. Continue?"
+    );
+    if (!confirmed) {
+      e.target.value = "";
+      return;
+    }
+  }
+
+  setPdfParsing(true);
+  setPdfParseError(null);
+
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData?.session?.access_token;
+
+  const uploadData = new FormData();
+  uploadData.append("file", file);
+
+  try {
+    const res = await fetch("/api/admin/parse-course-guide-pdf", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: uploadData,
+    });
+
+    const result = await res.json();
+
+    if (result.error) {
+      setPdfParseError(result.error);
+    } else {
+      const parsed = result.data;
+      setForm({
+        ...emptyForm,
+        ...parsed,
+        datePublished: getTodayDateString(),
+      });
+    }
+  } catch (err) {
+    setPdfParseError("Failed to parse PDF: " + err.message);
+  }
+
+  setPdfParsing(false);
+  e.target.value = "";
+}
 
   async function loadGuides() {
     setLoading(true);
@@ -232,6 +284,32 @@ export default function AdminCourseGuides() {
             </button>
           </div>
         )}
+
+        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 mb-6">
+  <div className="flex items-center gap-2 mb-2">
+    <span className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center text-sm shrink-0">
+      ✨
+    </span>
+    <h2 className="text-base font-bold text-gray-900">Auto-fill from a PDF</h2>
+  </div>
+  <p className="text-sm text-gray-600 mb-3">
+    Upload a course/career guide PDF and AI will fill out the form below for you — review and edit before saving.
+  </p>
+  <label className="inline-flex items-center gap-2 bg-indigo-50 text-indigo-700 border border-indigo-200 px-4 py-2 rounded-lg text-sm font-semibold cursor-pointer hover:bg-indigo-100 transition">
+    {pdfParsing ? "Reading PDF..." : "📄 Choose PDF"}
+    <input
+      type="file"
+      accept="application/pdf"
+      onChange={handlePdfUpload}
+      disabled={pdfParsing}
+      className="hidden"
+    />
+  </label>
+  {pdfParseError && (
+    <p className="text-red-600 text-sm font-medium mt-3">⚠️ {pdfParseError}</p>
+  )}
+</div>
+
         <form
           onSubmit={handleSubmit}
           className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden mb-10"
