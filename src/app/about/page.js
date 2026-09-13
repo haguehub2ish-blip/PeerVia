@@ -40,7 +40,7 @@ export default function About() {
   const [solutionExpanded, setSolutionExpanded] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#FFF9F2]">
+    <div className="min-h-screen bg-cream">
       <Navbar />
 
       {/* Hero */}
@@ -48,12 +48,12 @@ export default function About() {
         <p className="text-xs font-semibold text-green-700 uppercase tracking-widest mb-4">
           About Us
         </p>
-        <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-5 leading-tight max-w-xl mx-auto">
+        <h1 className="text-3xl md:text-4xl font-extrabold text-primary mb-5 leading-tight max-w-xl mx-auto">
           We know how overwhelming the future can feel.
         </h1>
-        <p className="text-lg text-gray-600 leading-relaxed max-w-xl mx-auto">
+        <p className="text-lg text-ink leading-relaxed max-w-xl mx-auto">
           At some point, every student asks themselves the same question:{" "}
-          <span className="italic text-gray-900">"What do I want to do in the future?"</span>
+          <span className="italic text-gray-600">"What do I want to do in the future?"</span>
         </p>
       </section>
 

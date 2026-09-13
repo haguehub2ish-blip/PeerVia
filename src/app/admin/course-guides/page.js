@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Navbar from "@/Components/Navbar";
 import { supabase } from "@/lib/supabase";
 import { getSubjectStyle } from "@/data/mentors";
@@ -38,6 +38,9 @@ const emptyForm = {
 export default function AdminCourseGuides() {
   const [pdfParsing, setPdfParsing] = useState(false);
 const [pdfParseError, setPdfParseError] = useState(null);
+const [pdfProgress, setPdfProgress] = useState(0);
+const [pdfTimeLeft, setPdfTimeLeft] = useState(null);
+const pdfProgressIntervalRef = useRef(null);
   const [guides, setGuides] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -64,6 +67,23 @@ const [pdfParseError, setPdfParseError] = useState(null);
 
   setPdfParsing(true);
   setPdfParseError(null);
+  setPdfProgress(0);
+
+  // The parse endpoint is a single non-streaming AI call, so we don't get real
+  // byte-level progress from the server. Instead, estimate a total duration from
+  // the file size and animate toward it, easing off so the bar never claims 100%
+  // before the response actually arrives.
+  const fileSizeMB = file.size / (1024 * 1024);
+  const estimatedMs = Math.min(45000, Math.max(9000, 9000 + fileSizeMB * 4500));
+  const startTime = Date.now();
+  setPdfTimeLeft(Math.round(estimatedMs / 1000));
+
+  pdfProgressIntervalRef.current = setInterval(() => {
+    const elapsed = Date.now() - startTime;
+    const eased = 92 * (1 - Math.exp(-elapsed / (estimatedMs * 0.6)));
+    setPdfProgress(eased);
+    setPdfTimeLeft(Math.max(1, Math.ceil((estimatedMs - elapsed) / 1000)));
+  }, 200);
 
   const { data: sessionData } = await supabase.auth.getSession();
   const token = sessionData?.session?.access_token;
@@ -80,6 +100,10 @@ const [pdfParseError, setPdfParseError] = useState(null);
 
     const result = await res.json();
 
+    clearInterval(pdfProgressIntervalRef.current);
+    setPdfProgress(100);
+    setPdfTimeLeft(0);
+
     if (result.error) {
       setPdfParseError(result.error);
     } else {
@@ -91,12 +115,25 @@ const [pdfParseError, setPdfParseError] = useState(null);
       });
     }
   } catch (err) {
+    clearInterval(pdfProgressIntervalRef.current);
     setPdfParseError("Failed to parse PDF: " + err.message);
   }
 
-  setPdfParsing(false);
+  // Briefly hold at 100% so the bar doesn't vanish mid-jump.
+  setTimeout(() => {
+    setPdfParsing(false);
+    setPdfProgress(0);
+    setPdfTimeLeft(null);
+  }, 400);
+
   e.target.value = "";
 }
+
+useEffect(() => {
+  return () => {
+    if (pdfProgressIntervalRef.current) clearInterval(pdfProgressIntervalRef.current);
+  };
+}, []);
 
   async function loadGuides() {
     setLoading(true);
@@ -305,6 +342,27 @@ const [pdfParseError, setPdfParseError] = useState(null);
       className="hidden"
     />
   </label>
+  {pdfParsing && (
+    <div className="mt-3">
+      <div className="flex items-center justify-between text-xs text-gray-500 mb-1.5">
+        <span>Analyzing PDF with AI…</span>
+        <span>
+          {pdfProgress >= 100
+            ? "Done!"
+            : pdfTimeLeft
+            ? `~${pdfTimeLeft}s left`
+            : "Starting…"}
+        </span>
+      </div>
+      <div className="w-full bg-indigo-100 rounded-full h-2 overflow-hidden">
+        <div
+          className="h-2 bg-indigo-600 rounded-full transition-[width] duration-200 ease-out"
+          style={{ width: `${pdfProgress}%` }}
+        />
+      </div>
+      <p className="text-right text-xs text-gray-400 mt-1">{Math.round(pdfProgress)}%</p>
+    </div>
+  )}
   {pdfParseError && (
     <p className="text-red-600 text-sm font-medium mt-3">⚠️ {pdfParseError}</p>
   )}

@@ -106,7 +106,7 @@ export default function Apply() {
 
   if (checkingStatus) {
     return (
-      <div className="min-h-screen bg-[#FFF9F2]">
+      <div className="min-h-screen bg-cream">
         <Navbar />
         <div className="max-w-2xl mx-auto px-6 py-24 text-center text-gray-500">
           Checking Your Application Status...
@@ -117,7 +117,7 @@ export default function Apply() {
 
   if (existingApplication?.status === "pending") {
     return (
-      <div className="min-h-screen bg-[#FFF9F2]">
+      <div className="min-h-screen bg-cream">
         <Navbar />
         <div className="max-w-2xl mx-auto px-6 py-24 text-center">
           <div className="text-5xl mb-4">⏳</div>
@@ -134,7 +134,7 @@ export default function Apply() {
 
   if (existingApplication?.status === "rejected") {
     return (
-      <div className="min-h-screen bg-[#FFF9F2]">
+      <div className="min-h-screen bg-cream">
         <Navbar />
         <div className="max-w-2xl mx-auto px-6 py-24 text-center">
           <div className="text-5xl mb-4">✉️</div>
@@ -158,7 +158,7 @@ export default function Apply() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-[#FFF9F2]">
+      <div className="min-h-screen bg-cream">
         <Navbar />
         <div className="max-w-2xl mx-auto px-6 py-24 text-center">
           <div className="text-5xl mb-4">✅</div>
@@ -174,15 +174,15 @@ export default function Apply() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FFF9F2]">
+    <div className="min-h-screen bg-cream">
       <Navbar />
       <div className="max-w-6xl mx-auto px-6 py-16 grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Form */}
         <div className="lg:col-span-2">
-          <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-2">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-primary mb-2">
             Apply to be a PeerVia Mentor
           </h1>
-          <p className="text-gray-600 mb-8">
+          <p className="text-ink mb-8">
             It takes just 5 minutes of your time. We review every application and aim to get back within 48 hours.
           </p>
 

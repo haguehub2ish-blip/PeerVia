@@ -122,10 +122,10 @@ const sortedMentors = [...filteredMentors].sort((a, b) => {
       <Navbar />
 
       <div className="max-w-6xl mx-auto px-6 py-10">
-        <h1 className="text-3xl font-extrabold text-gray-900 mb-2">
+        <h1 className="text-3xl font-extrabold text-primary mb-2">
           Verified Mentors
         </h1>
-        <p className="text-gray-600 mb-6">
+        <p className="text-ink mb-6">
           University students at top Dutch and UK institutions. Every mentor is reviewed before joining.
         </p>
 

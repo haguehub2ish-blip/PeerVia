@@ -88,9 +88,9 @@ function CourseGuidesContent() {
       <Navbar />
 
       <div className="max-w-6xl mx-auto px-6 py-10">
-        <h1 className="text-3xl font-extrabold text-gray-900 mb-2">Course Guides</h1>
-        <p className="text-gray-600 mb-6">
-          Everything you need to know about different fields of study — how the course works, study pathways, entry requirements, and what to expect along the way.
+        <h1 className="text-3xl font-extrabold text-primary mb-2">Course Guides</h1>
+        <p className="text-ink mb-6">
+          Everything you need to know about different fields of study. How the course works, study pathways, entry requirements, and what to expect along the way.
         </p>
 
         {/* Country filter */}
