@@ -54,7 +54,8 @@ export async function POST(request) {
 
   try {
     await resend.emails.send({
-      from: "PeerVia <onboarding@resend.dev>", // swap to your own domain once verified
+     from: "PeerVia <info@peervia.com>",
+replyTo: "info.peervia@gmail.com",
       to: [mentorUser.user.email], // change once domain to peervia 1
       replyTo: email,
       subject: `New call request from ${email}`,
