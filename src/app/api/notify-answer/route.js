@@ -47,7 +47,7 @@ export async function POST(request) {
     if (!askerError && askerData?.user?.email && notifyOwnQuestions) {
       try {
         await resend.emails.send({
-          from: "PeerVia <info@peervia.com>",
+          from: "PeerVia <info@peervia.org>",
 replyTo: "info.peervia@gmail.com",
           to: askerData.user.email,
           subject: "A Mentor Answered Your Question On PeerVia",
@@ -77,7 +77,7 @@ replyTo: "info.peervia@gmail.com",
     if (notifiedEmails.has(u.email?.toLowerCase())) continue; // don't double-email the asker
     try {
       await resend.emails.send({
-        from: "PeerVia <info@peervia.com>",
+        from: "PeerVia <info@peervia.org>",
 replyTo: "info.peervia@gmail.com",
         to: u.email,
         subject: `A Mentor Just Answered A ${subject} Question On PeerVia`,
