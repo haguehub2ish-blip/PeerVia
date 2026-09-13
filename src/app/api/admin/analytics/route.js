@@ -104,11 +104,11 @@ export async function GET(request) {
 
     const { data: allViews, error: allViewsError } = await supabaseAdmin
       .from("page_views")
-      .select("path, user_id, created_at");
+      .select("path, user_id, visitor_id, created_at");
     if (allViewsError) throw allViewsError;
 
     const uniqueVisitorIds = new Set(
-      allViews.filter((v) => v.user_id).map((v) => v.user_id)
+      allViews.map((v) => v.user_id || v.visitor_id).filter(Boolean)
     );
 
     const viewsByDay = {};

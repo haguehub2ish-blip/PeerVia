@@ -161,9 +161,9 @@ export default function AdminAnalytics() {
                 value={data.totalPageViews}
                 color="bg-cyan-100 text-cyan-700"
               />
-              <StatCard
+                            <StatCard
                 icon="🧑"
-                label="Unique Logged-In Visitors"
+                label="Unique Visitors"
                 value={data.uniqueVisitorCount}
                 color="bg-teal-100 text-teal-700"
               />
