@@ -152,7 +152,34 @@ export default function AdminAnalytics() {
                 color="bg-red-100 text-red-700"
               />
             </div>
+            {/* Website traffic */}
+            <SectionLabel>Website Traffic</SectionLabel>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-10">
+              <StatCard
+                icon="👁️"
+                label="Total Page Views"
+                value={data.totalPageViews}
+                color="bg-cyan-100 text-cyan-700"
+              />
+              <StatCard
+                icon="🧑"
+                label="Unique Logged-In Visitors"
+                value={data.uniqueVisitorCount}
+                color="bg-teal-100 text-teal-700"
+              />
+            </div>
 
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 mb-10">
+              <h2 className="text-lg font-bold text-gray-900 mb-4">Top Pages</h2>
+              <div className="space-y-2">
+                {data.topPages.map((page) => (
+                  <div key={page.path} className="flex items-center justify-between text-sm">
+                    <span className="text-gray-700 font-medium truncate">{page.path || "/"}</span>
+                    <span className="text-gray-500 shrink-0 ml-3">{page.count} Views</span>
+                  </div>
+                ))}
+              </div>
+            </div>
             {/* Signups chart */}
             <SectionLabel>Growth</SectionLabel>
             <div className="bg-white border border-gray-200 rounded-2xl p-6">

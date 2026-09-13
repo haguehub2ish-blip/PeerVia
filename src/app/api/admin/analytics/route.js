@@ -96,6 +96,44 @@ export async function GET(request) {
       .select("*", { count: "exact", head: true });
     if (cError) throw cError;
 
+    // Website traffic
+    const { count: totalPageViews, error: pvError } = await supabaseAdmin
+      .from("page_views")
+      .select("*", { count: "exact", head: true });
+    if (pvError) throw pvError;
+
+    const { data: allViews, error: allViewsError } = await supabaseAdmin
+      .from("page_views")
+      .select("path, user_id, created_at");
+    if (allViewsError) throw allViewsError;
+
+    const uniqueVisitorIds = new Set(
+      allViews.filter((v) => v.user_id).map((v) => v.user_id)
+    );
+
+    const viewsByDay = {};
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(sevenDaysAgo);
+      d.setDate(sevenDaysAgo.getDate() + i);
+      const key = d.toISOString().split("T")[0];
+      viewsByDay[key] = 0;
+    }
+    allViews.forEach((v) => {
+      const created = v.created_at?.split("T")[0];
+      if (created && viewsByDay[created] !== undefined) {
+        viewsByDay[created]++;
+      }
+    });
+
+    const pageCounts = {};
+    allViews.forEach((v) => {
+      pageCounts[v.path] = (pageCounts[v.path] || 0) + 1;
+    });
+    const topPages = Object.entries(pageCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([path, count]) => ({ path, count }));
+
     return Response.json({
       totalUsers,
       totalMentorUsers,
@@ -106,6 +144,10 @@ export async function GET(request) {
       likeCount,
       commentCount,
       signupsByDay,
+      totalPageViews,
+      uniqueVisitorCount: uniqueVisitorIds.size,
+      viewsByDay,
+      topPages,
     });
   } catch (err) {
     return Response.json({ error: err.message }, { status: 500 });
