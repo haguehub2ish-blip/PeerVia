@@ -119,7 +119,7 @@ export default function Navbar() {
         <div className="hidden lg:flex items-center gap-4 text-sm shrink-0">
           {user ? (
             <>
-              {user.email === "leotweeling@gmail.com" && (
+              {["leotweeling@gmail.com", "info.peervia@gmail.com"].includes(user.email) && (
                 <a href="/admin" className="text-gray-600 font-semibold hover:text-gray-900 whitespace-nowrap">
                   Admin
                 </a>
@@ -182,7 +182,7 @@ export default function Navbar() {
 
           {user ? (
             <>
-              {user.email === "leotweeling@gmail.com" && (
+              {["leotweeling@gmail.com", "info.peervia@gmail.com"].includes(user.email) && (
                 <a href="/admin" className={mobileLinkClass("/admin")}>
                   Admin
                 </a>
