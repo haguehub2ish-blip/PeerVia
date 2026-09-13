@@ -101,6 +101,20 @@ export default function Apply() {
       setError(error.message);
     } else {
       setSubmitted(true);
+
+      // Notify admin — don't block the UI on this
+      fetch("/api/notify-new-application", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firstName: form.first_name,
+          lastName: form.last_name,
+          email: form.email,
+          university: form.university,
+          field: form.field,
+          country: form.country,
+        }),
+      }).catch((err) => console.error("Admin notification error:", err));
     }
   }
 
