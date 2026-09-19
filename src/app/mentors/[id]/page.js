@@ -203,9 +203,17 @@ async function handleSubmitBooking(e) {
           <div className="p-8">
           {/* Header */}
           <div className="flex items-start gap-5 mb-6">
-            <div className="w-20 h-20 rounded-full bg-green-800 text-white flex items-center justify-center font-bold text-2xl shrink-0 ring-4 ring-green-50">
-              {mentor.initials}
-            </div>
+            {mentor.photo_url ? (
+              <img
+                src={mentor.photo_url}
+                alt={mentor.name}
+                className="w-20 h-20 rounded-full object-cover shrink-0 ring-4 ring-green-50"
+              />
+            ) : (
+              <div className="w-20 h-20 rounded-full bg-green-800 text-white flex items-center justify-center font-bold text-2xl shrink-0 ring-4 ring-green-50">
+                {mentor.initials}
+              </div>
+            )}
             <div>
               <h1 className="text-2xl font-extrabold text-gray-900">{mentor.name}</h1>
               <p className="text-gray-500">

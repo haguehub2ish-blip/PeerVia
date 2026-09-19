@@ -93,11 +93,24 @@ export default function AdminApplications() {
                 className="bg-white border border-gray-200 rounded-2xl p-6"
               >
                 <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <h3 className="font-bold text-gray-900 text-lg">
-                      {app.first_name} {app.last_name}
-                    </h3>
-                    <p className="text-gray-500 text-sm">{app.email}</p>
+                  <div className="flex items-center gap-3">
+                    {app.photo_url ? (
+                      <img
+                        src={app.photo_url}
+                        alt={app.first_name}
+                        className="w-12 h-12 rounded-full object-cover border border-gray-200"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-400 text-xs">
+                        No Photo
+                      </div>
+                    )}
+                    <div>
+                      <h3 className="font-bold text-gray-900 text-lg">
+                        {app.first_name} {app.last_name}
+                      </h3>
+                      <p className="text-gray-500 text-sm">{app.email}</p>
+                    </div>
                   </div>
                   <span
                     className={`text-xs font-semibold px-3 py-1 rounded-full ${statusStyles[app.status] || "bg-gray-100 text-gray-700"}`}

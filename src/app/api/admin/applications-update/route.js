@@ -105,11 +105,12 @@ export async function POST(request) {
       ? application.languages.split(",")
       : ["English"];
 
-    const { error: insertError } = await supabaseAdmin.from("mentorss").insert([
+     const { error: insertError } = await supabaseAdmin.from("mentorss").insert([
       {
         user_id: newUserId,
         name: fullName,
         initials,
+        photo_url: application.photo_url || null,
         school: application.university,
         year: application.year,
         verified: true,

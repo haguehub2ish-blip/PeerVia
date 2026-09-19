@@ -27,6 +27,10 @@ export default function MentorDashboard() {
   const [country, setCountry] = useState("");
   const [languages, setLanguages] = useState([]);
 
+    const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
+  const [photoUploading, setPhotoUploading] = useState(false);
+
   const [unansweredQuestions, setUnansweredQuestions] = useState([]);
   const [answerDrafts, setAnswerDrafts] = useState({});
   const [submittingId, setSubmittingId] = useState(null);
@@ -85,6 +89,63 @@ export default function MentorDashboard() {
     }
     load();
   }, []);
+
+  function handlePhotoSelect(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setSaveError("Please upload an image file.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setSaveError("Image must be under 5MB.");
+      return;
+    }
+
+    setSaveError("");
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  }
+
+  async function handleUploadPhoto() {
+    if (!photoFile) return;
+
+    setPhotoUploading(true);
+    setSaveError("");
+
+    const fileExt = photoFile.name.split(".").pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("mentor-photos")
+      .upload(fileName, photoFile);
+
+    if (uploadError) {
+      setSaveError("Photo upload failed: " + uploadError.message);
+      setPhotoUploading(false);
+      return;
+    }
+
+    const { data: urlData } = supabase.storage
+      .from("mentor-photos")
+      .getPublicUrl(fileName);
+
+    const { error: updateError } = await supabase
+      .from("mentorss")
+      .update({ photo_url: urlData.publicUrl })
+      .eq("user_id", user.id);
+
+    setPhotoUploading(false);
+
+    if (updateError) {
+      setSaveError(updateError.message);
+    } else {
+      setMentorProfile((prev) => (prev ? { ...prev, photo_url: urlData.publicUrl } : prev));
+      setPhotoFile(null);
+      setPhotoPreview(null);
+    }
+  }
 
   async function handleSaveProfile() {
     setSaving(true);
@@ -232,8 +293,27 @@ export default function MentorDashboard() {
           <div className="h-1.5 bg-gradient-to-r from-green-600 via-green-500 to-emerald-400" />
           <div className="p-6">
             <div className="flex items-start gap-5 flex-wrap">
-              <div className="w-16 h-16 rounded-full bg-green-800 text-white flex items-center justify-center font-bold text-xl shrink-0 ring-4 ring-green-50">
-                {mentorProfile?.initials || "?"}
+              <div className="relative shrink-0">
+                {photoPreview || mentorProfile?.photo_url ? (
+                  <img
+                    src={photoPreview || mentorProfile.photo_url}
+                    alt={mentorProfile?.name}
+                    className="w-16 h-16 rounded-full object-cover ring-4 ring-green-50"
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-green-800 text-white flex items-center justify-center font-bold text-xl ring-4 ring-green-50">
+                    {mentorProfile?.initials || "?"}
+                  </div>
+                )}
+                <label className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-white border border-gray-300 flex items-center justify-center text-xs cursor-pointer hover:bg-gray-50 transition">
+                  ✎
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoSelect}
+                    className="hidden"
+                  />
+                </label>
               </div>
               <div className="flex-1 min-w-[200px]">
                 <h2 className="text-xl font-extrabold text-gray-900">
@@ -261,6 +341,27 @@ export default function MentorDashboard() {
                   )}
                 </div>
               </div>
+
+              {photoFile && (
+                <div className="flex items-center gap-2 w-full">
+                  <button
+                    onClick={handleUploadPhoto}
+                    disabled={photoUploading}
+                    className="bg-green-600 text-white px-4 py-1.5 rounded-lg text-xs font-semibold hover:bg-green-700 transition disabled:opacity-50"
+                  >
+                    {photoUploading ? "Uploading..." : "Save New Photo"}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setPhotoFile(null);
+                      setPhotoPreview(null);
+                    }}
+                    className="text-xs font-medium text-gray-500 hover:text-gray-700"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
 
               <div className="flex gap-6 pl-4 border-l border-gray-100 ml-auto">
                 <div className="text-center">

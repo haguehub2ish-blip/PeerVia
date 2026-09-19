@@ -19,10 +19,10 @@ export async function GET(request) {
     return Response.json({ error: "Invalid session" }, { status: 401 });
   }
 
-  if (userData.user.email !== process.env.ADMIN_EMAIL) {
+  const adminEmails = (process.env.ADMIN_EMAILS || "").split(",").map((e) => e.trim());
+  if (!adminEmails.includes(userData.user.email)) {
     return Response.json({ error: "Not authorized" }, { status: 403 });
   }
-
   const { data, error } = await supabaseAdmin
     .from("course_guides")
     .select("*")

@@ -1,8 +1,8 @@
 export default function Footer() {
   return (
-    <footer className="bg-white border-t border-gray-200 py-8 px-6 mt-auto">
+       <footer className="bg-ink py-8 px-6 mt-auto">
       <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-white/50">
           © {new Date().getFullYear()} PeerVia. All rights reserved.
         </p>
 

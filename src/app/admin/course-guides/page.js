@@ -50,6 +50,10 @@ const pdfProgressIntervalRef = useRef(null);
   const [success, setSuccess] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [wasEditing, setWasEditing] = useState(false);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [existingImageUrl, setExistingImageUrl] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   async function handlePdfUpload(e) {
   const file = e.target.files[0];
@@ -169,6 +173,13 @@ useEffect(() => {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
+  function handleImageSelect(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  }
+
   async function handleDelete(id, label) {
     if (!window.confirm(`Delete "${label}"? This can't be undone.`)) return;
 
@@ -214,6 +225,9 @@ useEffect(() => {
       officialLinks: guide.official_links || [],
       datePublished: guide.date_published || getTodayDateString(),
     });
+    setImageFile(null);
+    setImagePreview(guide.image_url || null);
+    setExistingImageUrl(guide.image_url || null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -222,6 +236,9 @@ useEffect(() => {
     setForm({ ...emptyForm, datePublished: getTodayDateString() });
     setSubmitError(null);
     setSuccess(false);
+    setImageFile(null);
+    setImagePreview(null);
+    setExistingImageUrl(null);
   }
 
   async function handleSubmit(e) {
@@ -232,6 +249,29 @@ useEffect(() => {
 
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData?.session?.access_token;
+
+    let uploadedImageUrl = existingImageUrl;
+
+    if (imageFile) {
+      setUploadingImage(true);
+      const imageForm = new FormData();
+      imageForm.append("file", imageFile);
+
+      const uploadRes = await fetch("/api/admin/course-guides-upload", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: imageForm,
+      });
+      const uploadResult = await uploadRes.json();
+      setUploadingImage(false);
+
+      if (uploadResult.error) {
+        setSubmitError(uploadResult.error);
+        setSubmitting(false);
+        return;
+      }
+      uploadedImageUrl = uploadResult.url;
+    }
 
     const endpoint = editingId ? "/api/admin/course-guides-update" : "/api/admin/course-guides-add";
 
@@ -246,6 +286,7 @@ useEffect(() => {
         ...(editingId && { id: editingId }),
         countryLabel: countryLabels[form.country],
         flag: countryFlags[form.country],
+        imageUrl: uploadedImageUrl,
         popularUniversities: form.popularUniversities
           .split(",")
           .map((u) => u.trim())
@@ -271,6 +312,9 @@ useEffect(() => {
       setSuccess(true);
       setForm({ ...emptyForm, datePublished: getTodayDateString() });
       setEditingId(null);
+      setImageFile(null);
+      setImagePreview(null);
+      setExistingImageUrl(null);
       loadGuides();
     }
   }
@@ -378,6 +422,30 @@ useEffect(() => {
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
               Basics
             </p>
+
+            <div className="mb-4">
+              <label className="block text-sm font-semibold text-gray-800 mb-1">
+                Cover image
+              </label>
+              <div className="flex items-center gap-4">
+                {imagePreview && (
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="w-20 h-24 object-cover rounded-lg border border-gray-200"
+                  />
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageSelect}
+                  className="text-sm text-gray-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-green-600 file:text-white file:font-semibold file:text-sm hover:file:bg-green-700 file:cursor-pointer cursor-pointer"
+                />
+              </div>
+              {uploadingImage && (
+                <p className="text-xs text-gray-500 mt-1.5">Uploading image...</p>
+              )}
+            </div>
             <div className="grid grid-cols-2 gap-3 mb-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-800 mb-1">
@@ -613,95 +681,255 @@ useEffect(() => {
           </div>
         </form>
 
-        {(form.subject || form.description) && (
-          <div className="mb-10">
+{(form.subject || form.description) && (
+                 <div className="mb-10 -mx-6" style={{ width: "100vw", marginLeft: "calc(-50vw + 50%)" }}>
             <div className="flex items-center gap-2 mb-4">
               <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
               <h2 className="text-xl font-bold text-gray-900">Live Preview</h2>
+              <span className="text-xs text-gray-400">(matches the full course guide page)</span>
             </div>
-            <div className="max-w-md">
-              <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm flex flex-col h-full">
-                <div
-                  className={`px-6 py-4 flex items-center justify-between gap-3 ${
-                    form.subject ? getSubjectStyle(form.subject).color : "bg-gray-100 text-gray-700"
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <span className="w-8 h-8 rounded-lg bg-white/60 flex items-center justify-center text-base shrink-0">
-                      {form.subject ? getSubjectStyle(form.subject).icon : "📘"}
-                    </span>
-                    <h3 className="font-bold text-base leading-tight">
-                      {form.subject || "Subject"} in {countryLabels[form.country] || "..."}
-                    </h3>
-                  </div>
-                  {form.country && (
-                    <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-white/70 shrink-0">
-                      {countryFlags[form.country]} {form.country}
-                    </span>
-                  )}
-                </div>
 
-                <div className="p-6 flex flex-col flex-1">
-                  <p className="text-sm text-gray-600 mb-4 line-clamp-3 whitespace-pre-line">
+            <div className="bg-[#F1E7CC] rounded-3xl p-6 sm:p-8">
+              {/* Hero */}
+              <div className="rounded-2xl overflow-hidden mb-6">
+                {imagePreview ? (
+                  <div className="h-40 sm:h-48 relative">
+                    <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                  </div>
+                ) : (
+                  <div className="h-40 sm:h-48 flex items-center justify-center bg-gradient-to-br from-[#F8EFD9] to-[#E3D2AE]/60">
+                    <span className="text-6xl text-[#BC6C25]/30" style={{ fontFamily: "var(--font-display)" }}>
+                      {form.subject ? form.subject.charAt(0) : "?"}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#BC6C25]"></span>
+                <p className="text-xs uppercase tracking-[0.2em] text-[#BC6C25]">Course Guide</p>
+              </div>
+              <h1 className="text-3xl sm:text-4xl text-[#241A12] leading-tight mb-2" style={{ fontFamily: "var(--font-display)" }}>
+                {form.subject || "Subject"}{" "}
+                <span className="text-[#7A6952] font-normal">in {countryLabels[form.country] || "..."}</span>
+              </h1>
+              <p className="text-[#7A6952] flex items-center gap-2 mb-8 text-sm">
+                {countryFlags[form.country] || ""} {countryLabels[form.country] || "Select a country"}
+                {form.popularUniversities.trim() && (
+                  <>
+                    <span className="w-1 h-1 rounded-full bg-[#E3D2AE]"></span>
+                    {form.popularUniversities.split(",").map((u) => u.trim()).filter(Boolean).length} popular universities
+                  </>
+                )}
+              </p>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Main content */}
+                <div className="lg:col-span-2">
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-[#7A6952] mb-2">Overview</p>
+                  <p className="text-[#241A12]/80 mb-6 leading-relaxed whitespace-pre-line text-sm">
                     {form.description || "Description will appear here..."}
                   </p>
 
-                  {form.popularUniversities.trim() && (() => {
-                    const unis = form.popularUniversities.split(",").map((u) => u.trim()).filter(Boolean);
-                    return (
-                      <div className="mb-4 pb-4 border-b border-gray-100">
-                        <div className="flex items-center gap-1.5 mb-1.5">
-                          <span className="text-xs">🏛️</span>
-                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                            Popular universities
-                          </p>
-                        </div>
-                        <div className="flex flex-wrap gap-1.5">
-                          {unis.slice(0, 3).map((uni) => (
-                            <span
-                              key={uni}
-                              className="text-xs font-semibold px-2.5 py-1 rounded-full bg-orange-100 text-orange-800"
-                            >
-                              {uni}
+                  {form.journeySteps.length > 0 && (
+                    <div className="mb-6 pb-6 border-b border-[#E3D2AE]">
+                      <p className="text-[11px] uppercase tracking-[0.2em] text-[#7A6952] mb-3">Quick Summary</p>
+                      <div className="space-y-3">
+                        {form.journeySteps.map((step, i) => (
+                          <div key={i} className="flex gap-3">
+                            <span className="shrink-0 w-6 h-6 rounded-full bg-[#BC6C25]/10 text-[#BC6C25] text-xs font-bold flex items-center justify-center">
+                              {i + 1}
                             </span>
-                          ))}
-                          {unis.length > 3 && (
-                            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-500">
-                              +{unis.length - 3} more
-                            </span>
-                          )}
-                        </div>
+                            <div>
+                              <p className="font-semibold text-[#241A12] text-sm">{step.title}</p>
+                              {step.description && (
+                                <p className="text-sm text-[#241A12]/70">{step.description}</p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    );
-                  })()}
-
-                  <div className="mb-4 pb-4 border-b border-gray-100">
-                    <div className="flex items-center gap-1.5 mb-1.5">
-                      <span className="text-xs">📋</span>
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                        Admission requirements
-                      </p>
                     </div>
-                    <p className="text-sm text-gray-600 line-clamp-2 whitespace-pre-line">
+                  )}
+
+                  {form.applicationRules.length > 0 && (
+                    <div className="mb-6 pb-6 border-b border-[#E3D2AE]">
+                      <p className="text-[11px] uppercase tracking-[0.2em] text-[#7A6952] mb-3">Application Rules</p>
+                      <ul className="space-y-2.5">
+                        {form.applicationRules.map((rule, i) => (
+                          <li key={i}>
+                            <p className="font-semibold text-[#241A12] text-sm">{rule.title}</p>
+                            {rule.description && (
+                              <p className="text-sm text-[#241A12]/70">{rule.description}</p>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {form.entryPaths.length > 0 && (
+                    <div className="mb-6 pb-6 border-b border-[#E3D2AE]">
+                      <p className="text-[11px] uppercase tracking-[0.2em] text-[#7A6952] mb-3">Entry Paths</p>
+                      <div className="space-y-4">
+                        {form.entryPaths.map((path, i) => (
+                          <div key={i}>
+                            <p className="font-semibold text-[#241A12] text-sm mb-1.5">{path.title}</p>
+                            {(path.points || "").split("\n").map((s) => s.trim()).filter(Boolean).length > 0 && (
+                              <ul className="text-sm text-[#241A12]/70 space-y-1">
+                                {(path.points || "").split("\n").map((s) => s.trim()).filter(Boolean).map((point, j) => (
+                                  <li key={j} className="flex items-start gap-2">
+                                    <span className="mt-1.5 w-1 h-1 rounded-full bg-[#BC6C25] shrink-0"></span>
+                                    <span>{point}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {form.popularUniversities.trim() && (
+                    <div className="mb-6 pb-6 border-b border-[#E3D2AE]">
+                      <p className="text-[11px] uppercase tracking-[0.2em] text-[#7A6952] mb-2.5">Popular Universities</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {form.popularUniversities.split(",").map((u) => u.trim()).filter(Boolean).map((uni) => (
+                          <span key={uni} className="text-xs font-medium px-3 py-1 rounded-full border border-[#E3D2AE] text-[#241A12] bg-[#F8EFD9]">
+                            {uni}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="mb-6 pb-6 border-b border-[#E3D2AE]">
+                    <p className="text-[11px] uppercase tracking-[0.2em] text-[#7A6952] mb-2">Admission Requirements</p>
+                    <p className="text-[#241A12]/80 leading-relaxed whitespace-pre-line text-sm">
                       {form.admission || "Admission details will appear here..."}
                     </p>
                   </div>
 
-                  {form.languageRequirement.trim() && (
-                    <div className="mb-4">
-                      <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">
-                        <p className="text-xs font-semibold text-amber-800">
-                          ⚠️ Important: {form.languageRequirement}
-                        </p>
+                  {form.pipelineStages.length > 0 && (
+                    <div className="mb-6 pb-6 border-b border-[#E3D2AE]">
+                      <p className="text-[11px] uppercase tracking-[0.2em] text-[#7A6952] mb-3">Your Academic Pipeline</p>
+                      <div className="space-y-4">
+                        {form.pipelineStages.map((stage, i) => (
+                          <div key={i}>
+                            <p className="font-semibold text-[#241A12] text-sm mb-1">{stage.title}</p>
+                            {stage.description && (
+                              <p className="text-sm text-[#241A12]/70">{stage.description}</p>
+                            )}
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
 
+                  {form.languageRequirement.trim() && (
+                    <div className="mb-6 border-l-2 border-[#BC6C25] pl-3">
+                      <p className="text-[11px] uppercase tracking-[0.15em] text-[#BC6C25] mb-0.5">Note</p>
+                      <p className="text-sm text-[#241A12]/80">{form.languageRequirement}</p>
+                    </div>
+                  )}
+
+                  {form.specializations.length > 0 && (
+                    <div className="mb-6 pb-6 border-b border-[#E3D2AE]">
+                      <p className="text-[11px] uppercase tracking-[0.2em] text-[#7A6952] mb-3">Specializations</p>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-xs border-collapse">
+                          <thead>
+                            <tr className="border-b border-[#E3D2AE] text-left">
+                              <th className="py-2 pr-3 uppercase tracking-wide text-[#7A6952] font-semibold">Category</th>
+                              <th className="py-2 pr-3 uppercase tracking-wide text-[#7A6952] font-semibold">Examples</th>
+                              <th className="py-2 pr-3 uppercase tracking-wide text-[#7A6952] font-semibold">Duration</th>
+                              <th className="py-2 uppercase tracking-wide text-[#7A6952] font-semibold">Competitiveness</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {form.specializations.map((row, i) => (
+                              <tr key={i} className="border-b border-[#E3D2AE]/60 align-top">
+                                <td className="py-2 pr-3 font-semibold text-[#241A12]">{row.category}</td>
+                                <td className="py-2 pr-3 text-[#241A12]/70">{row.examples}</td>
+                                <td className="py-2 pr-3 text-[#241A12]/70">{row.duration}</td>
+                                <td className="py-2 text-[#241A12]/70">{row.competitiveness}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {form.careerSteps.length > 0 && (
+                    <div className="mb-6 pb-6 border-b border-[#E3D2AE]">
+                      <p className="text-[11px] uppercase tracking-[0.2em] text-[#7A6952] mb-3">Career Path After Graduating</p>
+                      <div className="space-y-4">
+                        {form.careerSteps.map((step, i) => (
+                          <div key={i}>
+                            <p className="font-semibold text-[#241A12] text-sm mb-1">{step.title}</p>
+                            {step.description && (
+                              <p className="text-sm text-[#241A12]/70">{step.description}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {form.glossary.length > 0 && (
+                    <div className="mb-6 pb-6 border-b border-[#E3D2AE]">
+                      <p className="text-[11px] uppercase tracking-[0.2em] text-[#7A6952] mb-3">Glossary</p>
+                      <dl className="space-y-2">
+                        {form.glossary.map((entry, i) => (
+                          <div key={i} className="text-sm">
+                            <dt className="font-semibold text-[#241A12] inline">{entry.term}: </dt>
+                            <dd className="text-[#241A12]/70 inline">{entry.definition}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </div>
+                  )}
+
+                  {form.officialLinks.length > 0 && (
+                    <div className="mb-6">
+                      <p className="text-[11px] uppercase tracking-[0.2em] text-[#7A6952] mb-2.5">Official Resources</p>
+                      <ul className="space-y-1">
+                        {form.officialLinks.map((link, i) => (
+                          <li key={i} className="text-sm font-medium text-[#BC6C25]">
+                            {link.label || "Untitled link"} ↗
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
                   {form.datePublished && (
-                    <p className="text-xs text-gray-400 italic mt-auto pt-3 border-t border-gray-100">
-                      Published {new Date(form.datePublished + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                    <p className="text-[11px] uppercase tracking-wide text-[#7A6952] pt-1">
+                      Published{" "}
+                      {new Date(form.datePublished + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
                     </p>
                   )}
+                </div>
+
+                {/* Sidebar */}
+                <div className="lg:col-span-1">
+                  <div className="bg-[#F8EFD9] border border-[#E3D2AE] rounded-2xl p-5">
+                    <p className="text-[11px] uppercase tracking-[0.15em] text-[#BC6C25] mb-1">
+                      {countryFlags[form.country] || ""} {countryLabels[form.country] || "..."}
+                    </p>
+                    <h2 className="text-lg text-[#241A12] mb-3" style={{ fontFamily: "var(--font-display)" }}>
+                      Talk to a {form.subject || "Subject"} mentor
+                    </h2>
+                    <p className="text-xs text-[#241A12]/70 leading-relaxed mb-4">
+                      Everything above is a general guide. For questions about your specific situation,
+                      message a verified student already on this path.
+                    </p>
+                    <div className="block text-center bg-[#BC6C25] text-[#F1E7CC] text-xs uppercase tracking-wide px-4 py-2.5 rounded-lg">
+                      Find {form.subject || "Subject"} Mentors →
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

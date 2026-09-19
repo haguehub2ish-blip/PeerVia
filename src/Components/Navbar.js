@@ -28,8 +28,6 @@ export default function Navbar() {
       setUser(data?.session?.user || null);
       setUserLoaded(true);
 
-      // Quietly refresh with the latest data from the server in case
-      // metadata (like mentor role) changed since this session was cached.
       supabase.auth.getUser().then(({ data: freshData }) => {
         if (freshData?.user) {
           setUser(freshData.user);
@@ -58,30 +56,30 @@ export default function Navbar() {
 
   const linkClass = (href) => {
     const isActive = pathname === href;
-    return `px-4 py-2 rounded-full text-sm transition whitespace-nowrap ${
+    return `font-label text-[11px] tracking-[0.08em] uppercase px-4 py-2 rounded-full transition whitespace-nowrap ${
       isActive
-        ? "bg-green-600 text-white font-semibold"
-        : "text-gray-600 font-medium hover:bg-green-600 hover:text-white"
+        ? "bg-primary text-white font-semibold"
+        : "text-muted font-medium hover:bg-primary hover:text-white"
     }`;
   };
 
   const mobileLinkClass = (href) => {
     const isActive = pathname === href;
-    return `block w-full text-left px-4 py-3 rounded-lg text-sm transition ${
+    return `font-label text-xs tracking-[0.05em] uppercase block w-full text-left px-4 py-3 rounded-lg transition ${
       isActive
-        ? "bg-green-600 text-white font-semibold"
-        : "text-gray-700 font-medium hover:bg-gray-50"
+        ? "bg-primary text-white font-semibold"
+        : "text-ink font-medium hover:bg-surface"
     }`;
   };
 
   return (
-    <header className="border-b border-gray-200 bg-white sticky top-0 z-20">
+    <header className="border-b border-border bg-background sticky top-0 z-20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
         {/* Logo */}
-       <a href="/" className="flex items-center gap-2 shrink-0">
-  <Image src="/logo.png" alt="PeerVia logo" width={36} height={36} priority />
-  <span className="text-xl font-bold text-gray-900">PeerVia</span>
-</a>
+        <a href="/" className="flex items-center gap-2 shrink-0">
+          <Image src="/logo.png" alt="PeerVia logo" width={36} height={36} priority />
+          <span className="font-display text-xl text-ink">PeerVia</span>
+        </a>
 
         {/* Centered nav links — desktop only */}
         <nav className="hidden lg:flex items-center gap-2 absolute left-1/2 -translate-x-1/2">
@@ -120,26 +118,26 @@ export default function Navbar() {
           {user ? (
             <>
               {["leotweeling@gmail.com", "info.peervia@gmail.com"].includes(user.email) && (
-                <a href="/admin" className="text-gray-600 font-semibold hover:text-gray-900 whitespace-nowrap">
+                <a href="/admin" className="font-label text-[11px] tracking-[0.05em] uppercase text-muted font-semibold hover:text-ink transition whitespace-nowrap">
                   Admin
                 </a>
               )}
-              <a href="/settings" className="w-9 h-9 rounded-full bg-green-800 text-white flex items-center justify-center font-bold text-sm hover:bg-green-700 transition shrink-0">
+              <a href="/settings" className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm hover:bg-primary-dark transition shrink-0">
                 {getInitials(user)}
               </a>
               <button
                 onClick={handleLogout}
-                className="bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition whitespace-nowrap"
+                className="font-label text-[11px] tracking-[0.05em] uppercase bg-ink text-white px-4 py-2 rounded-lg hover:opacity-90 transition whitespace-nowrap"
               >
                 Log out
               </button>
             </>
           ) : (
             <>
-              <a href="/login" className="text-gray-600 hover:text-gray-900 whitespace-nowrap">
+              <a href="/login" className="font-label text-[11px] tracking-[0.05em] uppercase text-muted hover:text-ink transition whitespace-nowrap">
                 Login
               </a>
-              <a href="/signup" className="bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition whitespace-nowrap">
+              <a href="/signup" className="font-label text-[11px] tracking-[0.05em] uppercase bg-ink text-white px-4 py-2 rounded-lg hover:opacity-90 transition whitespace-nowrap">
                 Sign up
               </a>
             </>
@@ -149,7 +147,7 @@ export default function Navbar() {
         {/* Hamburger button — mobile/tablet only */}
         <button
           onClick={() => setMenuOpen(!menuOpen)}
-          className="lg:hidden w-9 h-9 flex items-center justify-center text-gray-700"
+          className="lg:hidden w-9 h-9 flex items-center justify-center text-ink"
           aria-label="Toggle menu"
         >
           {menuOpen ? (
@@ -162,7 +160,7 @@ export default function Navbar() {
 
       {/* Mobile dropdown menu */}
       {menuOpen && (
-        <div className="lg:hidden border-t border-gray-200 px-4 py-3 space-y-1">
+        <div className="lg:hidden border-t border-border bg-background px-4 py-3 space-y-1">
           <a href="/" className={mobileLinkClass("/")}>Home</a>
           <a href="/mentors" className={mobileLinkClass("/mentors")}>Mentors</a>
           <a href="/course-guides" className={mobileLinkClass("/course-guides")}>Course Guides</a>
@@ -178,7 +176,7 @@ export default function Navbar() {
             )
           )}
 
-          <div className="border-t border-gray-100 my-2"></div>
+          <div className="border-t border-border my-2"></div>
 
           {user ? (
             <>
@@ -192,7 +190,7 @@ export default function Navbar() {
               </a>
               <button
                 onClick={handleLogout}
-                className="block w-full text-left px-4 py-3 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition"
+                className="font-label text-xs tracking-[0.05em] uppercase block w-full text-left px-4 py-3 rounded-lg font-medium text-red-600 hover:bg-red-50 transition"
               >
                 Log out
               </button>

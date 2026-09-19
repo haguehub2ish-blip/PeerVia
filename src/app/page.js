@@ -34,18 +34,112 @@ const categoryDisplayNames = {
 const categoryTargets = {
   mentors: { path: "/mentors", params: { field: "subject", country: "country", language: "language" } },
   questions: { path: "/community", params: { field: "field", country: "country" } },
- courseGuides: { path: "/course-guides", params: { field: "field", country: "country" } },
+  courseGuides: { path: "/course-guides", params: { field: "field", country: "country" } },
 };
 
 const exploreButtonLabels = {
-  mentors: "Find Your Mentor →",
-  questions: "Find Your Answer →",
-  courseGuides: "Find Your Course →",
+  mentors: "Find →",
+  questions: "Find →",
+  courseGuides: "Find →",
 };
+
+const howItWorksSteps = [
+  {
+    number: "01",
+    title: "Find the right mentor",
+    text: "Browse verified mentors by course, university, country, or language to find someone whose journey matches yours.",
+  },
+  {
+    number: "02",
+    title: "Reach out",
+    text: "Post a question to the community, or book a 1-on-1 session directly with a verified mentor.",
+  },
+  {
+    number: "03",
+    title: "Get honest advice",
+    text: "Learn what your future career is really like, from current students who've actually lived it.",
+  },
+];
+
+const whyPeerVia = [
+  {
+    number: "01",
+    title: "Honest Advice",
+    text: "From real university students, not marketing teams. Every mentor is reviewed before joining the platform",
+  },
+  {
+    number: "02",
+    title: "Completely Free",
+    text: "No paywalls, no subscriptions, no hidden costs.",
+  },
+  {
+    number: "03",
+    title: "By Students, for Students",
+    text: "Built by people who were in your shoes not long ago.",
+  },
+];
+
+// Put a real photo URL here once you've picked one (Unsplash/Pexels — see note below).
+// Leave empty to keep the current plain teal background.
+const CTA_PHOTO_URL = "/images/campus-medicine.jpg";
+const HERO_PHOTO_URL = "/images/PV_HomePage.jpg"; // swap to a different file if you want a distinct hero image
+const MENTORS_PHOTO_URL = "/images/PV_HomePage2.jpg"; // swap to a different file once you have one specific to this section
+const COMMUNITY_PHOTO_URL = "/images/PV_HomePage3.jpg"; // swap to a different file once you have one specific to this section
+
+
+
+function PhotoBlock({ src, alt = "", className = "", tint = 55, opacity = 100 }) {
+  if (!src) return null;
+  return (
+    <div className={`overflow-hidden ${className}`} style={{ opacity: opacity / 100 }}>
+      <img
+        src={src}
+        alt={alt}
+        className="w-full h-full object-cover grayscale contrast-[1.08]"
+      />
+      <div className="absolute inset-0 bg-primary mix-blend-multiply" style={{ opacity: tint / 100 }} />
+    </div>
+  );
+}
+
+// --- Placeholder photo tile: swaps to a real <img> automatically once mentor.photoUrl exists ---
+function MentorPhoto({ mentor, className = "" }) {
+  if (mentor?.photo_url) {
+    return (
+      <img
+        src={mentor.photo_url}
+        alt={mentor.name}
+        className={`object-cover ${className}`}
+      />
+    );
+  }
+  return (
+    <div
+      className={`flex items-center justify-center bg-gradient-to-br from-primary/15 to-primary/5 text-primary/50 font-display ${className}`}
+    >
+      {mentor?.initials || "?"}
+    </div>
+  );
+}
+
+// --- Decorative background texture, low-opacity, same hue family as bg ---
+function DecorShapes() {
+  return (
+    <>
+      <div
+        className="absolute -left-16 -top-10 w-64 h-40 -rotate-12 opacity-[0.07] pointer-events-none"
+        style={{
+          backgroundImage:
+            "repeating-linear-gradient(45deg, var(--color-primary) 0px, var(--color-primary) 3px, transparent 3px, transparent 14px)",
+        }}
+      />
+    </>
+  );
+}
 
 export default function Home() {
   const router = useRouter();
-  const [selectedCategory, setSelectedCategory] = useState("mentors");
+  const [selectedCategory, setSelectedCategory] = useState(null);
   const [activeDimension, setActiveDimension] = useState("field");
   const [selectedChips, setSelectedChips] = useState({});
   const [searchText, setSearchText] = useState("");
@@ -146,39 +240,38 @@ export default function Home() {
   };
 
   // --- Search index / suggestions ---
- const buildSearchIndex = () => {
-  const items = [];
+  const buildSearchIndex = () => {
+    const items = [];
 
-  Object.keys(categoryFilters).forEach((cat) => {
-    items.push({ type: "category", label: cat.charAt(0).toUpperCase() + cat.slice(1), value: cat });
-  });
+    Object.keys(categoryFilters).forEach((cat) => {
+      items.push({ type: "category", label: cat.charAt(0).toUpperCase() + cat.slice(1), value: cat });
+    });
 
-  // Dedupe filters by dimension + value, but remember every category they belong to
-  const filterMap = new Map();
-  Object.entries(categoryFilters).forEach(([cat, dims]) => {
-    Object.entries(dims).forEach(([dimension, chips]) => {
-      chips.forEach((chip) => {
-        const key = `${dimension}:${chip}`;
-        if (!filterMap.has(key)) {
-          filterMap.set(key, { type: "filter", label: chip, value: chip, dimension, categories: [cat] });
-        } else {
-          filterMap.get(key).categories.push(cat);
-        }
+    const filterMap = new Map();
+    Object.entries(categoryFilters).forEach(([cat, dims]) => {
+      Object.entries(dims).forEach(([dimension, chips]) => {
+        chips.forEach((chip) => {
+          const key = `${dimension}:${chip}`;
+          if (!filterMap.has(key)) {
+            filterMap.set(key, { type: "filter", label: chip, value: chip, dimension, categories: [cat] });
+          } else {
+            filterMap.get(key).categories.push(cat);
+          }
+        });
       });
     });
-  });
-  items.push(...filterMap.values());
+    items.push(...filterMap.values());
 
-  mentors.forEach((m) => {
-    items.push({ type: "mentor", label: m.name, value: m.name, subject: m.subject, school: m.school });
-  });
+    mentors.forEach((m) => {
+      items.push({ type: "mentor", label: m.name, value: m.name, subject: m.subject, school: m.school });
+    });
 
-  questions.forEach((q) => {
-    items.push({ type: "question", label: q.question, value: q.question, id: q.id, subject: q.subject });
-  });
+    questions.forEach((q) => {
+      items.push({ type: "question", label: q.question, value: q.question, id: q.id, subject: q.subject });
+    });
 
-  return items;
-};
+    return items;
+  };
 
   const searchResults = searchText.trim()
     ? buildSearchIndex()
@@ -186,39 +279,39 @@ export default function Home() {
         .slice(0, 8)
     : [];
 
- const handleSuggestionClick = (item) => {
-  if (item.type === "category") {
-    handleCategorySelect(item.value);
-  } else if (item.type === "filter") {
-    const targetCategory = item.categories.includes(selectedCategory)
-      ? selectedCategory
-      : item.categories[0];
-    if (selectedCategory !== targetCategory) handleCategorySelect(targetCategory);
-    handleChipSelect(item.dimension, item.value);
-  } else if (item.type === "mentor") {
-    router.push(`/mentors?name=${encodeURIComponent(item.value)}`);
-  } else if (item.type === "question") {
-    router.push(`/community#${item.id}`);
-  }
-  setSearchText("");
-  setShowSuggestions(false);
-};
+  const handleSuggestionClick = (item) => {
+    if (item.type === "category") {
+      handleCategorySelect(item.value);
+    } else if (item.type === "filter") {
+      const targetCategory = item.categories.includes(selectedCategory)
+        ? selectedCategory
+        : item.categories[0];
+      if (selectedCategory !== targetCategory) handleCategorySelect(targetCategory);
+      handleChipSelect(item.dimension, item.value);
+    } else if (item.type === "mentor") {
+      router.push(`/mentors?name=${encodeURIComponent(item.value)}`);
+    } else if (item.type === "question") {
+      router.push(`/community#${item.id}`);
+    }
+    setSearchText("");
+    setShowSuggestions(false);
+  };
 
   const categoryButtonStyles = {
     mentors: "bg-primary text-white border-primary",
-    questions: "bg-amber-500 text-white border-amber-500",
-    courseGuides: "bg-indigo-600 text-white border-indigo-600",
+    questions: "bg-primary text-white border-primary",
+    courseGuides: "bg-primary text-white border-primary",
   };
 
   const categoryFillStyles = {
-    mentors: "bg-primary/70 text-black",
-    questions: "bg-amber-100",
-    courseGuides: "bg-indigo-100",
+    mentors: "bg-primary/10 text-primary",
+    questions: "bg-primary/10 text-primary",
+    courseGuides: "bg-primary/10 text-primary",
   };
 
   const getChipStyle = (dimension, chip) => {
     if (dimension === "country") {
-      return { color: "bg-slate-100 text-slate-700", icon: getFlag(chip) };
+      return { color: "bg-ink/5 text-ink", icon: getFlag(chip) };
     }
     if (dimension === "language") {
       return getLanguageStyle(chip);
@@ -227,11 +320,13 @@ export default function Home() {
   };
 
   const topMentors = [...mentors].sort((a, b) => b.rating - a.rating).slice(0, 3);
+  const heroMentor = topMentors[0] || mentors[0];
+  const stripMentors = mentors.filter((m) => m.id !== heroMentor?.id).slice(0, 4);
   const topQuestions = [...questions].sort((a, b) => b.helpful - a.helpful).slice(0, 3);
   const verifiedMentorsCount = mentors.filter((m) => m.verified).length;
   const questionsAnsweredCount = questions.length + answeredUserQuestionsCount;
   const careerPathsCount = new Set(mentors.map((m) => m.subject)).size;
- const ratedMentors = mentors.filter((m) => m.rating > 0);
+  const ratedMentors = mentors.filter((m) => m.rating > 0);
   const avgRating = ratedMentors.length > 0
     ? (ratedMentors.reduce((sum, m) => sum + m.rating, 0) / ratedMentors.length).toFixed(1)
     : "—";
@@ -244,25 +339,76 @@ export default function Home() {
   ).size;
   const schoolsCount = new Set(mentors.map((m) => m.school)).size;
 
+  const statsList = [
+    { value: verifiedMentorsCount, label: "Verified Mentors" },
+    { value: questionsAnsweredCount, label: "Questions Answered" },
+    { value: careerPathsCount, label: "Career Paths" },
+    { value: `${avgRating}★`, label: "Avg. Rating" },
+    { value: languagesCount, label: "Languages" },
+    { value: schoolsCount, label: "Universities" },
+  ];
+
   return (
-    <main className="min-h-screen bg-white">
-      {/* Header */}
+    <main className="min-h-screen bg-background bg-grain">
       <Navbar />
 
-      {/* Hero + Search */}
-      <section className="bg-cream px-6 py-20 text-center">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-4xl font-bold text-primary mb-4">
-            Real Answers from the People Living it
-          </h2>
-       <p className="text-ink mb-10">
-  Connect with verified university students for honest, first hand advice about courses, universities, applications and student life - <span className="font-bold text-black">all completely free</span>.
-</p>
+            {/* ============ HERO ============ */}
+      <section className="relative overflow-hidden px-6 pt-16 pb-20 md:pt-20">
+        {HERO_PHOTO_URL && (
+          <div
+            className="absolute right-0 top-0 w-full md:w-[55%] h-full pointer-events-none overflow-hidden"
+            style={{
+              position: "absolute",
+              maskImage: "linear-gradient(to left, rgba(0,0,0,0.5), transparent)",
+              WebkitMaskImage: "linear-gradient(to left, rgba(0,0,0,0.5), transparent)",
+            }}
+          >
+            <PhotoBlock src={HERO_PHOTO_URL} className="w-full h-full" tint={30} opacity={32} />
+          </div>
+        )}
+        <DecorShapes />
+        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-[420px_1fr] gap-12 items-start relative">
+          {/* Left: spotlight mentor photo — fixed-width column so it never resizes when a filter/category is selected */}
+          <div className="relative w-full">
+            {!mentorsLoading && heroMentor ? (
+              <>
+                <MentorPhoto
+                  mentor={heroMentor}
+                  className="w-full aspect-[4/5] rounded-2xl border border-border text-6xl"
+                />
+                <div className="absolute left-4 right-4 bottom-4 bg-badge/90 backdrop-blur-sm rounded-xl px-5 py-4">
+                  <p className="font-label text-[11px] tracking-[0.15em] uppercase text-primary flex items-center gap-2 mb-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                    Verified Mentor
+                  </p>
+                  <p className="font-display text-white text-lg leading-tight">{heroMentor.name}</p>
+                  <p className="text-white/70 text-sm italic">
+                    {heroMentor.subject} · {heroMentor.school}
+                  </p>
+                </div>
+              </>
+            ) : (
+              <div className="w-full aspect-[4/5] rounded-2xl border border-border bg-surface animate-pulse" />
+            )}
+          </div>
 
-          {/* Search Bar */}
-          <div className="max-w-2xl mx-auto">
+          {/* Right: headline + search */}
+          <div>
+            <p className="inline-block font-label text-[11px] tracking-[0.15em] uppercase border border-border rounded-full px-4 py-2 text-muted mb-7">
+              Free Peer Mentorship For High Schoolers
+            </p>
+            <h1 className="font-display text-4xl md:text-6xl text-ink leading-[1.08] mb-6">
+              Real answers.
+              <br />
+              <span className="italic text-primary">From the people living it.</span>
+            </h1>
+            <p className="text-muted text-lg mb-9 max-w-lg">
+              Connect with verified university students for honest, first-hand advice about courses, universities, applications and student life —{" "}
+              <span className="font-semibold text-ink">all completely free</span>.
+            </p>
+
             {/* Category selector */}
-            <div className="flex justify-center gap-2 mb-4">
+            <div className="flex flex-wrap gap-2 mb-4">
               {[
                 { key: "mentors", label: "Mentors" },
                 { key: "questions", label: "Questions" },
@@ -271,10 +417,10 @@ export default function Home() {
                 <button
                   key={cat.key}
                   onClick={() => handleCategorySelect(cat.key)}
-                  className={`px-5 py-2 rounded-lg text-sm font-semibold border transition ${
+                  className={`font-label text-[11px] tracking-[0.1em] uppercase px-4 py-2 rounded-full border transition ${
                     selectedCategory === cat.key
                       ? categoryButtonStyles[cat.key]
-                      : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
+                      : "bg-surface text-muted border-border hover:border-primary/40"
                   }`}
                 >
                   {cat.label}
@@ -283,8 +429,8 @@ export default function Home() {
             </div>
 
             <div className="relative">
-              <div className="flex items-stretch bg-white border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-gray-900">
-                <div className="flex-1 px-4 py-2 flex items-center gap-2 flex-wrap">
+              <div className="flex items-stretch bg-surface border border-border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-primary/30">
+                <div className="flex-1 px-4 py-2.5 flex items-center gap-2 flex-wrap">
                   {selectedCategory && (
                     <>
                       <button
@@ -293,7 +439,7 @@ export default function Home() {
                           setSelectedChips({});
                           setActiveDimension("field");
                         }}
-                        className={`inline-flex items-center gap-2 text-sm font-semibold px-3 py-1 rounded-full text-black ${categoryFillStyles[selectedCategory]} hover:opacity-80 transition`}
+                        className={`inline-flex items-center gap-2 text-sm font-semibold px-3 py-1 rounded-full ${categoryFillStyles[selectedCategory]} hover:opacity-80 transition`}
                       >
                         {categoryDisplayNames[selectedCategory]}
                         <span className="font-bold">×</span>
@@ -324,397 +470,260 @@ export default function Home() {
                     onFocus={() => setShowSuggestions(true)}
                     onBlur={() => setShowSuggestions(false)}
                     onKeyDown={(e) => {
-  if (e.key === "Enter") {
-    if (searchResults.length > 0) {
-      handleSuggestionClick(searchResults[0]);
-    } else if (searchText.trim() && tryRecognizeToken(searchText.trim())) {
-      setSearchText("");
-    } else {
-      // No match just show "no results" instead of navigating away
-      setShowSuggestions(true);
-    }
-  }
-}}
-                    placeholder="Choose Mentors, Questions, or Course Guides to get started"
-                    className="flex-1 min-w-[160px] outline-none text-sm text-gray-600 placeholder-gray-600"
+                      if (e.key === "Enter") {
+                        if (searchResults.length > 0) {
+                          handleSuggestionClick(searchResults[0]);
+                        } else if (searchText.trim() && tryRecognizeToken(searchText.trim())) {
+                          setSearchText("");
+                        } else {
+                          setShowSuggestions(true);
+                        }
+                      }
+                    }}
+                    placeholder="Choose Mentors, Course Guides or Questions to get started…"
+                    className="flex-1 min-w-[160px] outline-none text-sm text-ink placeholder-muted bg-transparent"
                   />
                 </div>
                 <button
                   onClick={handleExplore}
-                  className="bg-secondary text-white px-6 font-medium hover:bg-primary transition shrink-0"
+                  className="font-label text-xs tracking-[0.1em] uppercase bg-primary text-white px-6 font-medium hover:bg-primary-dark transition shrink-0"
                 >
-                  {exploreButtonLabels[selectedCategory] || "Find your Mentor →"}
+                  {exploreButtonLabels[selectedCategory] || "Find →"}
                 </button>
               </div>
 
-             {showSuggestions && searchText.trim() && (
-  <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-20 text-left overflow-hidden">
-    {searchResults.length > 0 ? (
-      searchResults.map((item, i) => {
-        let badgeLabel = "";
-        let badgeStyle = "bg-gray-100 text-gray-500";
-        let icon = "";
+              {showSuggestions && searchText.trim() && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-surface border border-border rounded-lg shadow-lg z-20 text-left overflow-hidden">
+                  {searchResults.length > 0 ? (
+                    searchResults.map((item, i) => {
+                      let badgeLabel = "";
+                      let badgeStyle = "bg-ink/5 text-muted";
+                      let icon = "";
 
-        if (item.type === "category") {
-          badgeLabel = "Category";
-          badgeStyle =
-            item.value === "mentors"
-              ? "bg-green-100 text-green-700"
-              : item.value === "questions"
-              ? "bg-amber-100 text-amber-700"
-              : "bg-indigo-100 text-indigo-700";
-        } else if (item.type === "filter") {
-          badgeLabel = dimensionLabels[item.dimension] || item.dimension;
-          const style = getChipStyle(item.dimension, item.value);
-          badgeStyle = style.color;
-          icon = style.icon || "";
-        } else if (item.type === "mentor") {
-          badgeLabel = "Mentor";
-          badgeStyle = "bg-green-100 text-green-700";
-        } else if (item.type === "question") {
-          badgeLabel = "Question";
-          badgeStyle = "bg-amber-100 text-amber-700";
-        }
+                      if (item.type === "category") {
+                        badgeLabel = "Category";
+                        badgeStyle = "bg-primary/10 text-primary";
+                      } else if (item.type === "filter") {
+                        badgeLabel = dimensionLabels[item.dimension] || item.dimension;
+                        const style = getChipStyle(item.dimension, item.value);
+                        badgeStyle = style.color;
+                        icon = style.icon || "";
+                      } else if (item.type === "mentor") {
+                        badgeLabel = "Mentor";
+                        badgeStyle = "bg-primary/10 text-primary";
+                      } else if (item.type === "question") {
+                        badgeLabel = "Question";
+                        badgeStyle = "bg-ink/5 text-ink";
+                      }
 
-        return (
-          <button
-            key={`${item.type}-${item.value}-${i}`}
-            onMouseDown={() => handleSuggestionClick(item)}
-            className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-gray-50 transition text-left border-b border-gray-100 last:border-b-0"
-          >
-            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 ${badgeStyle}`}>
-              {icon} {badgeLabel}
-            </span>
-            <span className="text-gray-800 truncate">{item.label}</span>
-          </button>
-        );
-      })
-    ) : (
-      <div className="px-4 py-4 text-sm text-gray-500 text-center">
-        No results for "<span className="font-semibold text-gray-700">{searchText}</span>" — try a category, subject, or mentor name.
-      </div>
-    )}
-  </div>
-)}
+                      return (
+                        <button
+                          key={`${item.type}-${item.value}-${i}`}
+                          onMouseDown={() => handleSuggestionClick(item)}
+                          className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-background transition text-left border-b border-border last:border-b-0"
+                        >
+                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 ${badgeStyle}`}>
+                            {icon} {badgeLabel}
+                          </span>
+                          <span className="text-ink truncate">{item.label}</span>
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <div className="px-4 py-4 text-sm text-muted text-center">
+                      No results for &ldquo;<span className="font-semibold text-ink">{searchText}</span>&rdquo; — try a category, subject, or mentor name.
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
-            {/* Filter dimension tabs + chips for the selected category */}
-            {selectedCategory && (
-              <div className="mt-4">
-                <div className="flex justify-center gap-2 mb-3">
-                  {Object.keys(categoryFilters[selectedCategory]).map((dimension) => (
-                    <button
-                      key={dimension}
-                      onClick={() => setActiveDimension(dimension)}
-                      className={`px-3 py-1 rounded-md text-xs font-semibold transition ${
-                        activeDimension === dimension
-                          ? "bg-gray-900 text-white"
-                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                      }`}
-                    >
-                      {dimensionLabels[dimension]}
-                    </button>
-                  ))}
-                </div>
-                <div className="flex flex-wrap justify-center gap-2">
-                  {categoryFilters[selectedCategory][activeDimension].map((chip) => {
-                    const style = getChipStyle(activeDimension, chip);
-                    const isSelected = (selectedChips[activeDimension] || []).includes(chip);
 
-                    return (
-                      <button
-                        key={chip}
-                        onClick={() => handleChipSelect(activeDimension, chip)}
-                        className={`text-sm font-semibold px-4 py-1.5 rounded-full transition ${style.color} ${
-                          isSelected ? "ring-2 ring-gray-900" : "hover:opacity-80"
-                        }`}
-                      >
-                        {style.icon} {chip}
-                      </button>
-                    );
-                  })}
-                </div>
+            {/* Thumbnail strip */}
+            {!mentorsLoading && stripMentors.length > 0 && (
+              <div className="flex gap-3 mt-8">
+                {stripMentors.map((m) => (
+                  <Link key={m.id} href={`/mentors/${m.id}`} className="relative w-16 h-16 md:w-20 md:h-20 shrink-0">
+                    <MentorPhoto mentor={m} className="w-full h-full rounded-lg border border-border text-xl" />
+                    <span className="absolute -bottom-1.5 -right-1.5 font-label text-[9px] tracking-wide uppercase bg-ink text-white px-1.5 py-0.5 rounded">
+                      {m.school?.split(" ")[0] || getFlag(m.country)}
+                    </span>
+                  </Link>
+                ))}
               </div>
             )}
           </div>
         </div>
       </section>
 
-      {/* Stats */}
-      <section className="bg-white pt-6 pb-6">
-  <div className="max-w-5xl mx-auto px-6 py-5 rounded-2xl grid grid-cols-2 md:grid-cols-6 gap-4 text-center">
+      {/* ============ STATS STRIP ============ */}
+      <section className="px-6 py-8 border-y border-border bg-surface">
+        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-6 gap-8 text-center">
           {mentorsLoading
             ? [...Array(6)].map((_, i) => (
                 <div key={i} className="animate-pulse">
-                  <div className="h-10 w-16 bg-gray-200 rounded mx-auto mb-2"></div>
-                  <div className="h-4 w-24 bg-gray-200 rounded mx-auto"></div>
+                  <div className="h-7 w-12 bg-background rounded mx-auto mb-2"></div>
+                  <div className="h-3 w-20 bg-background rounded mx-auto"></div>
                 </div>
               ))
-            : (
-              <>
-                <div>
-                  <p className="text-4xl font-extrabold text-highlight">{verifiedMentorsCount}</p>
-                  <p className="text-ink text-sm mt-0.5">Verified Mentors</p>
+            : statsList.map((stat) => (
+                <div key={stat.label}>
+                  <p className="font-display text-3xl text-primary">{stat.value}</p>
+                  <p className="font-label text-[10px] tracking-[0.1em] uppercase text-muted mt-1">{stat.label}</p>
                 </div>
-
-                <div>
-                  <p className="text-4xl font-extrabold text-highlight">{questionsAnsweredCount}</p>
-                  <p className="text-ink text-sm mt-0.5"> Student Questions Answered</p>
-                </div>
-
-                <div>
-                  <p className="text-4xl font-extrabold text-highlight">{careerPathsCount}</p>
-                  <p className="text-ink text-sm mt-0.5">Career Paths</p>
-                </div>
-
-                <div>
-                  <p className="text-4xl font-extrabold text-highlight">{avgRating}★</p>
-                  <p className="text-ink text-sm mt-0.5">Average Session Rating</p>
-                </div>
-
-                <div>
-                  <p className="text-4xl font-extrabold text-highlight">{languagesCount}</p>
-                  <p className="text-ink text-sm mt-0.5">Languages Spoken</p>
-                </div>
-
-                <div>
-                  <p className="text-4xl font-extrabold text-highlight">{schoolsCount}</p>
-                  <p className="text-ink text-sm mt-0.5">Universities Represented</p>
-                </div>
-              </>
-            )}
+              ))}
         </div>
       </section>
 
-      {/* How it works */}
-      <section className="bg-cream pt-10 pb-10">
-        <div className="max-w-5xl mx-auto px-6">
-          <h3 className="text-2xl font-bold text-gray-900 text-center mb-2">
-            How it Works
-          </h3>
-          <p className="text-ink text-center mb-10">
-           Three simple steps to connect with verified university students for honest, first-hand advice about courses, universities, applications and student life.
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-md transition text-center flex flex-col items-center">
-              <div className="w-14 h-14 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-2xl font-bold mb-4">
-                🔍
-              </div>
-              <h4 className="font-bold text-gray-900 text-lg mb-2">1. Find the Right Mentor</h4>
-              <p className="text-gray-600 text-sm">
-                Browse verified mentors by course, university, country, or language to find someone whose journey matches yours.
-              </p>
-            </div>
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-md transition text-center flex flex-col items-center">
-              <div className="w-14 h-14 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-2xl font-bold mb-4">
-                💬
-              </div>
-              <h4 className="font-bold text-gray-900 text-lg mb-2">2. Reach Out</h4>
-              <p className="text-gray-600 text-sm">
-                Post a question to the community, or book a 1-on-1 session directly with a verified mentor.
-              </p>
-            </div>
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-md transition text-center flex flex-col items-center">
-              <div className="w-14 h-14 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-2xl font-bold mb-4">
-                ✅
-              </div>
-              <h4 className="font-bold text-gray-900 text-lg mb-2">3. Get Honest Advice</h4>
-              <p className="text-gray-600 text-sm">
-                Learn what your future career is really like with advice from current students.
-              </p>
-            </div>
+      {/* ============ FEATURED MENTORS (Quadzio "results" pattern) ============ */}
+      <section className="relative overflow-hidden px-6 py-20 md:py-24">
+        {MENTORS_PHOTO_URL && (
+          <div
+            className="absolute inset-0 w-full h-full pointer-events-none"
+            style={{
+              maskImage:
+                "linear-gradient(to bottom, transparent, rgba(0,0,0,0.5) 15%, rgba(0,0,0,0.5) 85%, transparent)",
+              WebkitMaskImage:
+                "linear-gradient(to bottom, transparent, rgba(0,0,0,0.5) 15%, rgba(0,0,0,0.5) 85%, transparent)",
+            }}
+          >
+            <PhotoBlock src={MENTORS_PHOTO_URL} className="w-full h-full" tint={35} opacity={9} />
           </div>
-        </div>
-      </section>
-
-
-
-     {/* Why Students Use PeerVia */}
-      <section className="bg-white pt-10 pb-10">
-        <div className="max-w-6xl mx-auto px-6">
-          <h3 className="text-2xl font-bold text-gray-900 text-center mb-2">
-            Why Students Use PeerVia
-          </h3>
-          <p className="text-ink text-center mb-10">
-            No brochures, no sales pitches — just a tool built by students, for students.
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-md transition text-center flex flex-col items-center">
-              <div className="w-14 h-14 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-2xl font-bold mb-4">
-                🎓
-              </div>
-              <h4 className="font-bold text-gray-900 text-lg mb-2">Honest Advice</h4>
-              <p className="text-gray-600 text-sm">
-                From real university students, not marketing teams.
+        )}
+        <div className="max-w-6xl mx-auto relative">
+          <div className="flex items-end justify-between flex-wrap gap-4 mb-10">
+            <div>
+              <p className="font-label text-[11px] tracking-[0.15em] uppercase text-primary mb-3">
+                Meet The Mentors · Verified Now
               </p>
+              <h2 className="font-display text-3xl md:text-4xl text-ink">
+                Real students, <span className="italic text-primary">real answers</span>
+              </h2>
             </div>
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-md transition text-center flex flex-col items-center">
-              <div className="w-14 h-14 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-2xl font-bold mb-4">
-                💸
-              </div>
-              <h4 className="font-bold text-gray-900 text-lg mb-2">Completely Free</h4>
-              <p className="text-gray-600 text-sm">
-                No paywalls, no subscriptions, no hidden costs.
-              </p>
-            </div>
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-md transition text-center flex flex-col items-center">
-              <div className="w-14 h-14 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-2xl font-bold mb-4">
-                ✅
-              </div>
-              <h4 className="font-bold text-gray-900 text-lg mb-2">Verified Mentors</h4>
-              <p className="text-gray-600 text-sm">
-                Every mentor is reviewed before joining the platform.
-              </p>
-            </div>
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-md transition text-center flex flex-col items-center">
-              <div className="w-14 h-14 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-2xl font-bold mb-4">
-                🚫
-              </div>
-              <h4 className="font-bold text-gray-900 text-lg mb-2">No Algorithms</h4>
-              <p className="text-gray-600 text-sm">
-                Real conversations, not content ranked for engagement.
-              </p>
-            </div>
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-md transition text-center flex flex-col items-center">
-              <div className="w-14 h-14 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-2xl font-bold mb-4">
-                🤝
-              </div>
-              <h4 className="font-bold text-gray-900 text-lg mb-2">By Students, for Students</h4>
-              <p className="text-gray-600 text-sm">
-                Built by people who were in your shoes not long ago.
-              </p>
-            </div>
+            <span className="font-label text-[11px] tracking-[0.1em] uppercase border border-border rounded-full px-4 py-2 text-muted flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+              {verifiedMentorsCount} Verified Mentors
+            </span>
           </div>
-        </div>
-      </section>
 
-      {/* Featured Mentors */}
-      <section className="bg-cream px-6 pt-6 pb-10">
-        <div className="max-w-6xl mx-auto">
-          <h3 className="text-xl font-semibold text-gray-900 mb-6">
-            Featured Mentors
-          </h3>
           {mentorsError ? (
             <p className="text-red-600 font-semibold">Error: {mentorsError}</p>
           ) : mentorsLoading ? (
-            <p className="text-gray-500">Loading mentors...</p>
+            <p className="text-muted">Loading mentors...</p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {topMentors.map((mentor) => (
                 <Link
                   key={mentor.id}
                   href={`/mentors/${mentor.id}`}
-                  className="bg-white border border-gray-200 rounded-2xl flex flex-col h-full overflow-hidden hover:shadow-md hover:border-green-200 hover:-translate-y-0.5 transition"
+                  className="bg-surface border border-border rounded-2xl p-6 flex flex-col h-full hover:border-primary/40 transition"
                 >
-                  <div className={`h-1.5 ${mentor.available ? "bg-gradient-to-r from-green-600 via-green-500 to-emerald-400" : "bg-gray-200"}`} />
-                  <div className="p-6 flex flex-col h-full">
-                  {/* Top: avatar + name + school */}
-                  <div className="flex items-start gap-4 mb-4">
-                    <div className="w-14 h-14 rounded-full bg-green-800 text-white flex items-center justify-center font-bold text-lg shrink-0 ring-4 ring-green-50">
-                      {mentor.initials}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <h4 className="font-bold text-gray-900 text-lg leading-tight">
-                          {mentor.name}
-                        </h4>
-                        <span className={`flex items-center gap-1 text-xs font-semibold shrink-0 ${mentor.available ? "text-green-600" : "text-gray-400"}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${mentor.available ? "bg-green-600" : "bg-gray-400"}`}></span>
-                          {mentor.available ? "Open" : "Closed"}
-                        </span>
-                      </div>
-                      <p className="text-gray-500 text-sm">
-                        {mentor.school} · {mentor.year}
+                  <div className="flex items-center gap-4 mb-4">
+                    <MentorPhoto mentor={mentor} className="w-16 h-16 rounded-lg shrink-0 text-xl" />
+                    <div>
+                      <p className="font-display text-lg text-ink leading-tight">{mentor.name}</p>
+                      <p className="text-muted text-sm">
+                        {getFlag(mentor.country)} {mentor.school}
                       </p>
-                      {mentor.verified && (
-                        <span className="inline-block mt-1 text-xs font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded-full">
-                          ✓ Verified Since{" "}
-                          {mentor.created_at &&
-                            new Date(mentor.created_at).toLocaleDateString("en-GB", {
-                              month: "short",
-                              year: "numeric",
-                            })}
-                        </span>
-                      )}
                     </div>
                   </div>
 
-                  {/* Subject tag */}
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    <span
-                      className={`inline-block text-xs font-semibold px-3 py-1 rounded-full ${getSubjectStyle(mentor.subject).color}`}
-                    >
-                      {getSubjectStyle(mentor.subject).icon} {mentor.subject}
-                    </span>
-                    <span className="inline-block text-xs font-semibold px-3 py-1 rounded-full bg-slate-100 text-slate-700">
-                      {getFlag(mentor.country)} {mentor.country}
-                    </span>
-                  </div>
+                  <p className="text-muted text-sm italic mb-4 line-clamp-2">
+                    &ldquo;{mentor.bio}&rdquo;
+                  </p>
 
-                  {/* Bio */}
-                  <p className="text-gray-600 text-sm mb-5">{mentor.bio}</p>
+                  <p className="font-label text-[10px] tracking-[0.1em] uppercase text-primary mb-4">
+                    {mentor.available ? "● Books Live 1:1 Calls" : "○ Currently Closed"}
+                  </p>
 
-                  {/* Stats row */}
-                  <div className="grid grid-cols-3 gap-2 pt-4 border-t border-gray-100 text-center mt-auto">
-                    <div>
-                      <p className="font-bold text-gray-900">{mentor.sessions}</p>
-                      <p className="text-xs text-gray-500">Sessions</p>
-                    </div>
-                    <div>
-                      <p className="font-bold text-gray-900">{mentor.answers}</p>
-                      <p className="text-xs text-gray-500">Answers</p>
-                    </div>
-                    <div>
-                      <p className="font-bold text-gray-900">{mentor.rating}★</p>
-                      <p className="text-xs text-gray-500">Rating</p>
-                    </div>
-                  </div>
-                  </div>
+                  <span className="mt-auto inline-flex items-center justify-center gap-2 font-label text-[11px] tracking-[0.1em] uppercase border border-ink/20 rounded-md px-4 py-2.5 text-ink hover:bg-ink hover:text-white transition">
+                    View Profile →
+                  </span>
                 </Link>
               ))}
             </div>
           )}
 
           <div className="text-center mt-10">
-            <a href="/mentors" className="inline-block border border-gray-300 rounded-lg px-6 py-2.5 font-medium text-gray-800 hover:bg-white transition">
+            <a href="/mentors" className="font-label text-xs tracking-[0.1em] uppercase text-ink underline underline-offset-4 hover:text-primary transition">
               See All Mentors →
             </a>
           </div>
         </div>
       </section>
 
-      {/* Community */}
-      <section className="bg-cream pt-8 pb-16">
-        <div className="max-w-6xl mx-auto px-6">
-          <h3 className="text-2xl font-bold text-gray-900 mb-8">
-            What High Schoolers are Actually Asking
-          </h3>
+      {/* ============ HOW IT WORKS ============ */}
+      <section className="px-6 py-20 md:py-24 border-y border-border bg-surface">
+        <div className="max-w-5xl mx-auto">
+          <div className="max-w-xl mb-14">
+            <p className="font-label text-[11px] tracking-[0.15em] uppercase text-primary mb-3">
+              How It Works
+            </p>
+            <h2 className="font-display text-3xl md:text-4xl text-ink">
+              Three steps to a <span className="italic text-primary">real conversation</span>
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-x-10 gap-y-12">
+            {howItWorksSteps.map((step) => (
+              <div key={step.number} className="border-t border-border pt-6">
+                <p className="font-display text-3xl text-primary/40 mb-4">{step.number}</p>
+                <h3 className="font-display text-xl text-ink mb-2">{step.title}</h3>
+                <p className="text-muted text-sm leading-relaxed">{step.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ============ COMMUNITY ============ */}
+      <section className="relative overflow-hidden px-6 py-20 md:py-24">
+        {COMMUNITY_PHOTO_URL && (
+          <div
+            className="absolute inset-0 w-full h-full pointer-events-none"
+            style={{
+              maskImage:
+                "linear-gradient(to bottom, transparent, rgba(0,0,0,0.5) 15%, rgba(0,0,0,0.5) 85%, transparent)",
+              WebkitMaskImage:
+                "linear-gradient(to bottom, transparent, rgba(0,0,0,0.5) 15%, rgba(0,0,0,0.5) 85%, transparent)",
+            }}
+          >
+            <PhotoBlock src={COMMUNITY_PHOTO_URL} className="w-full h-full" tint={35} opacity={16} />
+          </div>
+        )}
+        <div className="max-w-6xl mx-auto relative">
+          <div className="flex items-end justify-between flex-wrap gap-4 mb-10">
+            <div>
+              <p className="font-label text-[11px] tracking-[0.15em] uppercase text-primary mb-3">
+                From The Community
+              </p>
+              <h2 className="font-display text-3xl text-ink">
+                What high schoolers are <span className="italic text-primary">actually asking</span>
+              </h2>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {topQuestions.map((qa, i) => (
-              <a key={i} href={`/community#${qa.id}`} className="bg-white rounded-2xl p-6 flex flex-col h-full border border-gray-200 hover:shadow-md transition">
+              <a key={i} href={`/community#${qa.id}`} className="bg-surface border border-border rounded-2xl p-6 flex flex-col h-full hover:border-primary/40 transition">
                 <div className="flex flex-wrap gap-2 mb-3">
-                  <span
-                    className={`inline-block text-xs font-semibold px-3 py-1 rounded-full ${getSubjectStyle(qa.subject).color}`}
-                  >
+                  <span className={`inline-block text-xs font-semibold px-3 py-1 rounded-full ${getSubjectStyle(qa.subject).color}`}>
                     {getSubjectStyle(qa.subject).icon} {qa.subject}
                   </span>
-                  <span className="inline-block text-xs font-semibold px-3 py-1 rounded-full bg-slate-100 text-slate-700">
+                  <span className="inline-block text-xs font-semibold px-3 py-1 rounded-full bg-ink/5 text-ink">
                     {getFlag(qa.country)} {qa.country}
                   </span>
                 </div>
 
-                <h4 className="font-bold text-gray-900 text-lg mb-2">
-                  {qa.question}
-                </h4>
-                <p className="text-gray-500 text-sm mb-4 line-clamp-3">{qa.answer}</p>
+                <h4 className="font-display text-lg text-ink mb-2">{qa.question}</h4>
+                <p className="text-muted text-sm italic mb-4 line-clamp-3">&ldquo;{qa.answer}&rdquo;</p>
 
-                <div className="flex items-center gap-3 pt-4 mt-auto border-t border-gray-100">
-                  <div className="w-9 h-9 rounded-full bg-green-800 text-white flex items-center justify-center font-bold text-sm shrink-0">
+                <div className="flex items-center gap-3 pt-4 mt-auto border-t border-border">
+                  <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm shrink-0">
                     {qa.initials}
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-900 text-sm">{qa.name}</p>
-                    <p className="text-gray-500 text-xs">
+                    <p className="font-semibold text-ink text-sm">{qa.name}</p>
+                    <p className="font-label text-[10px] tracking-[0.05em] uppercase text-muted">
                       {qa.school} · {qa.year}
                     </p>
                   </div>
@@ -724,10 +733,79 @@ export default function Home() {
           </div>
 
           <div className="text-center mt-10">
-           <a href="/community" className="inline-block border border-gray-300 rounded-lg px-6 py-2.5 font-medium text-gray-800 hover:bg-white transition">
-              See all Community Posts →
+            <a href="/community" className="font-label text-xs tracking-[0.1em] uppercase text-ink underline underline-offset-4 hover:text-primary transition">
+              See All Community Posts →
             </a>
           </div>
+        </div>
+      </section>
+
+      {/* ============ WHY PEERVIA ============ */}
+      <section className="px-6 py-20 md:py-24 border-t border-border bg-surface">
+        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-[280px_1fr] gap-12">
+          <div>
+            <p className="font-label text-[11px] tracking-[0.15em] uppercase text-primary mb-3">
+              Why PeerVia
+            </p>
+            <h2 className="font-display text-3xl text-ink mb-4 leading-tight">
+              No brochures. <span className="italic text-primary">No sales pitches.</span>
+            </h2>
+            <p className="text-muted">Just a tool built by students, for students.</p>
+          </div>
+          <div className="divide-y divide-border">
+            {whyPeerVia.map((item) => (
+              <div key={item.title} className="flex items-start gap-5 py-6 first:pt-0 last:pb-0">
+                <span className="font-display text-2xl text-primary/40 shrink-0 w-10">{item.number}</span>
+                <div>
+                  <h3 className="font-display text-lg text-ink mb-1">{item.title}</h3>
+                  <p className="text-muted text-sm leading-relaxed">{item.text}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+           {/* ============ CLOSING CTA ============ */}
+      <section className="relative overflow-hidden px-6 py-24 text-center">
+        {CTA_PHOTO_URL && (
+          <>
+            <PhotoBlock src={CTA_PHOTO_URL} className="absolute inset-0 w-full h-full" tint={70} />
+            <div className="absolute inset-0 bg-ink/60" />
+          </>
+        )}
+        {!CTA_PHOTO_URL && (
+          <div className="absolute inset-0 bg-primary" />
+        )}
+        <div
+          className="absolute -left-10 top-6 w-48 h-28 -rotate-12 opacity-[0.06] pointer-events-none"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(45deg, var(--color-background) 0px, var(--color-background) 3px, transparent 3px, transparent 14px)",
+          }}
+        />
+               <div className="max-w-xl mx-auto relative">
+          <h2
+            className="font-display text-4xl md:text-5xl text-ink mb-8"
+            style={CTA_PHOTO_URL ? { color: "#fff", textShadow: "0 2px 12px rgba(0,0,0,0.45)" } : undefined}
+          >
+            Browse free.{" "}
+            <span
+              className="italic"
+              style={CTA_PHOTO_URL ? { color: "#fff" } : { color: "var(--color-primary)" }}
+            >
+              Join when ready.
+            </span>
+          </h2>
+          <a
+            href="/mentors"
+            className="inline-block font-label text-sm tracking-[0.1em] uppercase bg-primary text-white px-8 py-4 rounded-lg font-semibold hover:bg-primary-dark transition"
+          >
+            Find A Mentor →
+          </a>
+          <p className="font-label text-[11px] tracking-[0.05em] uppercase text-background/60 mt-5">
+            100% Free · No Sign-Up To Browse · Verified Mentors Only
+          </p>
         </div>
       </section>
     </main>

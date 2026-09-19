@@ -3,7 +3,6 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Navbar from "@/Components/Navbar";
 import { supabase } from "@/lib/supabase";
-import { getSubjectStyle } from "@/data/mentors";
 import Link from "next/link";
 
 const countryFlags = { NL: "🇳🇱", UK: "🇬🇧" };
@@ -11,7 +10,7 @@ const countries = ["All", "NL", "UK"];
 
 export default function CourseGuides() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#FFF9F2]" />}>
+    <Suspense fallback={<div className="min-h-screen bg-background" />}>
       <CourseGuidesContent />
     </Suspense>
   );
@@ -36,7 +35,8 @@ function CourseGuidesContent() {
           countryLabel: g.country_label,
           popularUniversities: g.popular_universities,
           languageRequirement: g.language_requirement,
-         datePublished: g.date_published,
+          datePublished: g.date_published,
+          imageUrl: g.image_url,
         }))
       );
       setLoading(false);
@@ -84,16 +84,18 @@ function CourseGuidesContent() {
   });
 
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="min-h-screen bg-background">
       <Navbar />
 
-      <div className="max-w-6xl mx-auto px-6 py-10">
-        <h1 className="text-3xl font-extrabold text-primary mb-2">Course Guides</h1>
-        <p className="text-ink mb-6">
-          Everything you need to know about different fields of study. How the course works, study pathways, entry requirements, and what to expect along the way.
+      <div className="max-w-6xl mx-auto px-6 py-12">
+        <p className="font-label text-xs uppercase tracking-[0.2em] text-primary mb-3">
+          Field by field, country by country
+        </p>
+        <h1 className="font-display text-4xl text-ink mb-3">Course Guides</h1>
+        <p className="text-muted max-w-xl mb-8 leading-relaxed">
+          Real pathways into the fields students actually apply for, written by the people already on them.
         </p>
 
-        {/* Country filter */}
         <div className="flex flex-wrap gap-2 mb-3">
           {countries.map((c) => {
             const isActive = c === "All" ? activeCountries.length === 0 : activeCountries.includes(c);
@@ -101,10 +103,10 @@ function CourseGuidesContent() {
               <button
                 key={c}
                 onClick={() => toggleCountry(c)}
-                className={`px-4 py-1.5 rounded-full text-sm font-semibold border transition ${
+                className={`font-label text-xs uppercase tracking-wide px-4 py-1.5 rounded-full border transition ${
                   isActive
-                    ? "border-green-600 text-green-700 bg-green-50"
-                    : "border-gray-300 text-gray-700 bg-white hover:border-gray-400"
+                    ? "border-primary bg-primary text-background"
+                    : "border-border text-muted bg-surface hover:border-primary hover:text-primary"
                 }`}
               >
                 {c === "All" ? "All" : `${countryFlags[c]} ${c}`}
@@ -113,133 +115,73 @@ function CourseGuidesContent() {
           })}
         </div>
 
-        {/* Subject filter */}
-        <div className="flex flex-wrap gap-2 mb-8">
+        <div className="flex flex-wrap gap-2 mb-10">
           {subjects.map((s) => {
             const isActive = s === "All" ? activeSubjects.length === 0 : activeSubjects.includes(s);
-            const style = s === "All" ? null : getSubjectStyle(s);
-
             return (
               <button
                 key={s}
                 onClick={() => toggleSubject(s)}
-                className={`px-4 py-1.5 rounded-full text-sm font-semibold border transition ${
-                  s === "All"
-                    ? isActive
-                      ? "border-green-600 text-green-700 bg-green-50"
-                      : "border-gray-300 text-gray-700 bg-white hover:border-gray-400"
-                    : isActive
-                    ? `${style.color} border-transparent ring-2 ring-offset-1 ring-gray-400`
-                    : `${style.color} border-transparent opacity-60 hover:opacity-100`
+                className={`font-label text-xs uppercase tracking-wide px-4 py-1.5 rounded-full border transition ${
+                  isActive
+                    ? "border-primary bg-primary text-background"
+                    : "border-border text-muted bg-surface hover:border-primary hover:text-primary"
                 }`}
               >
-                {s !== "All" && `${style.icon} `}
                 {s}
               </button>
             );
           })}
         </div>
 
-        {/* Course guide cards */}
         {loading ? (
-          <p className="text-gray-500">Loading course guides...</p>
+          <p className="font-label text-sm uppercase tracking-wide text-muted">Loading course guides...</p>
         ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {filteredGuides.map((guide) => (
-            <Link
-  key={guide.id}
-  href={`/course-guides/${guide.id}`}
-  className="bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-md hover:border-gray-300 hover:-translate-y-0.5 transition flex flex-col h-full"
->
-              <div className={`px-6 py-4 flex items-center justify-between gap-3 ${getSubjectStyle(guide.subject).color}`}>
-                <div className="flex items-center gap-2.5">
-                  <span className="w-8 h-8 rounded-lg bg-white/60 flex items-center justify-center text-base shrink-0">
-                    {getSubjectStyle(guide.subject).icon}
-                  </span>
-                  <h3 className="font-bold text-base leading-tight">
-                    {guide.subject} in {guide.countryLabel}
-                  </h3>
-                </div>
-                <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-white/70 shrink-0">
-                  {guide.flag} {guide.country}
-                </span>
-              </div>
-
-              <div className="p-6 flex flex-col flex-1">
-                <p className="text-sm text-gray-600 mb-4 line-clamp-3 whitespace-pre-line">{guide.description}</p>
-
-              {guide.popularUniversities?.length > 0 && (
-  <div className="mb-4 pb-4 border-b border-gray-100">
-    <div className="flex items-center gap-1.5 mb-1.5">
-      <span className="text-xs">🏛️</span>
-      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-        Popular universities
-      </p>
-    </div>
-    <div className="flex flex-wrap gap-1.5">
-      {guide.popularUniversities.slice(0, 3).map((uni) => (
-        <span
-          key={uni}
-          className="text-xs font-semibold px-2.5 py-1 rounded-full bg-orange-100 text-orange-800"
-        >
-          {uni}
-        </span>
-      ))}
-      {guide.popularUniversities.length > 3 && (
-        <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-500">
-          +{guide.popularUniversities.length - 3} more
-        </span>
-      )}
-    </div>
-  </div>
-)}
-   
-                <div className="mb-4 pb-4 border-b border-gray-100">
-                  <div className="flex items-center gap-1.5 mb-1.5">
-                    <span className="text-xs">📋</span>
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                      Admission requirements
-                    </p>
-                  </div>
-                  <p className="text-sm text-gray-600 line-clamp-2 whitespace-pre-line">{guide.admission}</p>
-                </div>
-
-                <div className="mb-4">
-                  <div className="flex items-center gap-1.5 mb-1.5">
-                    <span className="text-xs">🎯</span>
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                      Extracurriculars
-                    </p>
-                  </div>
-                  <ul className="text-sm text-gray-600 space-y-1">
-                    {guide.extracurriculars.map((activity) => (
-                      <li key={activity} className="flex items-start gap-2">
-                        <span className="text-green-600 mt-0.5">•</span>
-                        <span>{activity}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {guide.languageRequirement && (
-                  <div className="mb-4">
-                    <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">
-                      <p className="text-xs font-semibold text-amber-800">
-                        ⚠️ Important: {guide.languageRequirement}
-                      </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredGuides.map((guide) => (
+              <Link
+                key={guide.id}
+                href={`/course-guides/${guide.id}`}
+                className="group bg-border/40 hover:bg-primary/20 rounded-2xl p-2 transition-colors duration-200"
+              >
+                <div className="aspect-square rounded-xl overflow-hidden bg-surface relative">
+                  {guide.imageUrl ? (
+                    <img
+                      src={guide.imageUrl}
+                      alt={`${guide.subject} in ${guide.countryLabel}`}
+                      className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-surface to-border/60">
+                      <span className="font-display text-4xl text-primary/30">
+                        {guide.subject?.charAt(0)}
+                      </span>
                     </div>
-                  </div>
-                )}
+                  )}
+                  <span className="absolute top-2 right-2 font-label text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-background/90 text-ink backdrop-blur-sm">
+                    {guide.flag} {guide.country}
+                  </span>
+                </div>
 
-                {guide.datePublished && (
-  <p className="text-xs text-gray-400 italic mt-auto pt-3 border-t border-gray-100">
-    Published {new Date(guide.datePublished + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
-  </p>
-)}
-              </div>
-            </Link>
-          ))}
-        </div>
+                <div className="bg-surface rounded-xl -mt-4 relative px-4 pt-4 pb-4">
+                  <h3 className="font-display text-lg text-ink leading-tight mb-1.5">
+                    <span className="font-semibold">{guide.subject}</span>{" "}
+                    <span className="text-muted font-normal">in {guide.countryLabel}</span>
+                  </h3>
+
+                  <p className="text-sm text-ink/70 line-clamp-2 leading-relaxed mb-3">
+                    {guide.description}
+                  </p>
+
+                  <div className="border-t border-border pt-2.5">
+                    <span className="font-label text-[10px] uppercase tracking-[0.2em] text-ink/60 group-hover:text-primary transition-colors">
+                      Read the full guide →
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
         )}
       </div>
     </div>

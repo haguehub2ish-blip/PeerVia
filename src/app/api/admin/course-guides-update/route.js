@@ -22,7 +22,8 @@ export async function POST(request) {
     return Response.json({ error: "Invalid session" }, { status: 401 });
   }
 
-  if (userData.user.email !== process.env.ADMIN_EMAIL) {
+  const adminEmails = (process.env.ADMIN_EMAILS || "").split(",").map((e) => e.trim());
+  if (!adminEmails.includes(userData.user.email)) {
     return Response.json({ error: "Not authorized" }, { status: 403 });
   }
 
@@ -44,6 +45,7 @@ export async function POST(request) {
     admission: guide.admission,
     language_requirement: guide.languageRequirement || null,
     date_published: guide.datePublished || null,
+    image_url: guide.imageUrl || null,
     journey_steps: guide.journeySteps || [],
     application_rules: guide.applicationRules || [],
     entry_paths: guide.entryPaths || [],
