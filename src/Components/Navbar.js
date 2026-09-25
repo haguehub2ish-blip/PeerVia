@@ -7,6 +7,7 @@ import Image from "next/image";
 export default function Navbar() {
   const pathname = usePathname();
   const [user, setUser] = useState(null);
+    const [mentorPhoto, setMentorPhoto] = useState(null);
   const [userLoaded, setUserLoaded] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -31,6 +32,16 @@ export default function Navbar() {
       supabase.auth.getUser().then(({ data: freshData }) => {
         if (freshData?.user) {
           setUser(freshData.user);
+          if (freshData.user.user_metadata?.role === "mentor") {
+            supabase
+              .from("mentorss")
+              .select("photo_url")
+              .eq("user_id", freshData.user.id)
+              .single()
+              .then(({ data: mentorRow }) => {
+                if (mentorRow?.photo_url) setMentorPhoto(mentorRow.photo_url);
+              });
+          }
         }
       });
     });
@@ -122,8 +133,18 @@ export default function Navbar() {
                   Admin
                 </a>
               )}
-              <a href="/settings" className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm hover:bg-primary-dark transition shrink-0">
-                {getInitials(user)}
+              <a href="/settings" className="w-9 h-9 rounded-full overflow-hidden shrink-0 hover:opacity-90 transition">
+                {mentorPhoto || user?.user_metadata?.avatar_url ? (
+                  <img
+                    src={mentorPhoto || user.user_metadata.avatar_url}
+                    alt="Profile"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-primary text-white flex items-center justify-center font-bold text-sm">
+                    {getInitials(user)}
+                  </div>
+                )}
               </a>
               <button
                 onClick={handleLogout}

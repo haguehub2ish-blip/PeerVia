@@ -8,6 +8,117 @@ const supabaseAdmin = createClient(
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+// Shared, on-brand HTML shell for every "mentor answered" email.
+// Colors/typography mirror the app's tokens (primary #BC6C25, ink #241A12,
+// surface #F8EFD9, badge #2B1B10). Fraunces/Plex Mono are approximated with
+// system serif/mono fallbacks since custom @font-face is unreliable in inboxes.
+function renderAnswerEmail({ siteUrl, eyebrow, heading, intro, question, answer, mentorName, ctaUrl, ctaLabel, preheader }) {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PeerVia</title>
+</head>
+<body style="margin:0; padding:0; background-color:#F1E7CC; font-family: Helvetica, Arial, sans-serif;">
+  <div style="display:none; max-height:0; overflow:hidden; opacity:0;">${preheader}</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F1E7CC; padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px; background-color:#F8EFD9; border-radius:6px; overflow:hidden; border:1px solid #E3D2AE;">
+
+          <tr>
+            <td style="height:4px; background-color:#BC6C25; font-size:0; line-height:0;">&nbsp;</td>
+          </tr>
+
+          <tr>
+            <td style="padding:30px 32px 0 32px;">
+              <table role="presentation" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="width:30px; height:30px; background-color:#2B1B10; border-radius:4px; text-align:center;">
+                    <span style="color:#F8EFD9; font-size:15px; font-weight:800; line-height:30px; font-family: Georgia, 'Times New Roman', serif;">P</span>
+                  </td>
+                  <td style="padding-left:10px; font-size:16px; font-weight:700; color:#241A12; font-family: Georgia, 'Times New Roman', serif;">PeerVia</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:22px 32px 0 32px;">
+              <span style="display:inline-block; font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:#F8EFD9; background-color:#2B1B10; padding:5px 10px; border-radius:4px; font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;">${eyebrow}</span>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:14px 32px 0 32px;">
+              <h1 style="margin:0; font-size:24px; line-height:1.28; color:#241A12; font-weight:700; letter-spacing:-0.01em; font-family: Georgia, 'Times New Roman', serif;">${heading}</h1>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:10px 32px 0 32px;">
+              <p style="margin:0; font-size:15px; line-height:1.6; color:#7A6952;">${intro}</p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:22px 32px 0 32px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F1E7CC; border:1px solid #E3D2AE; border-radius:6px;">
+                <tr>
+                  <td style="padding:16px 18px;">
+                    <p style="margin:0 0 6px 0; font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:#7A6952; font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;">Question</p>
+                    <p style="margin:0; font-size:15px; line-height:1.55; color:#241A12;">${question}</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:14px 32px 0 32px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F3E4D3; border-radius:6px;">
+                <tr>
+                  <td style="width:3px; background-color:#BC6C25; font-size:0; line-height:0;">&nbsp;</td>
+                  <td style="padding:16px 18px;">
+                    <p style="margin:0 0 8px 0; font-size:15px; line-height:1.6; color:#241A12;">${answer}</p>
+                    <p style="margin:0; font-size:13px; font-weight:700; color:#8A4E1B;">— ${mentorName}, Verified Mentor</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:28px 32px 6px 32px;">
+              <table role="presentation" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="border-radius:6px; background-color:#BC6C25;">
+                    <a href="${ctaUrl}" style="display:inline-block; padding:12px 22px; font-size:14px; font-weight:700; color:#F8EFD9; text-decoration:none; border-radius:6px; font-family: Helvetica, Arial, sans-serif;">${ctaLabel}</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:30px 32px 28px 32px; border-top:1px solid #E3D2AE;">
+              <p style="margin:0; font-size:12px; line-height:1.6; color:#9C8B72;">
+                You're receiving this email because you have an active account on PeerVia. You can manage what you get notified about anytime in your
+                <a href="${siteUrl}/settings" style="color:#BC6C25; text-decoration:underline;">notification settings</a>.
+              </p>
+              <p style="margin:12px 0 0 0; font-size:12px; color:#B7A98B;">© ${new Date().getFullYear()} PeerVia · By students, for students.</p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
 export async function POST(request) {
   const { userQuestionId, question, answer, mentorName, subject, country, askerUserId } =
     await request.json();
@@ -17,6 +128,7 @@ export async function POST(request) {
   }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || new URL(request.url).origin;
+  const ctaUrl = `${siteUrl}/community#${userQuestionId}`;
 
   // Get all users from Supabase Auth
   const { data: usersData, error: usersError } = await supabaseAdmin.auth.admin.listUsers();
@@ -48,22 +160,21 @@ export async function POST(request) {
       try {
         await resend.emails.send({
           from: "PeerVia <info@peervia.org>",
-replyTo: "info.peervia@gmail.com",
+          replyTo: "info.peervia@gmail.com",
           to: askerData.user.email,
           subject: "A Mentor Answered Your Question On PeerVia",
-          html: `
-            <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto;">
-              <h2 style="color: #166534;">Your Question Was Answered</h2>
-              <p style="color: #374151;"><strong>Your Question:</strong> ${question}</p>
-              <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin: 16px 0;">
-                <p style="color: #1f2937; margin: 0 0 8px 0;">${answer}</p>
-                <p style="color: #166534; font-weight: 600; margin: 0; font-size: 14px;">— ${mentorName}, Verified Mentor</p>
-              </div>
-              <a href="${siteUrl}/community#${userQuestionId}" style="display: inline-block; background: #16a34a; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">
-                View On PeerVia
-              </a>
-            </div>
-          `,
+          html: renderAnswerEmail({
+            siteUrl,
+            eyebrow: "Your question was answered",
+            heading: "A mentor just replied",
+            intro: "A verified mentor answered the question you asked on PeerVia.",
+            question,
+            answer,
+            mentorName,
+            ctaUrl,
+            ctaLabel: "View on PeerVia →",
+            preheader: `${mentorName} just answered your question on PeerVia.`,
+          }),
         });
         notifiedEmails.add(askerData.user.email.toLowerCase());
         sendResults.push({ email: askerData.user.email, success: true, type: "asker" });
@@ -78,22 +189,21 @@ replyTo: "info.peervia@gmail.com",
     try {
       await resend.emails.send({
         from: "PeerVia <info@peervia.org>",
-replyTo: "info.peervia@gmail.com",
+        replyTo: "info.peervia@gmail.com",
         to: u.email,
         subject: `A Mentor Just Answered A ${subject} Question On PeerVia`,
-        html: `
-          <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto;">
-            <h2 style="color: #166534;">New Answer On PeerVia</h2>
-            <p style="color: #374151;"><strong>Question:</strong> ${question}</p>
-            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin: 16px 0;">
-              <p style="color: #1f2937; margin: 0 0 8px 0;">${answer}</p>
-              <p style="color: #166534; font-weight: 600; margin: 0; font-size: 14px;">— ${mentorName}, Verified Mentor</p>
-            </div>
-            <a href="${siteUrl}/community#${userQuestionId}" style="display: inline-block; background: #16a34a; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">
-              View On PeerVia
-            </a>
-          </div>
-        `,
+        html: renderAnswerEmail({
+          siteUrl,
+          eyebrow: "New answer on PeerVia",
+          heading: `A new ${subject} question was answered`,
+          intro: "A verified mentor just answered a question that matches your notification preferences.",
+          question,
+          answer,
+          mentorName,
+          ctaUrl,
+          ctaLabel: "View on PeerVia →",
+          preheader: `A verified mentor just answered a ${subject} question on PeerVia.`,
+        }),
       });
       sendResults.push({ email: u.email, success: true, type: "preference" });
     } catch (err) {

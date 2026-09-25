@@ -245,20 +245,20 @@ export default function MentorDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FFF9F2]">
+      <div className="min-h-screen bg-background">
         <Navbar />
-        <p className="text-gray-500 max-w-4xl mx-auto px-6 py-16">Loading Dashboard...</p>
+        <p className="text-muted max-w-4xl mx-auto px-6 py-16">Loading dashboard...</p>
       </div>
     );
   }
 
   if (notAuthorized) {
     return (
-      <div className="min-h-screen bg-[#FFF9F2]">
+      <div className="min-h-screen bg-background">
         <Navbar />
         <div className="max-w-md mx-auto px-6 py-16 text-center">
-          <p className="text-gray-700 font-medium">
-            This Page Is Only Available To Approved Mentors.
+          <p className="text-ink font-medium">
+            This page is only available to approved mentors.
           </p>
         </div>
       </div>
@@ -266,137 +266,128 @@ export default function MentorDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FFF9F2]">
+    <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="max-w-4xl mx-auto px-6 py-10">
-        <div className="flex items-center justify-between flex-wrap gap-3 mb-8">
+      <div className="max-w-4xl mx-auto px-6 py-12">
+        <div className="flex items-center justify-between flex-wrap gap-3 mb-10">
           <div>
-            <h1 className="text-3xl font-extrabold text-gray-900 mb-1">
-              Mentor Dashboard
-            </h1>
-            <p className="text-gray-600">
+            <h1 className="font-display text-3xl text-ink mb-1">Mentor Dashboard</h1>
+            <p className="text-muted text-sm">
               Welcome back, {mentorProfile?.name || user?.user_metadata?.name}.
             </p>
           </div>
           <span
-            className={`text-xs font-semibold px-3 py-1.5 rounded-full flex items-center gap-1.5 ${
-              available ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
+            className={`text-xs font-medium px-2.5 py-1 rounded-md border flex items-center gap-1.5 ${
+              available ? "text-primary border-primary/30" : "text-muted border-border"
             }`}
           >
-            <span className={`w-2 h-2 rounded-full ${available ? "bg-green-600" : "bg-gray-400"}`} />
+            <span className={`w-1.5 h-1.5 rounded-full ${available ? "bg-primary" : "bg-muted"}`} />
             {available ? "Open for bookings" : "Not accepting bookings"}
           </span>
         </div>
 
         {/* Profile summary */}
-        <div className="bg-white border border-gray-200 rounded-2xl mb-6 shadow-sm overflow-hidden">
-          <div className="h-1.5 bg-gradient-to-r from-green-600 via-green-500 to-emerald-400" />
-          <div className="p-6">
-            <div className="flex items-start gap-5 flex-wrap">
-              <div className="relative shrink-0">
-                {photoPreview || mentorProfile?.photo_url ? (
-                  <img
-                    src={photoPreview || mentorProfile.photo_url}
-                    alt={mentorProfile?.name}
-                    className="w-16 h-16 rounded-full object-cover ring-4 ring-green-50"
-                  />
-                ) : (
-                  <div className="w-16 h-16 rounded-full bg-green-800 text-white flex items-center justify-center font-bold text-xl ring-4 ring-green-50">
-                    {mentorProfile?.initials || "?"}
-                  </div>
-                )}
-                <label className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-white border border-gray-300 flex items-center justify-center text-xs cursor-pointer hover:bg-gray-50 transition">
-                  ✎
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handlePhotoSelect}
-                    className="hidden"
-                  />
-                </label>
-              </div>
-              <div className="flex-1 min-w-[200px]">
-                <h2 className="text-xl font-extrabold text-gray-900">
-                  {mentorProfile?.name || user?.user_metadata?.name}
-                </h2>
-                <p className="text-gray-500">
-                  {mentorProfile?.school}
-                  {mentorProfile?.year ? ` · ${mentorProfile.year}` : ""}
-                </p>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {mentorProfile?.subject && (
-                    <span className={`inline-block text-xs font-semibold px-3 py-1 rounded-full ${getSubjectStyle(mentorProfile.subject).color}`}>
-                      {getSubjectStyle(mentorProfile.subject).icon} {mentorProfile.subject}
-                    </span>
-                  )}
-                  {mentorProfile?.country && (
-                    <span className="inline-block text-xs font-semibold px-3 py-1 rounded-full bg-slate-100 text-slate-700">
-                      {getFlag(mentorProfile.country)} {mentorProfile.country}
-                    </span>
-                  )}
-                  {mentorProfile?.verified && (
-                    <span className="inline-block text-xs font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded-full">
-                      ✓ Verified
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {photoFile && (
-                <div className="flex items-center gap-2 w-full">
-                  <button
-                    onClick={handleUploadPhoto}
-                    disabled={photoUploading}
-                    className="bg-green-600 text-white px-4 py-1.5 rounded-lg text-xs font-semibold hover:bg-green-700 transition disabled:opacity-50"
-                  >
-                    {photoUploading ? "Uploading..." : "Save New Photo"}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setPhotoFile(null);
-                      setPhotoPreview(null);
-                    }}
-                    className="text-xs font-medium text-gray-500 hover:text-gray-700"
-                  >
-                    Cancel
-                  </button>
+        <div className="bg-surface border border-border rounded-lg mb-6 shadow-sm p-5">
+          <div className="flex items-start gap-5 flex-wrap">
+            <div className="relative shrink-0">
+              {photoPreview || mentorProfile?.photo_url ? (
+                <img
+                  src={photoPreview || mentorProfile.photo_url}
+                  alt={mentorProfile?.name}
+                  className="w-16 h-16 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-ink text-white flex items-center justify-center font-display text-xl">
+                  {mentorProfile?.initials || "?"}
                 </div>
               )}
+              <label className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-background border border-border flex items-center justify-center text-[10px] cursor-pointer hover:bg-surface transition">
+                ✎
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoSelect}
+                  className="hidden"
+                />
+              </label>
+            </div>
+            <div className="flex-1 min-w-[200px]">
+              <h2 className="font-display text-xl text-ink leading-tight">
+                {mentorProfile?.name || user?.user_metadata?.name}
+              </h2>
+              <p className="text-muted text-sm">
+                {mentorProfile?.school}
+                {mentorProfile?.year ? ` · ${mentorProfile.year}` : ""}
+              </p>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {mentorProfile?.subject && (
+                  <span className={`inline-block text-xs font-semibold px-3 py-1 rounded-full ${getSubjectStyle(mentorProfile.subject).color}`}>
+                    {getSubjectStyle(mentorProfile.subject).icon} {mentorProfile.subject}
+                  </span>
+                )}
+                {mentorProfile?.country && (
+                  <span className="inline-block text-xs font-semibold px-3 py-1 rounded-full bg-ink/5 text-ink">
+                    {getFlag(mentorProfile.country)} {mentorProfile.country}
+                  </span>
+                )}
+                {mentorProfile?.verified && (
+                  <span className="inline-block text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                    Verified
+                  </span>
+                )}
+              </div>
+            </div>
 
-              <div className="flex gap-6 pl-4 border-l border-gray-100 ml-auto">
-                <div className="text-center">
-                  <p className="text-lg font-extrabold text-gray-900">{mentorProfile?.sessions ?? 0}</p>
-                  <p className="text-[11px] uppercase tracking-wide text-gray-400 font-medium">Sessions</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-lg font-extrabold text-gray-900">{mentorProfile?.answers ?? 0}</p>
-                  <p className="text-[11px] uppercase tracking-wide text-gray-400 font-medium">Answers</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-lg font-extrabold text-gray-900">{mentorProfile?.rating ?? "—"}★</p>
-                  <p className="text-[11px] uppercase tracking-wide text-gray-400 font-medium">Rating</p>
-                </div>
+            {photoFile && (
+              <div className="flex items-center gap-2 w-full">
+                <button
+                  onClick={handleUploadPhoto}
+                  disabled={photoUploading}
+                  className="bg-ink text-white px-4 py-1.5 rounded-md text-xs font-semibold hover:opacity-90 transition disabled:opacity-50"
+                >
+                  {photoUploading ? "Uploading..." : "Save new photo"}
+                </button>
+                <button
+                  onClick={() => {
+                    setPhotoFile(null);
+                    setPhotoPreview(null);
+                  }}
+                  className="text-xs font-medium text-muted hover:text-ink"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+
+            <div className="flex gap-6 pl-4 border-l border-border ml-auto">
+              <div className="text-center">
+                <p className="font-display text-lg text-ink">{mentorProfile?.sessions ?? 0}</p>
+                <p className="text-[11px] uppercase tracking-wide text-muted font-medium">Sessions</p>
+              </div>
+              <div className="text-center">
+                <p className="font-display text-lg text-ink">{mentorProfile?.answers ?? 0}</p>
+                <p className="text-[11px] uppercase tracking-wide text-muted font-medium">Answers</p>
+              </div>
+              <div className="text-center">
+                <p className="font-display text-lg text-ink">{mentorProfile?.rating ?? "—"}★</p>
+                <p className="text-[11px] uppercase tracking-wide text-muted font-medium">Rating</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Profile section */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-6 mb-6 shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="w-7 h-7 rounded-lg bg-green-100 text-green-700 flex items-center justify-center text-sm">
-              ✎
-            </span>
-            <h2 className="text-lg font-bold text-gray-900">Your Profile</h2>
-          </div>
+        <div className="bg-surface border border-border rounded-lg p-6 mb-6 shadow-sm">
+          <h2 className="font-display text-xl text-ink mb-1">Your Profile</h2>
+          <p className="text-muted text-sm mb-6">Shown on your public mentor card and profile page.</p>
 
           <div className="grid sm:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Field of Study</label>
+              <label className="block text-sm text-muted mb-1">Field of study</label>
               <select
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-green-600"
+                className="w-full border border-border rounded-md px-4 py-2.5 text-sm text-ink bg-background focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="">Select a field...</option>
                 {Object.keys(subjectStyles).map((s) => (
@@ -405,11 +396,11 @@ export default function MentorDashboard() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+              <label className="block text-sm text-muted mb-1">Country</label>
               <select
                 value={country}
                 onChange={(e) => setCountry(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-green-600"
+                className="w-full border border-border rounded-md px-4 py-2.5 text-sm text-ink bg-background focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="">Select a country...</option>
                 {Object.keys(countryFlags).map((c) => (
@@ -431,7 +422,7 @@ export default function MentorDashboard() {
 
           <div className="grid sm:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
+              <label className="block text-sm text-muted mb-1">Age</label>
               <input
                 type="text"
                 inputMode="numeric"
@@ -443,73 +434,73 @@ export default function MentorDashboard() {
                   setAge(digitsOnly);
                 }}
                 placeholder="e.g. 21"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-600"
+                className="w-full border border-border rounded-md px-4 py-2.5 text-ink bg-background focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">LinkedIn</label>
+              <label className="block text-sm text-muted mb-1">LinkedIn</label>
               <input
                 type="url"
                 value={linkedin}
                 onChange={(e) => setLinkedin(e.target.value)}
                 placeholder="https://linkedin.com/in/you"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-600"
+                className="w-full border border-border rounded-md px-4 py-2.5 text-ink bg-background focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
           </div>
 
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
-            <p className="text-xs text-gray-500 mb-1">Short intro shown on your mentor card in listings.</p>
+            <label className="block text-sm text-muted mb-1">Bio</label>
+            <p className="text-xs text-muted mb-1">Short intro shown on your mentor card in listings.</p>
             <textarea
               rows={3}
               value={bio}
               onChange={(e) => setBio(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-600 resize-y"
+              className="w-full border border-border rounded-md px-4 py-2.5 text-ink bg-background focus:outline-none focus:ring-2 focus:ring-primary resize-y"
             />
           </div>
 
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">About Me</label>
-            <p className="text-xs text-gray-500 mb-1">A longer, more personal write-up shown on your full profile.</p>
+            <label className="block text-sm text-muted mb-1">About me</label>
+            <p className="text-xs text-muted mb-1">A longer, more personal write-up shown on your full profile.</p>
             <textarea
               rows={4}
               value={aboutMe}
               onChange={(e) => setAboutMe(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-600 resize-y"
+              className="w-full border border-border rounded-md px-4 py-2.5 text-ink bg-background focus:outline-none focus:ring-2 focus:ring-primary resize-y"
             />
           </div>
 
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Happy to Chat About</label>
-            <p className="text-xs text-gray-500 mb-1">Topics students can expect to ask you about, e.g. "Applications, imposter syndrome, part-time jobs".</p>
+            <label className="block text-sm text-muted mb-1">Happy to chat about</label>
+            <p className="text-xs text-muted mb-1">Topics students can expect to ask you about, e.g. "Applications, imposter syndrome, part-time jobs".</p>
             <textarea
               rows={2}
               value={happyToChat}
               onChange={(e) => setHappyToChat(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-600 resize-y"
+              className="w-full border border-border rounded-md px-4 py-2.5 text-ink bg-background focus:outline-none focus:ring-2 focus:ring-primary resize-y"
             />
           </div>
 
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mb-4">
-            <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+            <label className="flex items-center gap-2 text-sm text-ink cursor-pointer">
               <input
                 type="checkbox"
                 checked={available}
                 onChange={(e) => setAvailable(e.target.checked)}
-                className="w-4 h-4 accent-green-600"
+                className="w-4 h-4 accent-primary"
               />
-              Available For Bookings
+              Available for bookings
             </label>
 
-            <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+            <label className="flex items-center gap-2 text-sm text-ink cursor-pointer">
               <input
                 type="checkbox"
                 checked={calendarVisible}
                 onChange={(e) => setCalendarVisible(e.target.checked)}
-                className="w-4 h-4 accent-green-600"
+                className="w-4 h-4 accent-primary"
               />
-              Show Calendar On My Public Profile
+              Show calendar on my public profile
             </label>
           </div>
 
@@ -517,35 +508,33 @@ export default function MentorDashboard() {
             <p className="text-sm text-red-600 mb-3">{saveError}</p>
           )}
 
-          <button
-            onClick={handleSaveProfile}
-            disabled={saving}
-            className="bg-green-600 text-white px-5 py-2 rounded-lg text-sm font-semibold shadow-sm hover:bg-green-700 hover:shadow transition disabled:opacity-50"
-          >
-            {saving ? "Saving..." : "Save Profile"}
-          </button>
-          {saved && (
-            <span className="text-sm text-green-700 font-medium ml-2">
-              ✓ Saved
-            </span>
-          )}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleSaveProfile}
+              disabled={saving}
+              className="bg-ink text-white px-5 py-2 rounded-md text-sm font-semibold hover:opacity-90 transition disabled:opacity-50"
+            >
+              {saving ? "Saving..." : "Save profile"}
+            </button>
+            {saved && (
+              <span className="text-sm text-primary font-medium">Saved</span>
+            )}
+          </div>
         </div>
 
         {/* Calendar section */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <button
-              onClick={() => setCalendarExpanded(!calendarExpanded)}
-              className="flex items-center gap-2 text-lg font-bold text-gray-900"
-            >
-              <span className={`transition-transform ${calendarExpanded ? "rotate-90" : ""}`}>›</span>
-              Your Calendar
-            </button>
-          </div>
+        <div className="bg-surface border border-border rounded-lg p-6 mb-6 shadow-sm">
+          <button
+            onClick={() => setCalendarExpanded(!calendarExpanded)}
+            className="flex items-center gap-2 font-display text-xl text-ink"
+          >
+            <span className={`text-primary transition-transform ${calendarExpanded ? "rotate-90" : ""}`}>›</span>
+            Your Calendar
+          </button>
 
           {calendarExpanded && (
             <>
-              <p className="text-xs text-gray-500 mb-4">
+              <p className="text-xs text-muted mt-2 mb-4">
                 Students will only see this calendar on your public profile page if it's turned on.
               </p>
               {mentorProfile?.id && <MentorCalendarEditor mentorId={mentorProfile.id} />}
@@ -554,46 +543,41 @@ export default function MentorDashboard() {
         </div>
 
         {/* Unanswered questions */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="w-7 h-7 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center text-sm">
-              ?
-            </span>
-            <h2 className="text-lg font-bold text-gray-900">
-              Unanswered Community Questions
-            </h2>
-          </div>
-          <p className="text-sm text-gray-500 mb-4">
+        <div className="bg-surface border border-border rounded-lg p-6 shadow-sm">
+          <h2 className="font-display text-xl text-ink mb-1">
+            Unanswered Community Questions
+          </h2>
+          <p className="text-sm text-muted mb-6">
             Answer a student's question — it'll appear publicly on the community page.
           </p>
 
           {unansweredQuestions.length === 0 ? (
-            <div className="text-center py-8 border border-dashed border-gray-200 rounded-xl">
-              <p className="text-gray-500 text-sm">You're all caught up — no unanswered questions right now.</p>
+            <div className="text-center py-8 border border-dashed border-border rounded-lg">
+              <p className="text-muted text-sm">You're all caught up — no unanswered questions right now.</p>
             </div>
           ) : (
             <div className="space-y-4">
               {unansweredQuestions.map((q) => (
-                <div key={q.id} className="border border-gray-100 rounded-xl p-4 hover:border-green-200 hover:bg-green-50/30 transition-colors">
-                  <p className="font-semibold text-gray-900 mb-1">{q.question}</p>
-                  <p className="text-xs text-gray-500 mb-3">
-                    Asked By {q.author_name || "Anonymous"}
+                <div key={q.id} className="border border-border rounded-lg p-4 hover:border-primary/30 hover:bg-background/60 transition-colors">
+                  <p className="font-display text-ink mb-1">{q.question}</p>
+                  <p className="text-xs text-muted mb-3">
+                    Asked by {q.author_name || "Anonymous"}
                   </p>
                   <textarea
                     rows={2}
-                    placeholder="Write Your Answer..."
+                    placeholder="Write your answer..."
                     value={answerDrafts[q.id] || ""}
                     onChange={(e) =>
                       setAnswerDrafts((prev) => ({ ...prev, [q.id]: e.target.value }))
                     }
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-600 resize-y mb-2"
+                    className="w-full border border-border rounded-md px-4 py-2.5 text-sm text-ink bg-background focus:outline-none focus:ring-2 focus:ring-primary resize-y mb-2"
                   />
                   <button
                     onClick={() => handleSubmitAnswer(q.id)}
                     disabled={submittingId === q.id}
-                    className="bg-green-600 text-white px-4 py-1.5 rounded-lg text-sm font-semibold hover:bg-green-700 transition disabled:opacity-50"
+                    className="bg-ink text-white px-4 py-1.5 rounded-md text-sm font-semibold hover:opacity-90 transition disabled:opacity-50"
                   >
-                    {submittingId === q.id ? "Posting..." : "Post Answer"}
+                    {submittingId === q.id ? "Posting..." : "Post answer"}
                   </button>
                 </div>
               ))}

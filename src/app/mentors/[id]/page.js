@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Navbar from "@/Components/Navbar";
-import { getSubjectStyle, getFlag } from "@/data/mentors";
+import { getSubjectStyle, getFlag, getLanguageStyle } from "@/data/mentors";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import MentorCalendarView from "@/Components/MentorCalendarView";
@@ -31,6 +31,25 @@ const [reviewError, setReviewError] = useState("");
 const [reviewSubmitting, setReviewSubmitting] = useState(false);
 const [currentUser, setCurrentUser] = useState(null);
 
+const [recommended, setRecommended] = useState([]);
+const [recommendedLoading, setRecommendedLoading] = useState(true);
+
+const MENTOR_CTA_PHOTO_URL = "/images/PV_MentorIdPage.jpg";
+
+function PhotoBlock({ src, alt = "", className = "", tint = 55, opacity = 100 }) {
+  if (!src) return null;
+  return (
+    <div className={`overflow-hidden ${className}`} style={{ opacity: opacity / 100 }}>
+      <img
+        src={src}
+        alt={alt}
+        className="w-full h-full object-cover grayscale contrast-[1.08]"
+      />
+      <div className="absolute inset-0 bg-primary mix-blend-multiply" style={{ opacity: tint / 100 }} />
+    </div>
+  );
+}
+
 useEffect(() => {
   async function fetchReviews() {
     const { data: userData } = await supabase.auth.getUser();
@@ -55,6 +74,20 @@ useEffect(() => {
     setReviewsLoading(false);
   }
   if (id) fetchReviews();
+}, [id]);
+
+useEffect(() => {
+  async function fetchRecommended() {
+    const { data } = await supabase
+      .from("mentorss")
+      .select("*")
+      .neq("id", id)
+      .order("rating", { ascending: false })
+      .limit(3);
+    setRecommended(data || []);
+    setRecommendedLoading(false);
+  }
+  if (id) fetchRecommended();
 }, [id]);
 
 const sortedReviews = [...reviews].sort((a, b) => {
@@ -171,16 +204,18 @@ async function handleSubmitBooking(e) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FFF9F2]">
+      <div className="min-h-screen bg-background">
         <Navbar />
-        <p className="text-gray-500 text-center mt-20">Loading mentor...</p>
+        <p className="text-muted text-center mt-20 font-label text-sm uppercase tracking-wide">
+          Loading mentor...
+        </p>
       </div>
     );
   }
 
   if (error || !mentor) {
     return (
-      <div className="min-h-screen bg-[#FFF9F2]">
+      <div className="min-h-screen bg-background">
         <Navbar />
         <p className="text-red-600 text-center mt-20 font-semibold">
           {error || "Mentor not found."}
@@ -191,295 +226,431 @@ async function handleSubmitBooking(e) {
 
   const languages =
     typeof mentor.languages === "string"
-      ? mentor.languages.split(",").map((l) => l.trim())
+      ? mentor.languages.split(",").map((l) => l.trim()).filter(Boolean)
       : mentor.languages || [];
 
+  const chatTopics = (mentor.happy_to_chat_about || "")
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean);
+
+  const aboutText = mentor.about_me || mentor.bio;
+  const firstName = mentor.name?.split(" ")[0] || "this mentor";
+
   return (
-    <div className="min-h-screen bg-[#FFF9F2]">
+    <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
-        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-          <div className="h-1.5 bg-gradient-to-r from-green-600 via-green-500 to-emerald-400" />
-          <div className="p-8">
-          {/* Header */}
-          <div className="flex items-start gap-5 mb-6">
-            {mentor.photo_url ? (
-              <img
-                src={mentor.photo_url}
-                alt={mentor.name}
-                className="w-20 h-20 rounded-full object-cover shrink-0 ring-4 ring-green-50"
-              />
-            ) : (
-              <div className="w-20 h-20 rounded-full bg-green-800 text-white flex items-center justify-center font-bold text-2xl shrink-0 ring-4 ring-green-50">
-                {mentor.initials}
-              </div>
+
+      <div className="max-w-6xl mx-auto px-6 py-10">
+        {/* Header */}
+        <div className="flex items-start gap-5 pb-6 border-b border-border mb-6">
+          {mentor.photo_url ? (
+            <img
+              src={mentor.photo_url}
+              alt={mentor.name}
+              className="w-20 h-20 rounded-full object-cover shrink-0"
+            />
+          ) : (
+            <div className="w-20 h-20 rounded-full bg-primary text-background flex items-center justify-center font-bold text-2xl shrink-0">
+              {mentor.initials}
+            </div>
+          )}
+          <div>
+            {mentor.verified && (
+              <p className="flex items-center gap-1.5 font-label text-xs uppercase tracking-[0.15em] text-primary mb-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                Verified Mentor
+              </p>
             )}
-            <div>
-              <h1 className="text-2xl font-extrabold text-gray-900">{mentor.name}</h1>
-              <p className="text-gray-500">
-                {mentor.school} · {mentor.year}
-                {mentor.age ? ` · Age ${mentor.age}` : ""}
-              </p>
-              {mentor.verified && (
-                <span className="inline-block mt-2 text-xs font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded-full">
-                  ✓ Verified
-                </span>
-              )}
-            </div>
+            <h1 className="font-display text-4xl sm:text-5xl text-ink leading-tight">
+              {mentor.name}
+            </h1>
+            <p className="text-muted mt-2 text-base">
+              {mentor.school}, {mentor.year} · {mentor.subject}
+            </p>
           </div>
+        </div>
 
-          {/* Tags */}
-          <div className="flex flex-wrap gap-2 mb-6">
-            <span className={`inline-block text-xs font-semibold px-3 py-1 rounded-full ${getSubjectStyle(mentor.subject).color}`}>
-              {getSubjectStyle(mentor.subject).icon} {mentor.subject}
-            </span>
-            <span className="inline-block text-xs font-semibold px-3 py-1 rounded-full bg-slate-100 text-slate-700">
-              {getFlag(mentor.country)} {mentor.country}
-            </span>
-            {languages.map((lang) => (
-              <span key={lang} className="inline-block text-xs font-semibold px-3 py-1 rounded-full bg-indigo-50 text-indigo-700">
-                {lang}
-              </span>
-            ))}
-          </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main content */}
+          <div className="lg:col-span-2">
+            <p className="font-label text-xs uppercase tracking-[0.2em] text-muted mb-2">
+              About Me
+            </p>
+            <h2 className="font-display text-2xl text-ink mb-4">In their own words</h2>
+            <p className="text-ink/90 leading-relaxed text-base whitespace-pre-line">
+              {aboutText}
+            </p>
 
-          {/* Bio */}
-          <p className="text-gray-700 mb-4 leading-relaxed">{mentor.bio}</p>
-
-          {mentor.about_me && (
-            <div className="mb-4 bg-gray-50 border border-gray-100 rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className="w-6 h-6 rounded-md bg-green-100 text-green-700 flex items-center justify-center text-xs">👤</span>
-                <h3 className="text-sm font-bold text-gray-900">About Me</h3>
-              </div>
-              <p className="text-gray-700 leading-relaxed">{mentor.about_me}</p>
-            </div>
-          )}
-
-          {mentor.happy_to_chat_about && (
-            <div className="mb-4 bg-gray-50 border border-gray-100 rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className="w-6 h-6 rounded-md bg-amber-100 text-amber-700 flex items-center justify-center text-xs">💬</span>
-                <h3 className="text-sm font-bold text-gray-900">Happy to Chat About</h3>
-              </div>
-              <p className="text-gray-700 leading-relaxed">{mentor.happy_to_chat_about}</p>
-            </div>
-          )}
-
-          {mentor.linkedin && (
-            <a
-              href={mentor.linkedin}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-sm font-semibold text-green-700 hover:text-green-800 mb-6"
-            >
-              View LinkedIn Profile
-              <span aria-hidden>→</span>
-            </a>
-          )}
-
-          <div className="mb-2" />
-
-         {/* Stats */}
-          <div className="grid grid-cols-4 gap-2 pt-6 border-t border-gray-100 text-center mb-8">
-            <div>
-              <p className="font-bold text-gray-900 text-lg">{mentor.sessions}</p>
-              <p className="text-xs text-gray-500">Sessions</p>
-            </div>
-            <div>
-              <p className="font-bold text-gray-900 text-lg">{mentor.answers}</p>
-              <p className="text-xs text-gray-500">Answers</p>
-            </div>
-            <div>
-              <p className="font-bold text-gray-900 text-lg">{mentor.rating}★</p>
-              <p className="text-xs text-gray-500">Rating</p>
-            </div>
-            <div>
-              <p className={`font-bold text-lg flex items-center justify-center gap-1 ${mentor.available ? "text-green-600" : "text-gray-400"}`}>
-                <span className={`w-2 h-2 rounded-full ${mentor.available ? "bg-green-600" : "bg-gray-400"}`}></span>
-                {mentor.available ? "Open" : "Closed"}
-              </p>
-              <p className="text-xs text-gray-500">Bookings</p>
-            </div>
-          </div>
-
-        {/* Calendar — only shown if this mentor made it public */}
-{mentor.calendar_visible && (
-  <div className="border-t border-gray-100 pt-6 mb-8">
-    <button
-      onClick={() => setCalendarExpanded(!calendarExpanded)}
-      className="flex items-center gap-2 font-bold text-gray-900 mb-4"
-    >
-      <span className={`transition-transform ${calendarExpanded ? "rotate-90" : ""}`}>›</span>
-      Upcoming Availability
-    </button>
-    {calendarExpanded && <MentorCalendarView mentorId={mentor.id} />}
-  </div>
-)}
-
-          {/* Reviews */}
-          <div className="pt-6 border-t border-gray-100 mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <button
-                onClick={() => setReviewsCollapsed(!reviewsCollapsed)}
-                className="flex items-center gap-2 text-lg font-bold text-gray-900 hover:text-green-700 transition"
-              >
-                {reviewsCollapsed ? "▶" : "▼"} Reviews {reviews.length > 0 && `(${reviews.length})`}
-              </button>
-
-              {!reviewsCollapsed && reviews.length > 1 && (
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-600 bg-white"
-                >
-                  <option value="newest">Newest First</option>
-                  <option value="oldest">Oldest First</option>
-                  <option value="highest">Highest Rating</option>
-                  <option value="lowest">Lowest Rating</option>
-                </select>
-              )}
-            </div>
-
-            {!reviewsCollapsed && (
-              <>
-            {/* Leave a review */}
-            {currentUser ? (
-              <form onSubmit={handleSubmitReview} className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6 space-y-3">
-                <div>
-                  <p className="text-sm font-medium text-gray-700 mb-1.5">Your Rating</p>
-                  <div className="flex gap-1" onMouseLeave={() => setHoverRating(0)}>
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        type="button"
-                        onClick={() => setReviewRating(star)}
-                        onMouseEnter={() => setHoverRating(star)}
-                        className={`text-2xl transition ${
-                          star <= (hoverRating || reviewRating) ? "text-yellow-400" : "text-gray-300"
-                        }`}
-                      >
-                        ★
-                      </button>
-                    ))}
-                  </div>
+            {chatTopics.length > 0 && (
+              <div className="mt-8 pt-8 border-t border-border">
+                <p className="font-label text-xs uppercase tracking-[0.2em] text-muted mb-3">
+                  Happy to Chat About
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {chatTopics.map((topic) => (
+                    <span
+                      key={topic}
+                      className="text-sm font-medium px-3.5 py-1.5 rounded-full border border-border text-ink bg-surface"
+                    >
+                      {topic}
+                    </span>
+                  ))}
                 </div>
-                <textarea
-                  rows={2}
-                  value={reviewComment}
-                  onChange={(e) => setReviewComment(e.target.value)}
-                  placeholder="Share Your Experience With This Mentor (Optional)"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600 resize-y"
-                />
-                {reviewError && <p className="text-red-600 text-sm">{reviewError}</p>}
-                <button
-                  type="submit"
-                  disabled={reviewSubmitting}
-                  className="bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-800 transition disabled:opacity-50"
-                >
-                  {reviewSubmitting ? "Posting..." : "Post Review"}
-                </button>
-              </form>
-            ) : (
-              <p className="text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6">
-                <a href={`/login?redirect=/mentors/${id}`} className="text-green-700 font-semibold underline">
-                  Sign In
-                </a>{" "}
-                To Leave A Review.
-              </p>
+              </div>
             )}
 
-            {/* Review list */}
-            {reviewsLoading ? (
-              <p className="text-gray-400 text-sm">Loading Reviews...</p>
-            ) : reviews.length === 0 ? (
-              <p className="text-gray-400 text-sm">No reviews yet. Be the first to leave one.</p>
-            ) : (
-              <div className="space-y-4">
-                {sortedReviews.map((r) => (
-                  <div key={r.id} className="border-b border-gray-100 pb-4 last:border-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="font-semibold text-gray-900 text-sm">{r.author_name}</p>
-                      <div className="flex text-sm">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <span key={star} className={star <= r.rating ? "text-yellow-400" : "text-gray-200"}>
-                            ★
-                          </span>
-                        ))}
+            {languages.length > 0 && (
+              <div className="mt-8 pt-8 border-t border-border">
+                <p className="font-label text-xs uppercase tracking-[0.2em] text-muted mb-3">
+                  Languages
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {languages.map((lang) => (
+                    <span
+                      key={lang}
+                      className={`text-sm font-medium px-3.5 py-1.5 rounded-full ${getLanguageStyle(lang).color}`}
+                    >
+                      {getLanguageStyle(lang).icon} {lang}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-4 mt-8 pt-8 border-t border-border">
+              <div>
+                <p className="font-display text-3xl text-ink">{mentor.sessions}</p>
+                <p className="font-label text-xs uppercase tracking-wide text-muted mt-1">Sessions</p>
+              </div>
+              <div>
+                <p className="font-display text-3xl text-ink">{mentor.answers}</p>
+                <p className="font-label text-xs uppercase tracking-wide text-muted mt-1">Answers</p>
+              </div>
+              <div>
+                <p className="font-display text-3xl text-ink">{mentor.rating}★</p>
+                <p className="font-label text-xs uppercase tracking-wide text-muted mt-1">Rating</p>
+              </div>
+            </div>
+
+            {mentor.linkedin && (
+              <a
+                href={mentor.linkedin}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary-dark mt-6"
+              >
+                View LinkedIn Profile
+                <span aria-hidden>→</span>
+              </a>
+            )}
+
+            {/* Calendar */}
+            {mentor.calendar_visible && (
+              <div className="mt-8 pt-8 border-t border-border">
+                <button
+                  onClick={() => setCalendarExpanded(!calendarExpanded)}
+                  className="flex items-center gap-2 font-display text-xl text-ink mb-4"
+                >
+                  <span className={`transition-transform text-primary ${calendarExpanded ? "rotate-90" : ""}`}>›</span>
+                  Upcoming Availability
+                </button>
+                {calendarExpanded && <MentorCalendarView mentorId={mentor.id} />}
+              </div>
+            )}
+
+            {/* Reviews */}
+            <div className="mt-8 pt-8 border-t border-border">
+              <div className="flex items-center justify-between mb-4">
+                <button
+                  onClick={() => setReviewsCollapsed(!reviewsCollapsed)}
+                  className="flex items-center gap-2 font-display text-xl text-ink hover:text-primary transition"
+                >
+                  {reviewsCollapsed ? "▶" : "▼"} Reviews {reviews.length > 0 && `(${reviews.length})`}
+                </button>
+
+                {!reviewsCollapsed && reviews.length > 1 && (
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="text-sm border border-border rounded-lg px-3 py-1.5 text-ink focus:outline-none focus:ring-2 focus:ring-primary bg-surface"
+                  >
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                    <option value="highest">Highest Rating</option>
+                    <option value="lowest">Lowest Rating</option>
+                  </select>
+                )}
+              </div>
+
+              {!reviewsCollapsed && (
+                <>
+                  {currentUser ? (
+                    <form onSubmit={handleSubmitReview} className="bg-surface border border-border rounded-xl p-4 mb-6 space-y-3">
+                      <div>
+                        <p className="text-sm font-medium text-ink/80 mb-1.5">Your Rating</p>
+                        <div className="flex gap-1" onMouseLeave={() => setHoverRating(0)}>
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <button
+                              key={star}
+                              type="button"
+                              onClick={() => setReviewRating(star)}
+                              onMouseEnter={() => setHoverRating(star)}
+                              className={`text-2xl transition ${
+                                star <= (hoverRating || reviewRating) ? "text-yellow-400" : "text-border"
+                              }`}
+                            >
+                              ★
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                    {r.comment && <p className="text-gray-600 text-sm leading-relaxed">{r.comment}</p>}
-                    <p className="text-gray-400 text-xs mt-1">
-                      {new Date(r.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                      <textarea
+                        rows={2}
+                        value={reviewComment}
+                        onChange={(e) => setReviewComment(e.target.value)}
+                        placeholder="Share your experience with this mentor (optional)"
+                        className="w-full border border-border rounded-lg px-3 py-2 text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-primary resize-y bg-background"
+                      />
+                      {reviewError && <p className="text-red-600 text-sm">{reviewError}</p>}
+                      <button
+                        type="submit"
+                        disabled={reviewSubmitting}
+                        className="bg-primary text-background px-4 py-2 rounded-lg text-sm font-semibold hover:bg-primary-dark transition disabled:opacity-50"
+                      >
+                        {reviewSubmitting ? "Posting..." : "Post Review"}
+                      </button>
+                    </form>
+                  ) : (
+                    <p className="text-sm text-muted bg-surface border border-border rounded-xl p-4 mb-6">
+                      <a href={`/login?redirect=/mentors/${id}`} className="text-primary font-semibold underline">
+                        Sign in
+                      </a>{" "}
+                      to leave a review.
                     </p>
+                  )}
+
+                  {reviewsLoading ? (
+                    <p className="text-muted text-sm">Loading reviews...</p>
+                  ) : reviews.length === 0 ? (
+                    <p className="text-muted text-sm">No reviews yet. Be the first to leave one.</p>
+                  ) : (
+                    <div className="space-y-4">
+                      {sortedReviews.map((r) => (
+                        <div key={r.id} className="border-b border-border pb-4 last:border-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="font-semibold text-ink text-base">{r.author_name}</p>
+                            <div className="flex text-sm">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <span key={star} className={star <= r.rating ? "text-yellow-400" : "text-border"}>
+                                  ★
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                          {r.comment && <p className="text-ink/80 text-base leading-relaxed">{r.comment}</p>}
+                          <p className="text-muted text-sm mt-1">
+                            {new Date(r.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Sidebar */}
+          <div className="lg:col-span-1">
+            <div className="lg:sticky lg:top-6 lg:max-h-[85vh] lg:overflow-y-auto bg-surface border border-border rounded-2xl p-6">
+              <div className="flex items-center gap-2.5 mb-4">
+                <span className="w-9 h-9 rounded-lg bg-background border border-border flex items-center justify-center text-base shrink-0">
+                  🎓
+                </span>
+                <div>
+                  <p className="font-semibold text-ink text-sm leading-tight">{mentor.school}</p>
+                  <p className="font-label text-[10px] uppercase tracking-wide text-primary flex items-center gap-1">
+                    <span className="w-1 h-1 rounded-full bg-primary"></span>
+                    {getFlag(mentor.country)} {mentor.country}
+                  </p>
+                </div>
+              </div>
+
+              <h2 className="font-display text-xl text-ink mb-2">
+                Book a session with {firstName}
+              </h2>
+              <p className="text-sm text-ink/70 leading-relaxed mb-5">
+                Send a message to set up a time that works for you both — there's no cost to reach out.
+              </p>
+
+              {submitted ? (
+                <p className="text-center text-primary font-semibold bg-primary/10 py-3 rounded-lg text-sm">
+                  Request sent! {mentor.name} will get back to you by email.
+                </p>
+              ) : !mentor.available ? (
+                <button disabled className="w-full bg-border text-muted font-semibold py-3 rounded-lg cursor-not-allowed text-sm">
+                  Not Currently Open for Bookings
+                </button>
+              ) : showForm ? (
+                <form onSubmit={handleSubmitBooking} className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-medium text-ink/80 mb-1">Your email</label>
+                    <input
+                      type="email"
+                      required
+                      value={formEmail}
+                      onChange={(e) => setFormEmail(e.target.value)}
+                      className="w-full border border-border rounded-lg px-3 py-2 text-sm text-ink bg-background"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-ink/80 mb-1">
+                      Why do you want to book a call?
+                    </label>
+                    <textarea
+                      required
+                      rows={3}
+                      value={formMessage}
+                      onChange={(e) => setFormMessage(e.target.value)}
+                      className="w-full border border-border rounded-lg px-3 py-2 text-sm text-ink bg-background"
+                    />
+                  </div>
+                  {bookError && <p className="text-red-600 text-sm">{bookError}</p>}
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="w-full bg-primary text-background font-semibold py-2.5 rounded-lg hover:bg-primary-dark transition disabled:opacity-50 text-sm"
+                  >
+                    {submitting ? "Sending..." : "Send Request"}
+                  </button>
+                </form>
+              ) : (
+                <>
+                  <button
+                    onClick={handleBookClick}
+                    className="w-full bg-primary text-background font-semibold py-2.5 rounded-lg hover:bg-primary-dark transition text-sm"
+                  >
+                    Book a Call
+                  </button>
+                  {bookError && (
+                    <p className="text-red-600 text-xs text-center mt-2">
+                      {bookError}{" "}
+                      <a href={`/login?redirect=/mentors/${id}`} className="underline font-semibold">
+                        Sign in
+                      </a>
+                    </p>
+                  )}
+                </>
+              )}
+
+              <div className="space-y-3 pt-5 mt-5 border-t border-border">
+                {[
+                  `Send ${firstName} a message (free)`,
+                  "Agree on a time together",
+                  "Meet on your call",
+                ].map((step, i) => (
+                  <div key={i} className="flex items-start gap-2.5">
+                    <span className="font-label text-[10px] text-primary shrink-0 mt-0.5">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <span className="text-sm text-ink/70">{step}</span>
                   </div>
                 ))}
               </div>
-            )}
-              </>
-            )}
-          </div>
-
-         {submitted ? (
-  <p className="text-center text-green-700 font-semibold bg-green-50 py-3 rounded-lg">
-    Request sent! {mentor.name} will get back to you by email.
-  </p>
-) : !mentor.available ? (
-  <button disabled className="w-full bg-gray-200 text-gray-500 font-semibold py-3 rounded-lg cursor-not-allowed">
-    Not Currently Open for Bookings
-  </button>
-) : showForm ? (
-  <form onSubmit={handleSubmitBooking} className="space-y-3">
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">Your email</label>
-      <input
-        type="email"
-        required
-        value={formEmail}
-        onChange={(e) => setFormEmail(e.target.value)}
-        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900"
-      />
-    </div>
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">Why do you want to book a call?</label>
-      <textarea
-        required
-        rows={4}
-        value={formMessage}
-        onChange={(e) => setFormMessage(e.target.value)}
-        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900"
-      />
-    </div>
-    {bookError && <p className="text-red-600 text-sm">{bookError}</p>}
-    <button
-      type="submit"
-      disabled={submitting}
-      className="w-full bg-green-700 text-white font-semibold py-3 rounded-lg hover:bg-green-800 transition disabled:opacity-50"
-    >
-      {submitting ? "Sending..." : "Send Request"}
-    </button>
-  </form>
-) : (
-  <>
-    <button
-      onClick={handleBookClick}
-      className="w-full bg-green-700 text-white font-semibold py-3 rounded-lg hover:bg-green-800 transition"
-    >
-      Book a Call
-    </button>
-    {bookError && (
-      <p className="text-red-600 text-sm text-center mt-2">
-        {bookError}{" "}
-        <a href={`/login?redirect=/mentors/${id}`} className="underline font-semibold">
-          Sign in
-        </a>
-      </p>
-    )}
-  </>
-)}
+            </div>
           </div>
         </div>
+
+        {/* Recommended Mentors */}
+        {!recommendedLoading && recommended.length > 0 && (
+          <div className="mt-10 pt-6 border-t border-border">
+            <h2 className="font-display text-2xl text-ink mb-4">Recommended Mentors</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {recommended.map((rec) => (
+                <a
+                  key={rec.id}
+                  href={`/mentors/${rec.id}`}
+                  className="bg-surface border border-border rounded-xl p-4 hover:shadow-md hover:border-primary transition flex flex-col"
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    {rec.photo_url ? (
+                      <img
+                        src={rec.photo_url}
+                        alt={rec.name}
+                        className="w-12 h-12 rounded-full object-cover shrink-0"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-primary text-background flex items-center justify-center font-bold text-sm shrink-0">
+                        {rec.initials}
+                      </div>
+                    )}
+                    <div>
+                      <p className="font-bold text-ink text-sm leading-tight">{rec.name}</p>
+                      <p className="text-muted text-xs">{rec.school}</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${getSubjectStyle(rec.subject).color}`}>
+                      {getSubjectStyle(rec.subject).icon} {rec.subject}
+                    </span>
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full border border-border text-ink bg-background">
+                      {getFlag(rec.country)} {rec.country}
+                    </span>
+                  </div>
+                  <p className="text-ink/70 text-xs leading-relaxed line-clamp-2">{rec.bio}</p>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
+
+        {/* ============ CLOSING CTA ============ */}
+      <section className="relative overflow-hidden px-6 py-24 text-center">
+        {MENTOR_CTA_PHOTO_URL ? (
+          <>
+            <PhotoBlock src={MENTOR_CTA_PHOTO_URL} className="absolute inset-0 w-full h-full" tint={70} />
+            <div className="absolute inset-0 bg-ink/60" />
+          </>
+        ) : (
+          <div className="absolute inset-0 bg-primary" />
+        )}
+        <div
+          className="absolute -left-10 top-6 w-48 h-28 -rotate-12 opacity-[0.06] pointer-events-none"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(45deg, var(--color-background) 0px, var(--color-background) 3px, transparent 3px, transparent 14px)",
+          }}
+        />
+        <div className="max-w-xl mx-auto relative">
+          <h2
+            className="font-display text-4xl md:text-5xl text-ink mb-8"
+            style={MENTOR_CTA_PHOTO_URL ? { color: "#fff", textShadow: "0 2px 12px rgba(0,0,0,0.45)" } : undefined}
+          >
+            Browse free.{" "}
+            <span
+              className="italic"
+              style={{ color: MENTOR_CTA_PHOTO_URL ? "#fff" : "var(--color-primary)" }}
+            >
+              Join when ready.
+            </span>
+          </h2>
+          <a
+            href="/mentors"
+            className="inline-block font-label text-sm tracking-[0.1em] uppercase bg-primary text-white px-8 py-4 rounded-lg font-semibold hover:bg-primary-dark transition"
+          >
+            Find A Mentor →
+          </a>
+          <p
+            className="font-label text-[11px] tracking-[0.05em] uppercase mt-5"
+            style={{ color: MENTOR_CTA_PHOTO_URL ? "rgba(255,255,255,0.75)" : undefined }}
+          >
+            100% Free · No Sign-Up To Browse · Verified Mentors Only
+          </p>
+        </div>
+      </section>
     </div>
   );
 }

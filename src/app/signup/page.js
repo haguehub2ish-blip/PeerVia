@@ -4,12 +4,7 @@ import Navbar from "@/Components/Navbar";
 import MultiSelect from "@/Components/MultiSelect";
 import { supabase } from "@/lib/supabase";
 import { courseGuides, allUniversityNames } from "@/data/courseGuides";
-import { getSubjectStyle, getFlag, getLanguageStyle } from "@/data/mentors";
 
-const getCountryStyle = (country) => ({
-  color: "bg-slate-100 text-slate-700",
-  icon: getFlag(country),
-});
 const emailProviders = {
   "gmail.com": { name: "Gmail", url: "https://mail.google.com" },
   "outlook.com": { name: "Outlook", url: "https://outlook.live.com/mail" },
@@ -36,7 +31,7 @@ export default function Signup() {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
-const [resent, setResent] = useState(false);
+  const [resent, setResent] = useState(false);
 
   const [customizePrefs, setCustomizePrefs] = useState(false);
   const [allMentors, setAllMentors] = useState([]);
@@ -110,69 +105,70 @@ const [resent, setResent] = useState(false);
       setSuccess(true);
     }
   }
-async function handleResend() {
-  setResending(true);
-  setResent(false);
-  const { error } = await supabase.auth.resend({ type: "signup", email });
-  setResending(false);
-  if (!error) {
-    setResent(true);
-    setTimeout(() => setResent(false), 5000);
+
+  async function handleResend() {
+    setResending(true);
+    setResent(false);
+    const { error } = await supabase.auth.resend({ type: "signup", email });
+    setResending(false);
+    if (!error) {
+      setResent(true);
+      setTimeout(() => setResent(false), 5000);
+    }
   }
-}
+
   return (
-    <div className="min-h-screen bg-[#FFF9F2]">
+    <div className="min-h-screen bg-background">
       <Navbar />
 
-      <div className="max-w-md mx-auto px-6 py-16">
-        <h1 className="text-3xl font-extrabold text-gray-900 mb-2">
-          Create your account
-        </h1>
-        <p className="text-gray-600 mb-8">
+      <div className="max-w-sm mx-auto px-6 py-20">
+        <h1 className="font-display text-2xl text-ink mb-1">Create your account</h1>
+        <p className="text-muted text-sm mb-8">
           Sign up to connect with verified mentors and get real answers.
         </p>
 
         {success ? (
-  <div className="bg-green-50 border border-green-200 text-green-800 rounded-2xl p-6 space-y-4">
-    <div>
-      <p className="font-semibold mb-1">Account created!</p>
-      <p className="text-sm">
-        We sent a confirmation link to <span className="font-medium">{email}</span>.
-        Click it to activate your account, then you can log in.
-      </p>
-    </div>
+          <div className="border border-border bg-surface rounded-lg p-6 shadow-sm space-y-4">
+            <div>
+              <p className="font-semibold text-ink mb-1">Account created</p>
+              <p className="text-sm text-muted">
+                We sent a confirmation link to{" "}
+                <span className="font-medium text-ink">{email}</span>. Click it to activate your
+                account, then you can log in.
+              </p>
+            </div>
 
-    {(() => {
-      const provider = getEmailProvider(email);
-      return provider ? (
-        <a
-          href={provider.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-block bg-green-700 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-green-800 transition"
-        >
-          Open {provider.name} →
-        </a>
-      ) : null;
-    })()}
+            {(() => {
+              const provider = getEmailProvider(email);
+              return provider ? (
+                <a
+                  href={provider.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block bg-ink text-white text-sm font-semibold px-4 py-2 rounded-md hover:opacity-90 transition"
+                >
+                  Open {provider.name}
+                </a>
+              ) : null;
+            })()}
 
-    <div className="text-sm border-t border-green-200 pt-3">
-      Didn't get it?{" "}
-      <button
-        onClick={handleResend}
-        disabled={resending}
-        className="text-green-800 font-medium hover:underline disabled:opacity-50"
-      >
-        {resending ? "Resending..." : "Resend confirmation email"}
-      </button>
-      {resent && <span className="ml-2 text-green-700">✓ Sent</span>}
-    </div>
-  </div>
-) : (
-          <form onSubmit={handleSignup} className="bg-white border border-gray-200 rounded-2xl p-6 space-y-4">
+            <div className="text-sm border-t border-border pt-3 text-muted">
+              Didn't get it?{" "}
+              <button
+                onClick={handleResend}
+                disabled={resending}
+                className="text-ink font-medium hover:underline disabled:opacity-50"
+              >
+                {resending ? "Resending..." : "Resend confirmation email"}
+              </button>
+              {resent && <span className="ml-2 text-primary">Sent</span>}
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={handleSignup} className="bg-surface border border-border rounded-lg p-6 shadow-sm space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-ink mb-1.5">
                   First name
                 </label>
                 <input
@@ -180,11 +176,11 @@ async function handleResend() {
                   required
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-600"
+                  className="w-full border border-border rounded-md px-3 py-2.5 text-sm text-ink bg-background focus:outline-none focus:ring-2 focus:ring-ink/20"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-ink mb-1.5">
                   Last name
                 </label>
                 <input
@@ -192,13 +188,13 @@ async function handleResend() {
                   required
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-600"
+                  className="w-full border border-border rounded-md px-3 py-2.5 text-sm text-ink bg-background focus:outline-none focus:ring-2 focus:ring-ink/20"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-ink mb-1.5">
                 Email
               </label>
               <input
@@ -206,12 +202,12 @@ async function handleResend() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-600"
+                className="w-full border border-border rounded-md px-3 py-2.5 text-sm text-ink bg-background focus:outline-none focus:ring-2 focus:ring-ink/20"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-ink mb-1.5">
                 Password
               </label>
               <input
@@ -220,62 +216,69 @@ async function handleResend() {
                 minLength={6}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-600"
+                className="w-full border border-border rounded-md px-3 py-2.5 text-sm text-ink bg-background focus:outline-none focus:ring-2 focus:ring-ink/20"
               />
             </div>
 
             {/* Optional email preferences */}
-            <div className="border-t border-gray-100 pt-4">
+            <div className="border-t border-border pt-4">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={customizePrefs}
                   onChange={(e) => setCustomizePrefs(e.target.checked)}
-                  className="w-4 h-4 accent-green-600"
+                  className="w-4 h-4 accent-ink"
                 />
-                <span className="text-sm font-medium text-gray-700">
+                <span className="text-sm font-medium text-ink">
                   Customize email preferences now
                 </span>
               </label>
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-muted mt-1">
                 Optional — you can always change this later in Settings.
               </p>
 
               {customizePrefs && (
-                <div className="space-y-4 mt-4">
-                  <MultiSelect
-                    label="Field"
-                    options={fieldOptions}
-                    selected={selectedFields}
-                    onChange={setSelectedFields}
-                    getOptionStyle={getSubjectStyle}
-                  />
-                  <MultiSelect
-                    label="Language"
-                    options={languageOptions}
-                    selected={selectedLanguages}
-                    onChange={setSelectedLanguages}
-                      getOptionStyle={getLanguageStyle}
-                  />
-                  <MultiSelect
-                    label="School"
-                    options={schoolOptions}
-                    selected={selectedSchools}
-                    onChange={setSelectedSchools}
-                  />
-                  <MultiSelect
-                    label="Specific Mentor"
-                    options={mentorOptions}
-                    selected={selectedMentors}
-                    onChange={setSelectedMentors}
-                  />
-                  <MultiSelect
-                    label="Country"
-                    options={countryOptions}
-                    selected={selectedCountries}
-                    onChange={setSelectedCountries}
-                    getOptionStyle={getCountryStyle}
-                  />
+                <div className="border border-border rounded-md divide-y divide-border mt-4 bg-background">
+                  <div className="grid grid-cols-1 sm:grid-cols-[100px_1fr] gap-2 sm:gap-0 px-4 py-3 items-center">
+                    <span className="text-sm text-muted">Field</span>
+                    <MultiSelect
+                      options={fieldOptions}
+                      selected={selectedFields}
+                      onChange={setSelectedFields}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-[100px_1fr] gap-2 sm:gap-0 px-4 py-3 items-center">
+                    <span className="text-sm text-muted">Language</span>
+                    <MultiSelect
+                      options={languageOptions}
+                      selected={selectedLanguages}
+                      onChange={setSelectedLanguages}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-[100px_1fr] gap-2 sm:gap-0 px-4 py-3 items-center">
+                    <span className="text-sm text-muted">School</span>
+                    <MultiSelect
+                      options={schoolOptions}
+                      selected={selectedSchools}
+                      onChange={setSelectedSchools}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-[100px_1fr] gap-2 sm:gap-0 px-4 py-3 items-center">
+                    <span className="text-sm text-muted">Mentor</span>
+                    <MultiSelect
+                      options={mentorOptions}
+                      selected={selectedMentors}
+                      onChange={setSelectedMentors}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-[100px_1fr] gap-2 sm:gap-0 px-4 py-3 items-center">
+                    <span className="text-sm text-muted">Country</span>
+                    <MultiSelect
+                      options={countryOptions}
+                      selected={selectedCountries}
+                      onChange={setSelectedCountries}
+                    />
+                  </div>
                 </div>
               )}
             </div>
@@ -287,19 +290,19 @@ async function handleResend() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-green-600 text-white py-2.5 rounded-lg font-semibold hover:bg-green-700 transition disabled:opacity-50"
+              className="w-full bg-ink text-white py-2.5 rounded-md text-sm font-semibold hover:opacity-90 transition disabled:opacity-50"
             >
               {loading ? "Creating account..." : "Sign up"}
             </button>
-
-            <p className="text-sm text-gray-500 text-center">
-              Already have an account?{" "}
-              <a href="/login" className="text-green-700 font-medium hover:underline">
-                Log in
-              </a>
-            </p>
           </form>
         )}
+
+        <p className="text-sm text-muted text-center mt-6">
+          Already have an account?{" "}
+          <a href="/login" className="text-ink font-medium hover:underline">
+            Log in
+          </a>
+        </p>
       </div>
     </div>
   );

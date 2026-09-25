@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 
 export default function Login() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#FFF9F2]" />}>
+    <Suspense fallback={<div className="min-h-screen bg-background" />}>
       <LoginContent />
     </Suspense>
   );
@@ -32,7 +32,7 @@ function LoginContent() {
 
     setLoading(false);
 
-   if (error) {
+    if (error) {
       setError("Incorrect email or password. Please try again.");
     } else {
       window.location.href = "/";
@@ -40,26 +40,22 @@ function LoginContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FFF9F2]">
+    <div className="min-h-screen bg-background">
       <Navbar />
 
-      <div className="max-w-md mx-auto px-6 py-16">
-        <h1 className="text-3xl font-extrabold text-gray-900 mb-2">
-          Welcome back
-        </h1>
-        <p className="text-gray-600 mb-8">
-          Log in to your PeerVia account.
-        </p>
+      <div className="max-w-sm mx-auto px-6 py-20">
+        <h1 className="font-display text-2xl text-ink mb-1">Welcome back</h1>
+        <p className="text-muted text-sm mb-8">Log in to your PeerVia account.</p>
 
         {reason === "interact" && (
-          <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-4 py-3 mb-6 text-sm">
+          <div className="border border-amber-200 bg-amber-50 text-amber-800 rounded-md px-4 py-3 mb-6 text-sm">
             You need an account to like or comment on questions. Log in below to continue.
           </div>
         )}
 
-        <form onSubmit={handleLogin} className="bg-white border border-gray-200 rounded-2xl p-6 space-y-4">
+        <form onSubmit={handleLogin} className="bg-surface border border-border rounded-lg p-6 shadow-sm space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-ink mb-1.5">
               Email
             </label>
             <input
@@ -67,17 +63,17 @@ function LoginContent() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-600"
+              className="w-full border border-border rounded-md px-3 py-2.5 text-sm text-ink bg-background focus:outline-none focus:ring-2 focus:ring-ink/20"
             />
           </div>
 
-        <div>
-            <div className="flex justify-between items-center mb-1">
-              <label className="block text-sm font-medium text-gray-700">
+          <div>
+            <div className="flex justify-between items-baseline mb-1.5">
+              <label className="block text-sm font-medium text-ink">
                 Password
               </label>
-              <a href="/forgot-password" className="text-sm text-green-700 hover:underline">
-                Forgot Password?
+              <a href="/forgot-password" className="text-xs text-muted hover:text-ink transition">
+                Forgot password?
               </a>
             </div>
             <input
@@ -85,7 +81,7 @@ function LoginContent() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-600"
+              className="w-full border border-border rounded-md px-3 py-2.5 text-sm text-ink bg-background focus:outline-none focus:ring-2 focus:ring-ink/20"
             />
           </div>
 
@@ -96,18 +92,18 @@ function LoginContent() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-green-600 text-white py-2.5 rounded-lg font-semibold hover:bg-green-700 transition disabled:opacity-50"
+            className="w-full bg-ink text-white py-2.5 rounded-md text-sm font-semibold hover:opacity-90 transition disabled:opacity-50"
           >
             {loading ? "Logging in..." : "Log in"}
           </button>
-
-          <p className="text-sm text-gray-500 text-center">
-            Don't have an account?{" "}
-            <a href="/signup" className="text-green-700 font-medium hover:underline">
-              Sign up
-            </a>
-          </p>
         </form>
+
+        <p className="text-sm text-muted text-center mt-6">
+          Don't have an account?{" "}
+          <a href="/signup" className="text-ink font-medium hover:underline">
+            Sign up
+          </a>
+        </p>
       </div>
     </div>
   );

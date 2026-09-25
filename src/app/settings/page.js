@@ -6,12 +6,15 @@ import { supabase } from "@/lib/supabase";
 import { courseGuides, allUniversityNames } from "@/data/courseGuides"
 import { getSubjectStyle, getFlag, getLanguageStyle } from "@/data/mentors";
 
-const getCountryStyle = (country) => ({
-  color: "bg-slate-100 text-slate-700",
-  icon: getFlag(country),
-});
+const sections = [
+  { id: "account", label: "Account" },
+  { id: "notifications", label: "Notifications" },
+  { id: "danger", label: "Danger Zone" },
+];
 
 export default function Settings() {
+  const [activeSection, setActiveSection] = useState("account");
+
   const [user, setUser] = useState(null);
   const [allMentors, setAllMentors] = useState([]);
 
@@ -20,16 +23,29 @@ export default function Settings() {
   const [selectedSchools, setSelectedSchools] = useState([]);
   const [selectedMentors, setSelectedMentors] = useState([]);
   const [selectedCountries, setSelectedCountries] = useState([]);
-const [notifyOwnQuestions, setNotifyOwnQuestions] = useState(true);
+  const [notifyOwnQuestions, setNotifyOwnQuestions] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [prefsLoading, setPrefsLoading] = useState(true);
   const savedTimeoutRef = useRef(null);
 
+  const [mentorPhoto, setMentorPhoto] = useState(null);
+
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       const currentUser = data?.user || null;
       setUser(currentUser);
+
+      if (currentUser?.user_metadata?.role === "mentor") {
+        supabase
+          .from("mentorss")
+          .select("photo_url")
+          .eq("user_id", currentUser.id)
+          .single()
+          .then(({ data: mentorRow }) => {
+            if (mentorRow?.photo_url) setMentorPhoto(mentorRow.photo_url);
+          });
+      }
 
       const prefs = currentUser?.user_metadata?.emailPreferences;
       if (prefs) {
@@ -51,7 +67,6 @@ const [notifyOwnQuestions, setNotifyOwnQuestions] = useState(true);
     };
   }, []);
 
-  // Build option lists dynamically from real data
   const fieldOptions = [...new Set(allMentors.map((m) => m.subject).filter(Boolean))];
   const languageOptions = [
     ...new Set(
@@ -69,24 +84,80 @@ const [notifyOwnQuestions, setNotifyOwnQuestions] = useState(true);
     ]),
   ];
   const mentorOptions = allMentors.map((m) => m.name).filter(Boolean);
- const countryOptions = [
+  const countryOptions = [
     ...new Set([
       ...allMentors.map((m) => m.country).filter(Boolean),
       ...courseGuides.map((u) => u.country),
     ]),
   ];
 
-const [deleting, setDeleting] = useState(false);
+    const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState("");
+
+  function handleAvatarSelect(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setAvatarError("Please upload an image file.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarError("Image must be under 5MB.");
+      return;
+    }
+
+    setAvatarError("");
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+  }
+
+  async function handleUploadAvatar() {
+    if (!avatarFile) return;
+
+    setAvatarUploading(true);
+    setAvatarError("");
+
+    const fileExt = avatarFile.name.split(".").pop();
+    const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(fileName, avatarFile);
+
+    if (uploadError) {
+      setAvatarError("Upload failed: " + uploadError.message);
+      setAvatarUploading(false);
+      return;
+    }
+
+    const { data: urlData } = supabase.storage
+      .from("avatars")
+      .getPublicUrl(fileName);
+
+    const { data, error: updateError } = await supabase.auth.updateUser({
+      data: { avatar_url: urlData.publicUrl },
+    });
+
+    setAvatarUploading(false);
+
+    if (updateError) {
+      setAvatarError(updateError.message);
+    } else {
+      setUser(data.user);
+      setAvatarFile(null);
+      setAvatarPreview(null);
+    }
+  }
+  const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [confirmEmail, setConfirmEmail] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [deleteError, setDeleteError] = useState(null);
 
- function handleDeleteAccount() {
-    const confirmed = window.confirm(
-      "Are you sure you want to permanently delete your account? This cannot be undone."
-    );
-    if (!confirmed) return;
+  function handleDeleteAccount() {
     setDeleteError(null);
     setConfirmEmail("");
     setConfirmPassword("");
@@ -98,7 +169,6 @@ const [deleting, setDeleting] = useState(false);
     setDeleteError(null);
     setDeleting(true);
 
-    // Step 1: verify the email/password are correct
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email: confirmEmail,
       password: confirmPassword,
@@ -116,7 +186,6 @@ const [deleting, setDeleting] = useState(false);
       return;
     }
 
-    // Step 2: actually delete the account
     const res = await fetch("/api/delete-account", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -162,175 +231,285 @@ const [deleting, setDeleting] = useState(false);
   }
 
   return (
-    <div className="min-h-screen bg-[#FFF9F2]">
+    <div className="min-h-screen bg-background">
       <Navbar />
 
-      <div className="max-w-2xl mx-auto px-6 py-16">
-        <h1 className="text-3xl font-extrabold text-gray-900 mb-8">
-          Settings
-        </h1>
+      <div className="max-w-6xl mx-auto px-6 py-12">
+        <h1 className="font-display text-3xl text-ink mb-1">Settings</h1>
+        <p className="text-muted text-sm mb-10">
+          Manage your account details, notification preferences, and data.
+        </p>
 
-        {/* Account section */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-6 mb-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Account</h2>
-          <div className="space-y-3 text-sm">
-            <div className="flex justify-between border-b border-gray-100 pb-2">
-              <span className="text-gray-500">Name</span>
-              <span className="text-gray-900 font-medium">
-                {user?.user_metadata?.name || "—"}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-500">Email</span>
-              <span className="text-gray-900 font-medium">{user?.email}</span>
-            </div>
-          </div>
-        </div>
+        <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-10">
+          {/* Sidebar nav */}
+          <nav className="flex md:flex-col gap-1 overflow-x-auto md:overflow-visible border-b md:border-b-0 md:border-r border-border pb-2 md:pb-0 md:pr-6">
+            {sections.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => setActiveSection(s.id)}
+                className={`text-left px-3 py-2.5 text-sm font-medium transition whitespace-nowrap relative border-l-2 ${
+                  activeSection === s.id
+                    ? "border-l-primary text-ink bg-surface"
+                    : "border-l-transparent text-muted hover:text-ink hover:bg-surface/60"
+                }`}
+              >
+                {s.label}
+              </button>
+            ))}
+          </nav>
 
-        {/* Email preferences section */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-6 mb-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-1">
-            Email Preferences
-          </h2>
-          <p className="text-sm text-gray-500 mb-4">
-            Choose what you'd like to receive email updates about.
-          </p>
+          {/* Content */}
+          <div>
+            {/* ACCOUNT */}
+            {activeSection === "account" && (
+              <div>
+                <h2 className="font-display text-xl text-ink mb-1">Account</h2>
+                <p className="text-muted text-sm mb-6">Your basic account information.</p>
 
-        <label className="flex items-center justify-between mb-5 cursor-pointer">
-            <div>
-              <p className="text-sm font-semibold text-gray-800">
-                Notify Me When A Mentor Answers My Question
-              </p>
-              <p className="text-xs text-gray-500">
-                Get An Email Whenever One Of Your Own Questions Gets A Response.
-              </p>
-            </div>
-            <input
-              type="checkbox"
-              checked={notifyOwnQuestions}
-              onChange={(e) => setNotifyOwnQuestions(e.target.checked)}
-              className="w-5 h-5 accent-green-600 shrink-0 ml-4"
-            />
-          </label>
+                <div className="flex items-center gap-4 bg-surface border border-border rounded-lg p-5 mb-6 shadow-sm">
+                  <div className="relative shrink-0">
+                    {avatarPreview || mentorPhoto || user?.user_metadata?.avatar_url ? (
+                      <img
+                        src={avatarPreview || mentorPhoto || user.user_metadata.avatar_url}
+                        alt="Profile"
+                        className="w-12 h-12 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-ink text-white flex items-center justify-center font-display text-base">
+                        {(user?.user_metadata?.name || user?.email || "?").charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    {!mentorPhoto && (
+                      <label className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-background border border-border flex items-center justify-center text-[10px] cursor-pointer hover:bg-surface transition">
+                        ✎
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleAvatarSelect}
+                          className="hidden"
+                        />
+                      </label>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-display text-base text-ink leading-tight truncate">
+                      {user?.user_metadata?.name || "Unnamed User"}
+                    </p>
+                    <p className="text-muted text-sm truncate">{user?.email}</p>
+                  </div>
+                  {user?.user_metadata?.role === "mentor" && (
+                    <span className="ml-auto text-xs font-medium text-primary border border-primary/30 px-2.5 py-1 rounded-md shrink-0">
+                      Mentor
+                    </span>
+                  )}
+                </div>
 
-          <div className="space-y-4 mb-6">
-            {prefsLoading ? (
-              <div className="space-y-3 animate-pulse">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="h-[42px] bg-gray-100 rounded-lg" />
-                ))}
+                {avatarFile && (
+                  <div className="flex items-center gap-2 -mt-3 mb-6">
+                    <button
+                      onClick={handleUploadAvatar}
+                      disabled={avatarUploading}
+                      className="bg-ink text-white px-4 py-1.5 rounded-md text-xs font-semibold hover:opacity-90 transition disabled:opacity-50"
+                    >
+                      {avatarUploading ? "Uploading..." : "Save photo"}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setAvatarFile(null);
+                        setAvatarPreview(null);
+                      }}
+                      className="text-xs font-medium text-muted hover:text-ink"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+                {avatarError && (
+                  <p className="text-red-600 text-xs -mt-4 mb-6">{avatarError}</p>
+                )}
+
+                <div className="border border-border rounded-lg divide-y divide-border bg-surface shadow-sm">
+                  <div className="flex items-center justify-between px-5 py-4">
+                    <span className="text-sm text-muted">Full name</span>
+                    <span className="text-sm text-ink font-medium">
+                      {user?.user_metadata?.name || "—"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between px-5 py-4">
+                    <span className="text-sm text-muted">Email address</span>
+                    <span className="text-sm text-ink font-medium">{user?.email}</span>
+                  </div>
+                  <div className="flex items-center justify-between px-5 py-4">
+                    <span className="text-sm text-muted">Account type</span>
+                    <span className="text-sm text-ink font-medium">
+                      {user?.user_metadata?.role === "mentor" ? "Mentor" : "Student"}
+                    </span>
+                  </div>
+                </div>
               </div>
-            ) : (
-              <>
-                <MultiSelect
-                  label="Field"
-                  options={fieldOptions}
-                  selected={selectedFields}
-                  onChange={setSelectedFields}
-                  getOptionStyle={getSubjectStyle}
-                />
-                <MultiSelect
-                  label="Language"
-                  options={languageOptions}
-                  selected={selectedLanguages}
-                  onChange={setSelectedLanguages}
-                   getOptionStyle={getLanguageStyle}
-                />
-                <MultiSelect
-                  label="School"
-                  options={schoolOptions}
-                  selected={selectedSchools}
-                  onChange={setSelectedSchools}
-                />
-                <MultiSelect
-                  label="Specific Mentor"
-                  options={mentorOptions}
-                  selected={selectedMentors}
-                  onChange={setSelectedMentors}
-                />
-                <MultiSelect
-                  label="Country"
-                  options={countryOptions}
-                  selected={selectedCountries}
-                  onChange={setSelectedCountries}
-                  getOptionStyle={getCountryStyle}
-                />
-              </>
+            )}
+
+            {/* NOTIFICATIONS */}
+            {activeSection === "notifications" && (
+              <div>
+                <h2 className="font-display text-xl text-ink mb-1">Notifications</h2>
+                <p className="text-muted text-sm mb-6">
+                  Choose what you'd like to receive email updates about.
+                </p>
+
+                <div className="border border-border rounded-lg mb-8 bg-surface shadow-sm">
+                  <div className="flex items-center justify-between px-5 py-4">
+                    <div>
+                      <p className="text-sm font-medium text-ink">
+                        Notify me when a mentor answers my question
+                      </p>
+                      <p className="text-xs text-muted mt-0.5">
+                        Sent whenever one of your own questions gets a response.
+                      </p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={notifyOwnQuestions}
+                      onChange={(e) => setNotifyOwnQuestions(e.target.checked)}
+                      className="w-4 h-4 accent-primary shrink-0 ml-4"
+                    />
+                  </div>
+                </div>
+
+                <p className="text-xs font-semibold text-muted uppercase tracking-wide mb-3">
+                  Notify me about new questions matching
+                </p>
+
+                {prefsLoading ? (
+                  <div className="space-y-3 animate-pulse">
+                    {[...Array(5)].map((_, i) => (
+                      <div key={i} className="h-11 bg-surface rounded-md" />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="border border-border rounded-lg divide-y divide-border bg-surface shadow-sm">
+                    <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-2 sm:gap-0 px-5 py-4 items-center hover:bg-background/60 transition-colors">
+                      <span className="text-sm text-muted">Field</span>
+                      <MultiSelect
+                        options={fieldOptions}
+                        selected={selectedFields}
+                        onChange={setSelectedFields}
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-2 sm:gap-0 px-5 py-4 items-center hover:bg-background/60 transition-colors">
+                      <span className="text-sm text-muted">Language</span>
+                      <MultiSelect
+                        options={languageOptions}
+                        selected={selectedLanguages}
+                        onChange={setSelectedLanguages}
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-2 sm:gap-0 px-5 py-4 items-center hover:bg-background/60 transition-colors">
+                      <span className="text-sm text-muted">School</span>
+                      <MultiSelect
+                        options={schoolOptions}
+                        selected={selectedSchools}
+                        onChange={setSelectedSchools}
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-2 sm:gap-0 px-5 py-4 items-center hover:bg-background/60 transition-colors">
+                      <span className="text-sm text-muted">Mentor</span>
+                      <MultiSelect
+                        options={mentorOptions}
+                        selected={selectedMentors}
+                        onChange={setSelectedMentors}
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-2 sm:gap-0 px-5 py-4 items-center hover:bg-background/60 transition-colors">
+                      <span className="text-sm text-muted">Country</span>
+                      <MultiSelect
+                        options={countryOptions}
+                        selected={selectedCountries}
+                        onChange={setSelectedCountries}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-3 mt-6">
+                  <button
+                    onClick={handleSavePreferences}
+                    disabled={saving}
+                    className="bg-ink text-white px-5 py-2 rounded-md text-sm font-semibold hover:opacity-90 transition disabled:opacity-50"
+                  >
+                    {saving ? "Saving..." : "Save changes"}
+                  </button>
+                  {saved && (
+                    <span className="text-sm text-primary font-medium">Saved</span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* DANGER ZONE */}
+            {activeSection === "danger" && (
+              <div>
+                <h2 className="font-display text-xl text-red-700 mb-1">Danger Zone</h2>
+                <p className="text-muted text-sm mb-6">
+                  Permanently delete your account and all associated data. This cannot be undone.
+                </p>
+
+                <div className="border border-red-200 bg-red-50/50 rounded-lg p-5">
+                  {!showDeleteConfirm ? (
+                    <button
+                      onClick={handleDeleteAccount}
+                      className="border border-red-300 text-red-700 px-5 py-2 rounded-md text-sm font-semibold hover:bg-red-100 transition"
+                    >
+                      Delete account
+                    </button>
+                  ) : (
+                    <form onSubmit={handleConfirmDelete} className="space-y-3">
+                      <p className="text-sm text-ink font-medium">
+                        Confirm your email and password to permanently delete your account.
+                      </p>
+                      <input
+                        type="email"
+                        required
+                        placeholder="Email"
+                        value={confirmEmail}
+                        onChange={(e) => setConfirmEmail(e.target.value)}
+                        className="w-full border border-border rounded-md px-3 py-2 text-sm text-ink bg-background focus:outline-none focus:ring-2 focus:ring-red-400"
+                      />
+                      <input
+                        type="password"
+                        required
+                        placeholder="Password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className="w-full border border-border rounded-md px-3 py-2 text-sm text-ink bg-background focus:outline-none focus:ring-2 focus:ring-red-400"
+                      />
+
+                      {deleteError && (
+                        <p className="text-red-600 text-sm font-medium">{deleteError}</p>
+                      )}
+
+                      <div className="flex gap-2">
+                        <button
+                          type="submit"
+                          disabled={deleting}
+                          className="bg-red-600 text-white px-5 py-2 rounded-md text-sm font-semibold hover:bg-red-700 transition disabled:opacity-50"
+                        >
+                          {deleting ? "Deleting..." : "Confirm delete"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowDeleteConfirm(false)}
+                          className="border border-border text-ink px-5 py-2 rounded-md text-sm font-semibold hover:bg-surface transition"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                </div>
+              </div>
             )}
           </div>
-
-          <button
-    onClick={handleSavePreferences}
-    disabled={saving}
-    className="bg-green-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-green-700 transition disabled:opacity-50"
-  >
-    {saving ? "Saving..." : "Save preferences"}
-  </button>
-  {saved && (
-    <span className="text-sm text-green-700 font-medium ml-2">
-      ✓ Preferences saved
-    </span>
-  )}
-</div>
-
-       {/* Danger zone */}
-        <div className="bg-white border border-red-200 rounded-2xl p-6">
-          <h2 className="text-lg font-bold text-red-700 mb-1">Danger zone</h2>
-          <p className="text-sm text-gray-500 mb-4">
-            Permanently delete your account and all associated data.
-          </p>
-
-          {!showDeleteConfirm ? (
-            <button
-              onClick={handleDeleteAccount}
-              className="border border-red-300 text-red-700 px-5 py-2 rounded-lg text-sm font-semibold hover:bg-red-50 transition"
-            >
-              Delete Account
-            </button>
-          ) : (
-            <form onSubmit={handleConfirmDelete} className="space-y-3 border-t border-red-100 pt-4">
-              <p className="text-sm text-gray-700 font-medium">
-                Confirm your email and password to permanently delete your account.
-              </p>
-              <input
-                type="email"
-                required
-                placeholder="Email"
-                value={confirmEmail}
-                onChange={(e) => setConfirmEmail(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500"
-              />
-              <input
-                type="password"
-                required
-                placeholder="Password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500"
-              />
-
-              {deleteError && (
-                <p className="text-red-600 text-sm font-medium">{deleteError}</p>
-              )}
-
-              <div className="flex gap-2">
-                <button
-                  type="submit"
-                  disabled={deleting}
-                  className="bg-red-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-red-700 transition disabled:opacity-50"
-                >
-                  {deleting ? "Deleting..." : "Confirm delete"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowDeleteConfirm(false)}
-                  className="border border-gray-300 text-gray-700 px-5 py-2 rounded-lg text-sm font-semibold hover:bg-gray-50 transition"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          )}
         </div>
       </div>
     </div>

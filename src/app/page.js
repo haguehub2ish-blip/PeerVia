@@ -125,15 +125,17 @@ function MentorPhoto({ mentor, className = "" }) {
 // --- Decorative background texture, low-opacity, same hue family as bg ---
 function DecorShapes() {
   return (
-    <>
-      <div
-        className="absolute -left-16 -top-10 w-64 h-40 -rotate-12 opacity-[0.07] pointer-events-none"
-        style={{
-          backgroundImage:
-            "repeating-linear-gradient(45deg, var(--color-primary) 0px, var(--color-primary) 3px, transparent 3px, transparent 14px)",
-        }}
-      />
-    </>
+    <svg
+      className="absolute left-8 top-2 w-32 h-32 md:w-40 md:h-40 text-primary/[0.06] pointer-events-none hidden lg:block"
+      viewBox="0 0 0 0"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="0.8"
+    >
+      <path d="M12 3 2 8l10 5 10-5-10-5z" />
+      <path d="M6 10.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-5.5" />
+      <path d="M22 8v6" />
+    </svg>
   );
 }
 
@@ -353,7 +355,7 @@ export default function Home() {
       <Navbar />
 
             {/* ============ HERO ============ */}
-      <section className="relative overflow-hidden px-6 pt-16 pb-20 md:pt-20">
+            <section className="relative overflow-hidden px-6 pt-4 pb-8 md:pt-6">
         {HERO_PHOTO_URL && (
           <div
             className="absolute right-0 top-0 w-full md:w-[55%] h-full pointer-events-none overflow-hidden"
@@ -431,35 +433,6 @@ export default function Home() {
             <div className="relative">
               <div className="flex items-stretch bg-surface border border-border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-primary/30">
                 <div className="flex-1 px-4 py-2.5 flex items-center gap-2 flex-wrap">
-                  {selectedCategory && (
-                    <>
-                      <button
-                        onClick={() => {
-                          setSelectedCategory(null);
-                          setSelectedChips({});
-                          setActiveDimension("field");
-                        }}
-                        className={`inline-flex items-center gap-2 text-sm font-semibold px-3 py-1 rounded-full ${categoryFillStyles[selectedCategory]} hover:opacity-80 transition`}
-                      >
-                        {categoryDisplayNames[selectedCategory]}
-                        <span className="font-bold">×</span>
-                      </button>
-                      {Object.entries(selectedChips).flatMap(([dimension, chips]) =>
-                        chips.map((chip) => {
-                          const style = getChipStyle(dimension, chip);
-                          return (
-                            <button
-                              key={`${dimension}-${chip}`}
-                              onClick={() => handleChipSelect(dimension, chip)}
-                              className={`inline-flex items-center gap-1 text-sm font-semibold px-3 py-1 rounded-full transition hover:opacity-80 ${style.color}`}
-                            >
-                              {style.icon} {chip}
-                            </button>
-                          );
-                        })
-                      )}
-                    </>
-                  )}
                   <input
                     type="text"
                     value={searchText}
@@ -705,15 +678,6 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {topQuestions.map((qa, i) => (
               <a key={i} href={`/community#${qa.id}`} className="bg-surface border border-border rounded-2xl p-6 flex flex-col h-full hover:border-primary/40 transition">
-                <div className="flex flex-wrap gap-2 mb-3">
-                  <span className={`inline-block text-xs font-semibold px-3 py-1 rounded-full ${getSubjectStyle(qa.subject).color}`}>
-                    {getSubjectStyle(qa.subject).icon} {qa.subject}
-                  </span>
-                  <span className="inline-block text-xs font-semibold px-3 py-1 rounded-full bg-ink/5 text-ink">
-                    {getFlag(qa.country)} {qa.country}
-                  </span>
-                </div>
-
                 <h4 className="font-display text-lg text-ink mb-2">{qa.question}</h4>
                 <p className="text-muted text-sm italic mb-4 line-clamp-3">&ldquo;{qa.answer}&rdquo;</p>
 
