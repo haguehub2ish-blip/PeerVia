@@ -28,6 +28,7 @@ function QAFeedContent() {
   const router = useRouter();
   const [openIndex, setOpenIndex] = useState(0);
 const [user, setUser] = useState(null);
+const [authChecked, setAuthChecked] = useState(false);
   const [interactions, setInteractions] = useState({});
   const [interactionsLoading, setInteractionsLoading] = useState(true);
   const [showMyActivity, setShowMyActivity] = useState(false);
@@ -116,6 +117,7 @@ const [user, setUser] = useState(null);
       const { data: userData } = await supabase.auth.getUser();
       const currentUser = userData?.user || null;
       setUser(currentUser);
+      setAuthChecked(true);
 
       const [{ data: likes }, { data: comments }, { data: views }, { data: askedQuestions }, { data: userQuestionAnswers }] = await Promise.all([
         supabase.from("question_likes").select("question_id, user_id"),
@@ -381,9 +383,36 @@ const [user, setUser] = useState(null);
   });
 
   return (
-    <div className="min-h-screen bg-[#FFF9F2]">
+    <div className="min-h-screen bg-[#FFF9F2] relative">
       <Navbar />
-      <div className="flex">
+
+           {authChecked && !user && (
+        <div className="fixed inset-0 top-[65px] z-30 flex items-center justify-center bg-[#FFF9F2]/60 backdrop-blur-[1px]">
+          <div className="bg-white border border-gray-200 rounded-2xl p-8 max-w-sm text-center shadow-lg mx-4">
+            <div className="text-4xl mb-3">🔒</div>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Unlock Community Access</h2>
+            <p className="text-gray-500 text-sm mb-6">
+              Sign up or log in to see mentor answers, ask your own questions, and join the conversation.
+            </p>
+            <div className="flex gap-2 justify-center">
+              <a
+                href="/signup?redirect=/community"
+                className="bg-amber-600 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-amber-700 transition"
+              >
+                Sign Up
+              </a>
+              <a
+                href="/login?redirect=/community"
+                className="border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-gray-50 transition"
+              >
+                Log In
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className={`flex ${authChecked && !user ? "h-[calc(100vh-65px)] overflow-hidden pointer-events-none select-none blur-[1px]" : ""}`}>
         {/* Sidebar */}
         <aside className="w-64 bg-white border-r border-gray-200 p-6 hidden md:block shadow-[2px_0_8px_-4px_rgba(0,0,0,0.05)]">
           <div className="flex items-center gap-2.5 mb-1">
