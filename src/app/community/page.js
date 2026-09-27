@@ -12,12 +12,13 @@ function formatDate(dateString) {
   const date = new Date(dateString);
   return date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 }
+
 const fields = ["All fields", "Medicine", "Engineering", "Law", "Business", "Computer Science", "Psychology", "Biology", "Architecture"];
 const countries = ["NL & UK", "Netherlands", "United Kingdom"];
 
 export default function QAFeed() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#FFF9F2]" />}>
+    <Suspense fallback={<div className="min-h-screen bg-background" />}>
       <QAFeedContent />
     </Suspense>
   );
@@ -27,34 +28,34 @@ function QAFeedContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [openIndex, setOpenIndex] = useState(0);
-const [user, setUser] = useState(null);
-const [authChecked, setAuthChecked] = useState(false);
+  const [user, setUser] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const [interactions, setInteractions] = useState({});
   const [interactionsLoading, setInteractionsLoading] = useState(true);
   const [showMyActivity, setShowMyActivity] = useState(false);
-    const [userQuestions, setUserQuestions] = useState([]);
-    const [userQuestionAnswers, setUserQuestionAnswers] = useState([]);
-    const [openAnsweredUserQuestions, setOpenAnsweredUserQuestions] = useState(new Set());
+  const [userQuestions, setUserQuestions] = useState([]);
+  const [userQuestionAnswers, setUserQuestionAnswers] = useState([]);
+  const [openAnsweredUserQuestions, setOpenAnsweredUserQuestions] = useState(new Set());
 
-    function toggleAnsweredUserQuestion(id) {
-      setOpenAnsweredUserQuestions((prev) => {
-        const next = new Set(prev);
-        if (next.has(id)) {
-          next.delete(id);
-        } else {
-          next.add(id);
-        }
-        return next;
-      });
-    }
-    const answeredIds = new Set(userQuestionAnswers.map((a) => a.user_question_id));
-    const unansweredUserQuestions = userQuestions.filter((uq) => !answeredIds.has(uq.id));
-    const answeredUserQuestions = userQuestions
-      .filter((uq) => answeredIds.has(uq.id))
-      .map((uq) => ({
-        ...uq,
-        answerData: userQuestionAnswers.find((a) => a.user_question_id === uq.id),
-      }));
+  function toggleAnsweredUserQuestion(id) {
+    setOpenAnsweredUserQuestions((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }
+  const answeredIds = new Set(userQuestionAnswers.map((a) => a.user_question_id));
+  const unansweredUserQuestions = userQuestions.filter((uq) => !answeredIds.has(uq.id));
+  const answeredUserQuestions = userQuestions
+    .filter((uq) => answeredIds.has(uq.id))
+    .map((uq) => ({
+      ...uq,
+      answerData: userQuestionAnswers.find((a) => a.user_question_id === uq.id),
+    }));
   const [askText, setAskText] = useState("");
   const [showAskFilters, setShowAskFilters] = useState(false);
   const [askSubjects, setAskSubjects] = useState([]);
@@ -70,20 +71,6 @@ const [authChecked, setAuthChecked] = useState(false);
       if (index !== -1) {
         setOpenIndex(index);
       }
-    }
-  }, []);
-
-  useEffect(() => {
-    const seen = new Set();
-    const duplicates = new Set();
-    questions.forEach((q) => {
-      if (seen.has(q.id)) duplicates.add(q.id);
-      seen.add(q.id);
-    });
-    if (duplicates.size > 0) {
-      console.warn(
-        `[Community] Duplicate question id(s) found: ${[...duplicates].join(", ")} — these questions will incorrectly share likes/comments/views.`
-      );
     }
   }, []);
 
@@ -111,7 +98,6 @@ const [authChecked, setAuthChecked] = useState(false);
 
   const [search, setSearch] = useState("");
 
-  // --- Load current user + all interaction data ---
   useEffect(() => {
     async function loadInteractions() {
       const { data: userData } = await supabase.auth.getUser();
@@ -172,7 +158,6 @@ const [authChecked, setAuthChecked] = useState(false);
 
     const { error } = await supabase.rpc("increment_question_view", { qid });
     if (error) {
-      // roll back on failure
       setInteractions((prev) => ({
         ...prev,
         [qid]: { ...prev[qid], viewCount: Math.max((prev[qid]?.viewCount || 1) - 1, 0) },
@@ -382,28 +367,30 @@ const [authChecked, setAuthChecked] = useState(false);
     return matchesField && matchesCountry && matchesSearch && matchesMyActivity;
   });
 
+  const totalAnswered = questions.length + answeredUserQuestions.length;
+  const totalHelpful = Object.values(interactions).reduce((sum, d) => sum + (d.likeCount || 0), 0);
+
   return (
-    <div className="min-h-screen bg-[#FFF9F2] relative">
+    <div className="min-h-screen bg-background relative">
       <Navbar />
 
-           {authChecked && !user && (
-        <div className="fixed inset-0 top-[65px] z-30 flex items-center justify-center bg-[#FFF9F2]/60 backdrop-blur-[1px]">
-          <div className="bg-white border border-gray-200 rounded-2xl p-8 max-w-sm text-center shadow-lg mx-4">
-            <div className="text-4xl mb-3">🔒</div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Unlock Community Access</h2>
-            <p className="text-gray-500 text-sm mb-6">
+      {authChecked && !user && (
+        <div className="fixed inset-0 top-[65px] z-30 flex items-center justify-center bg-background/60 backdrop-blur-[1px]">
+          <div className="bg-surface border border-border rounded-2xl p-8 max-w-sm text-center shadow-lg mx-4">
+            <h2 className="font-display text-xl text-ink mb-2">Unlock Community Access</h2>
+            <p className="text-muted text-sm mb-6">
               Sign up or log in to see mentor answers, ask your own questions, and join the conversation.
             </p>
             <div className="flex gap-2 justify-center">
               <a
                 href="/signup?redirect=/community"
-                className="bg-amber-600 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-amber-700 transition"
+                className="bg-primary text-white px-5 py-2.5 rounded-md text-sm font-semibold hover:bg-primary-dark transition"
               >
                 Sign Up
               </a>
               <a
                 href="/login?redirect=/community"
-                className="border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-gray-50 transition"
+                className="border border-border text-ink px-5 py-2.5 rounded-md text-sm font-semibold hover:bg-background transition"
               >
                 Log In
               </a>
@@ -412,17 +399,151 @@ const [authChecked, setAuthChecked] = useState(false);
         </div>
       )}
 
-      <div className={`flex ${authChecked && !user ? "h-[calc(100vh-65px)] overflow-hidden pointer-events-none select-none blur-[1px]" : ""}`}>
-        {/* Sidebar */}
-        <aside className="w-64 bg-white border-r border-gray-200 p-6 hidden md:block shadow-[2px_0_8px_-4px_rgba(0,0,0,0.05)]">
-          <div className="flex items-center gap-2.5 mb-1">
-            <span className="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-base shrink-0">
-              💬
-            </span>
-            <p className="font-bold text-gray-900 text-sm">Community</p>
+      <div className={authChecked && !user ? "h-[calc(100vh-65px)] overflow-hidden pointer-events-none select-none blur-[1px]" : ""}>
+        {/* Hero banner */}
+        <section className="bg-ink text-white px-6 py-12 md:py-16">
+          <div className="max-w-6xl mx-auto">
+            <p className="font-label text-[11px] tracking-[0.15em] uppercase text-primary mb-3">
+              Community
+            </p>
+            <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8">
+              <h1 className="font-display text-3xl md:text-4xl leading-tight max-w-xl">
+                Real questions, answered by students who've{" "}
+                <span className="italic text-primary">actually done it</span>
+              </h1>
+              <div className="flex gap-8">
+                <div>
+                  <p className="font-display text-3xl text-primary">{totalAnswered}</p>
+                  <p className="font-label text-[10px] tracking-[0.05em] uppercase text-white/60">
+                    Answered
+                  </p>
+                </div>
+                <div>
+                  <p className="font-display text-3xl text-primary">{unansweredUserQuestions.length}</p>
+                  <p className="font-label text-[10px] tracking-[0.05em] uppercase text-white/60">
+                    Open
+                  </p>
+                </div>
+                <div>
+                  <p className="font-display text-3xl text-primary">{totalHelpful}</p>
+                  <p className="font-label text-[10px] tracking-[0.05em] uppercase text-white/60">
+                    Helpful Votes
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Ask box, embedded in hero */}
+            <div className="mt-10 bg-white/10 border border-white/15 rounded-xl px-5 py-4 flex items-center gap-3 backdrop-blur-sm">
+              <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-semibold text-sm shrink-0">
+                {(user?.user_metadata?.name || "?").charAt(0).toUpperCase()}
+              </div>
+              <input
+                type="text"
+                value={askText}
+                onChange={(e) => {
+                  setAskText(e.target.value);
+                  if (askError) setAskError(false);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleAskClick();
+                }}
+                placeholder={user ? "Ask a question to verified mentors..." : "Log in to ask a question..."}
+                className="flex-1 focus:outline-none text-sm text-white placeholder-white/50 bg-transparent"
+              />
+              <button
+                onClick={handleAskClick}
+                className="bg-primary text-white px-5 py-2 rounded-md text-sm font-semibold hover:bg-primary-dark transition shrink-0"
+              >
+                Ask
+              </button>
+            </div>
+            {askError && (
+              <p className="text-red-300 text-sm mt-2">Type a question before posting.</p>
+            )}
+
+            {showAskFilters && (
+              <div className="mt-4 bg-white/10 border border-white/15 rounded-xl px-5 py-4 space-y-3 backdrop-blur-sm">
+                <p className="text-sm font-medium text-white/80">
+                  Want to tag your question so it's easier to find? (optional)
+                </p>
+                <div>
+                  <p className="text-xs font-semibold text-white/50 mb-1.5">SUBJECT</p>
+                  <div className="flex flex-wrap gap-2">
+                    {fields.filter((f) => f !== "All fields").map((f) => {
+                      const isSelected = askSubjects.includes(f);
+                      return (
+                        <button
+                          key={f}
+                          onClick={() =>
+                            setAskSubjects((prev) =>
+                              isSelected ? prev.filter((s) => s !== f) : [...prev, f]
+                            )
+                          }
+                          className={`text-xs font-medium px-3 py-1 rounded-md border transition ${
+                            isSelected
+                              ? "border-primary text-primary bg-primary/20"
+                              : "border-white/20 text-white/70 hover:border-white/40"
+                          }`}
+                        >
+                          {f}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-white/50 mb-1.5">COUNTRY</p>
+                  <div className="flex flex-wrap gap-2">
+                    {["NL", "UK"].map((c) => {
+                      const isSelected = askCountries.includes(c);
+                      return (
+                        <button
+                          key={c}
+                          onClick={() =>
+                            setAskCountries((prev) =>
+                              isSelected ? prev.filter((x) => x !== c) : [...prev, c]
+                            )
+                          }
+                          className={`text-xs font-medium px-3 py-1 rounded-md border transition ${
+                            isSelected
+                              ? "border-primary text-primary bg-primary/20"
+                              : "border-white/20 text-white/70 hover:border-white/40"
+                          }`}
+                        >
+                          {c}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 pt-1">
+                  <button
+                    onClick={handleAskPost}
+                    className="bg-primary text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-dark transition"
+                  >
+                    Post question
+                  </button>
+                  <button
+                    onClick={() => {
+                      setAskSubjects([]);
+                      setAskCountries([]);
+                      handleAskPost();
+                    }}
+                    className="text-white/60 text-sm font-medium hover:text-white"
+                  >
+                    Skip filters
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-          <div className="h-1 w-10 rounded-full bg-amber-400 mb-6"></div>
-          <p className="text-xs font-semibold text-gray-500 mb-3 tracking-wide">CAREER FIELD</p>
+        </section>
+
+        <div className="flex">
+        {/* Sidebar */}
+        <aside className="w-64 bg-surface border-r border-border p-6 hidden md:block">
+          <p className="text-xs font-semibold text-muted mb-3 tracking-wide">CAREER FIELD</p>
           <div className="space-y-1 mb-8">
             {fields.map((field) => {
               const isActive =
@@ -431,40 +552,30 @@ const [authChecked, setAuthChecked] = useState(false);
                 <button
                   key={field}
                   onClick={() => toggleField(field)}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition ${
+                  className={`w-full text-left px-3 py-2 rounded-md text-sm transition border-l-2 ${
                     isActive
-                      ? "bg-amber-50 text-amber-800 font-semibold"
-                      : "text-gray-600 hover:bg-gray-50"
+                      ? "border-l-primary text-ink bg-primary/5 font-medium"
+                      : "border-l-transparent text-muted hover:text-ink hover:bg-background/60"
                   }`}
                 >
-                  <span
-                    className={`w-1.5 h-1.5 rounded-full ${
-                      isActive ? "bg-amber-600" : "bg-gray-300"
-                    }`}
-                  ></span>
                   {field}
                 </button>
               );
             })}
           </div>
 
-          <p className="text-xs font-semibold text-gray-500 mb-3 tracking-wide">COUNTRY</p>
+          <p className="text-xs font-semibold text-muted mb-3 tracking-wide">COUNTRY</p>
           <div className="space-y-1">
             {countries.map((country) => (
               <button
                 key={country}
                 onClick={() => setSelectedCountry(country)}
-                className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition ${
+                className={`w-full text-left px-3 py-2 rounded-md text-sm transition border-l-2 ${
                   selectedCountry === country
-                    ? "bg-amber-50 text-amber-800 font-semibold"
-                    : "text-gray-600 hover:bg-gray-50"
+                    ? "border-l-primary text-ink bg-primary/5 font-medium"
+                    : "border-l-transparent text-muted hover:text-ink hover:bg-background/60"
                 }`}
               >
-                <span
-                  className={`w-1.5 h-1.5 rounded-full ${
-                    selectedCountry === country ? "bg-amber-600" : "bg-gray-300"
-                  }`}
-                ></span>
                 {country}
               </button>
             ))}
@@ -473,27 +584,14 @@ const [authChecked, setAuthChecked] = useState(false);
 
         {/* Main content */}
         <main className="flex-1 p-6 md:p-10">
-          {/* Top bar */}
-          <div className="mb-1 flex items-center gap-3">
-            <span className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-lg shrink-0">
-              🔥
-            </span>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Community</h1>
-              <p className="text-sm text-gray-500">
-                Real questions from students, answered by verified mentors who've been there.
-              </p>
-            </div>
-          </div>
-          <div className="flex flex-col md:flex-row gap-3 md:items-center mb-6 mt-4">
-            <div className="flex-1 bg-white border border-gray-300 rounded-lg px-4 py-2.5 flex items-center gap-2 focus-within:ring-2 focus-within:ring-amber-500 focus-within:border-amber-500">
-              <span>🔍</span>
+          <div className="flex flex-col md:flex-row gap-3 md:items-center mb-6">
+            <div className="flex-1 bg-surface border border-border rounded-lg px-4 py-2.5 flex items-center gap-2 focus-within:ring-2 focus-within:ring-primary">
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search questions..."
-                className="flex-1 focus:outline-none text-gray-900 placeholder-gray-400"
+                className="flex-1 focus:outline-none text-ink placeholder-muted bg-transparent"
               />
             </div>
             <button
@@ -506,133 +604,24 @@ const [authChecked, setAuthChecked] = useState(false);
               }}
               className={`px-4 py-2.5 rounded-lg text-sm font-semibold border transition shrink-0 ${
                 showMyActivity
-                  ? "bg-amber-500 text-white border-amber-500"
-                  : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
+                  ? "bg-primary text-background border-primary"
+                  : "bg-surface text-ink/80 border-border hover:border-primary"
               }`}
             >
               {showMyActivity ? "✓ My Activity" : "My Activity"}
             </button>
           </div>
 
-          {/* Ask a question box */}
-          <div className="bg-white border border-amber-200 rounded-xl px-5 py-4 flex items-center gap-3 mb-6 shadow-sm">
-            <div className="w-9 h-9 rounded-full bg-amber-600 text-white flex items-center justify-center font-bold text-sm shrink-0 ring-4 ring-amber-50">
-              You
-            </div>
-            <input
-              type="text"
-              value={askText}
-              onChange={(e) => {
-                setAskText(e.target.value);
-                if (askError) setAskError(false);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleAskClick();
-              }}
-              placeholder={user ? "Ask a question to verified mentors..." : "Log in to ask a question..."}
-              className={`flex-1 focus:outline-none text-gray-900 placeholder-gray-400 ${
-                askError ? "placeholder-red-400" : ""
-              }`}
-            />
-            <button
-              onClick={handleAskClick}
-              className="bg-amber-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-amber-700 transition shrink-0"
-            >
-              Ask
-            </button>
-          </div>
-          {askError && (
-            <p className="text-red-600 text-sm -mt-4 mb-6">
-              Type a question before posting.
-            </p>
-          )}
-
-          {showAskFilters && (
-            <div className="bg-white border border-amber-100 rounded-xl px-5 py-4 mb-6 space-y-3 shadow-sm">
-              <p className="text-sm font-medium text-gray-700">
-                Want to tag your question so it's easier to find? (optional)
-              </p>
-
-              <div>
-                <p className="text-xs font-semibold text-gray-500 mb-1.5">SUBJECT</p>
-                <div className="flex flex-wrap gap-2">
-                  {fields.filter((f) => f !== "All fields").map((f) => {
-                    const style = getSubjectStyle(f);
-                    const isSelected = askSubjects.includes(f);
-                    return (
-                      <button
-                        key={f}
-                        onClick={() =>
-                          setAskSubjects((prev) =>
-                            isSelected ? prev.filter((s) => s !== f) : [...prev, f]
-                          )
-                        }
-                        className={`text-xs font-semibold px-3 py-1 rounded-full transition ${style.color} ${
-                          isSelected ? "ring-2 ring-gray-900" : "hover:opacity-80"
-                        }`}
-                      >
-                        {style.icon} {f}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div>
-                <p className="text-xs font-semibold text-gray-500 mb-1.5">COUNTRY</p>
-                <div className="flex flex-wrap gap-2">
-                  {["NL", "UK"].map((c) => {
-                    const isSelected = askCountries.includes(c);
-                    return (
-                      <button
-                        key={c}
-                        onClick={() =>
-                          setAskCountries((prev) =>
-                            isSelected ? prev.filter((x) => x !== c) : [...prev, c]
-                          )
-                        }
-                        className={`text-xs font-semibold px-3 py-1 rounded-full transition bg-slate-100 text-slate-700 ${
-                          isSelected ? "ring-2 ring-gray-900" : "hover:opacity-80"
-                        }`}
-                      >
-                        {getFlag(c)} {c}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 pt-1">
-                <button
-                  onClick={handleAskPost}
-                  className="bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-amber-700 transition"
-                >
-                  Post question
-                </button>
-                <button
-                  onClick={() => {
-                    setAskSubjects([]);
-                    setAskCountries([]);
-                    handleAskPost();
-                  }}
-                  className="text-gray-500 text-sm font-medium hover:text-gray-700"
-                >
-                  Skip filters
-                </button>
-              </div>
-            </div>
-          )}
-
-         
-
           {/* Recently asked, not yet answered by a mentor */}
           {unansweredUserQuestions.length > 0 && (
-            <div className="bg-white border border-amber-200 rounded-xl px-5 py-4 mb-6 space-y-3 shadow-sm">
-              <p className="text-xs font-semibold text-amber-700 tracking-wide flex items-center gap-1.5">🕒 RECENTLY ASKED</p>
+            <div className="bg-surface border border-border rounded-xl px-5 py-4 mb-6 space-y-3">
+              <p className="font-label text-xs uppercase tracking-wide text-primary flex items-center gap-1.5">
+                🕒 Recently Asked
+              </p>
               {unansweredUserQuestions.map((uq) => (
                 <div key={uq.id} className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gray-300 text-gray-700 flex items-center justify-center font-bold text-xs shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-border text-ink flex items-center justify-center font-bold text-xs shrink-0">
                       {(uq.author_name || "?").charAt(0).toUpperCase()}
                     </div>
                     <div>
@@ -642,41 +631,41 @@ const [authChecked, setAuthChecked] = useState(false);
                             uq.subject.split(",").map((s) => (
                               <span
                                 key={s}
-                                className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full ${getSubjectStyle(s).color}`}
+                                className="font-label text-[10px] uppercase tracking-[0.1em] px-2.5 py-1 rounded-md border border-border text-ink/70 bg-background"
                               >
-                                {getSubjectStyle(s).icon} {s}
+                                {s}
                               </span>
                             ))}
                           {uq.country &&
                             uq.country.split(",").map((c) => (
                               <span
                                 key={c}
-                                className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700"
+                                className="font-label text-[10px] uppercase tracking-[0.1em] px-2.5 py-1 rounded-md border border-border text-ink/70 bg-background"
                               >
-                                {getFlag(c)} {c}
+                                {c}
                               </span>
                             ))}
                         </div>
                       )}
-                      <p className="text-sm text-gray-900">{uq.question}</p>
+                      <p className="text-sm text-ink">{uq.question}</p>
                       {(() => {
                         const answer = userQuestionAnswers.find(
                           (a) => a.user_question_id === uq.id
                         );
                         if (answer) {
                           return (
-                            <div className="mt-2 bg-green-50 border border-green-100 rounded-lg p-3">
-                              <p className="text-sm text-gray-800 mb-1">{answer.answer}</p>
-                              <p className="text-xs font-semibold text-green-700">
-                                — <Link href={`/mentors/${answer.mentor_id}`} className="font-semibold text-green-700 hover:underline">{answer.mentor_name}</Link>, Verified Mentor
+                            <div className="mt-2 bg-primary/5 border border-primary/20 rounded-lg p-3">
+                              <p className="text-sm text-ink/90 mb-1">{answer.answer}</p>
+                              <p className="text-xs font-semibold text-primary">
+                                — <Link href={`/mentors/${answer.mentor_id}`} className="font-semibold text-primary hover:underline">{answer.mentor_name}</Link>, Verified Mentor
                               </p>
                             </div>
                           );
                         }
                         return (
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-muted">
                             {uq.author_name} · {formatDate(uq.created_at)} ·{" "}
-                            <span className="text-amber-600">Awaiting An Answer</span>
+                            <span className="text-primary">Awaiting An Answer</span>
                           </p>
                         );
                       })()}
@@ -686,7 +675,7 @@ const [authChecked, setAuthChecked] = useState(false);
                     <button
                       onClick={() => handleDeleteQuestion(uq.id, uq.user_id)}
                       title="Delete your question"
-                      className="text-gray-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-md transition shrink-0"
+                      className="text-muted hover:text-red-600 hover:bg-red-50 p-1.5 rounded-md transition shrink-0"
                     >
                       🗑️ Delete
                     </button>
@@ -705,37 +694,37 @@ const [authChecked, setAuthChecked] = useState(false);
                   <div
                     key={uq.id}
                     id={uq.id}
-                    className="bg-white border border-gray-200 rounded-xl overflow-hidden scroll-mt-24 hover:border-amber-200 hover:shadow-sm transition"
+                    className="bg-surface border border-border rounded-xl overflow-hidden scroll-mt-24 hover:border-primary transition"
                   >
-                    <div className="p-5 flex items-start justify-between gap-4 hover:bg-gray-50/60 transition-colors rounded-t-xl">
+                    <div className="p-5 flex items-start justify-between gap-4 hover:bg-background/60 transition-colors rounded-t-xl">
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-wrap gap-2 mb-3">
                           {uq.subject &&
                             uq.subject.split(",").map((s) => (
                               <span
                                 key={s}
-                                className={`inline-block text-xs font-semibold px-3 py-1 rounded-full ${getSubjectStyle(s).color}`}
+                                className="font-label text-[10px] uppercase tracking-[0.1em] px-2.5 py-1 rounded-md border border-border text-ink/70 bg-background"
                               >
-                                {getSubjectStyle(s).icon} {s}
+                                {s}
                               </span>
                             ))}
                           {uq.country &&
                             uq.country.split(",").map((c) => (
                               <span
                                 key={c}
-                                className="inline-block text-xs font-semibold px-3 py-1 rounded-full bg-slate-100 text-slate-700"
+                                className="font-label text-[10px] uppercase tracking-[0.1em] px-2.5 py-1 rounded-md border border-border text-ink/70 bg-background"
                               >
-                                {getFlag(c)} {c}
+                                {c}
                               </span>
                             ))}
                         </div>
-                        <h3 className="font-bold text-gray-900 text-lg mb-2">{uq.question}</h3>
+                        <h3 className="font-display text-lg text-ink mb-2">{uq.question}</h3>
                         <button
                           onClick={() => {
                             toggleAnsweredUserQuestion(uq.id);
                             if (!isOpen) registerView(uq.id);
                           }}
-                          className="text-amber-700 font-semibold text-sm flex items-center gap-1 hover:text-amber-800"
+                          className="text-primary font-semibold text-sm flex items-center gap-1 hover:text-primary-dark"
                         >
                           {isOpen ? "▲ Hide Answer" : "▼ Show Answer"}
                         </button>
@@ -751,11 +740,11 @@ const [authChecked, setAuthChecked] = useState(false);
                         };
                         return (
                           <div className="hidden sm:flex flex-col items-end gap-2 shrink-0 text-right">
-                            <div className="flex items-center gap-2 bg-green-50 rounded-full pl-1 pr-3 py-1">
-                              <div className="w-6 h-6 rounded-full bg-green-800 text-white flex items-center justify-center font-bold text-[10px] shrink-0">
+                            <div className="flex items-center gap-2 bg-primary/10 rounded-full pl-1 pr-3 py-1">
+                              <div className="w-6 h-6 rounded-full bg-primary text-background flex items-center justify-center font-bold text-[10px] shrink-0">
                                 {(uq.answerData?.mentor_name || "?").charAt(0).toUpperCase()}
                               </div>
-                              <p className="text-xs font-semibold text-green-900">
+                              <p className="text-xs font-semibold text-primary">
                                 {uq.answerData?.mentor_name}
                               </p>
                             </div>
@@ -764,20 +753,20 @@ const [authChecked, setAuthChecked] = useState(false);
                                 onClick={() => handleLike(uq.id)}
                                 className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border transition ${
                                   data.liked
-                                    ? "bg-amber-500 border-amber-500 text-white"
-                                    : "bg-white border-gray-200 text-gray-600 hover:border-amber-400 hover:text-amber-700"
+                                    ? "bg-primary border-primary text-background"
+                                    : "bg-surface border-border text-ink/70 hover:border-primary hover:text-primary"
                                 }`}
                               >
                                 {data.liked ? "👍" : "🤍"} {data.likeCount}
                               </button>
-                              <span className="flex items-center gap-1 text-xs font-medium text-gray-400 bg-gray-50 px-2.5 py-1 rounded-full border border-gray-100">
+                              <span className="flex items-center gap-1 text-xs font-medium text-muted bg-background px-2.5 py-1 rounded-full border border-border">
                                 👁 {data.viewCount}
                               </span>
-                              <span className="flex items-center gap-1 text-xs font-medium text-gray-400 bg-gray-50 px-2.5 py-1 rounded-full border border-gray-100">
+                              <span className="flex items-center gap-1 text-xs font-medium text-muted bg-background px-2.5 py-1 rounded-full border border-border">
                                 💬 {data.comments.length}
                               </span>
                             </div>
-                            <p className="text-[11px] text-gray-400">
+                            <p className="text-[11px] text-muted">
                               Asked {formatDate(uq.created_at)}
                             </p>
                           </div>
@@ -787,19 +776,19 @@ const [authChecked, setAuthChecked] = useState(false);
 
                     {isOpen && (
                       <>
-                        <div className="px-5 pb-5 border-t border-gray-100 pt-4 text-gray-600 leading-relaxed">
+                        <div className="px-5 pb-5 border-t border-border pt-4 text-ink/80 leading-relaxed">
                           {uq.answerData?.answer}
                         </div>
-                        <div className="bg-gray-50 px-5 py-3 flex items-center justify-between flex-wrap gap-2">
+                        <div className="bg-background px-5 py-3 flex items-center justify-between flex-wrap gap-2">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-green-800 text-white flex items-center justify-center font-bold text-xs shrink-0">
+                            <div className="w-8 h-8 rounded-full bg-primary text-background flex items-center justify-center font-bold text-xs shrink-0">
                               {(uq.answerData?.mentor_name || "?").charAt(0).toUpperCase()}
                             </div>
                             <div>
-                              <p className="font-semibold text-green-800 text-sm">
+                              <p className="font-semibold text-primary text-sm">
                                 {uq.answerData?.mentor_name}
                               </p>
-                              <p className="text-gray-500 text-xs">
+                              <p className="text-muted text-xs">
                                 Verified Mentor · Answered {formatDate(uq.answerData?.created_at)}
                               </p>
                             </div>
@@ -817,20 +806,20 @@ const [authChecked, setAuthChecked] = useState(false);
                                 <button
                                   onClick={() => handleLike(uq.id)}
                                   className={`flex items-center gap-1 font-medium transition ${
-                                    data.liked ? "text-amber-700" : "text-gray-500 hover:text-amber-700"
+                                    data.liked ? "text-primary" : "text-muted hover:text-primary"
                                   }`}
                                 >
                                   {data.liked ? "👍" : "🤍"} {data.likeCount} Found Helpful
                                 </button>
-                                <span className="text-gray-500">👁 {data.viewCount} Views</span>
-                                <span className="text-gray-500">💬 {data.comments.length}</span>
+                                <span className="text-muted">👁 {data.viewCount} Views</span>
+                                <span className="text-muted">💬 {data.comments.length}</span>
                               </div>
                             );
                           })()}
                         </div>
 
                         {/* Comments */}
-                        <div className="px-5 py-4 border-t border-gray-100 space-y-3">
+                        <div className="px-5 py-4 border-t border-border space-y-3">
                           {(() => {
                             const data = interactions[uq.id] || {
                               likeCount: 0,
@@ -843,7 +832,7 @@ const [authChecked, setAuthChecked] = useState(false);
                               <>
                                 <button
                                   onClick={() => toggleComments(uq.id)}
-                                  className="text-sm font-medium text-gray-600 hover:text-gray-900"
+                                  className="text-sm font-medium text-ink/70 hover:text-ink"
                                 >
                                   {commentsVisible[uq.id]
                                     ? "▲ Hide Comments"
@@ -856,19 +845,19 @@ const [authChecked, setAuthChecked] = useState(false);
                                       <div className="space-y-3">
                                         {data.comments.map((c) => (
                                           <div key={c.id} className="flex items-start gap-2">
-                                            <div className="w-7 h-7 rounded-full bg-gray-300 text-gray-700 flex items-center justify-center font-bold text-xs shrink-0">
+                                            <div className="w-7 h-7 rounded-full bg-border text-ink flex items-center justify-center font-bold text-xs shrink-0">
                                               {(c.author_name || "?").charAt(0).toUpperCase()}
                                             </div>
-                                            <div className="bg-gray-50 rounded-lg px-3 py-2 flex-1 flex items-start justify-between gap-2">
+                                            <div className="bg-background rounded-lg px-3 py-2 flex-1 flex items-start justify-between gap-2">
                                               <div>
-                                                <p className="text-xs font-semibold text-gray-800">{c.author_name}</p>
-                                                <p className="text-sm text-gray-600">{c.content}</p>
+                                                <p className="text-xs font-semibold text-ink">{c.author_name}</p>
+                                                <p className="text-sm text-ink/80">{c.content}</p>
                                               </div>
                                               {user && user.id === c.user_id && (
                                                 <button
                                                   onClick={() => handleDeleteComment(uq.id, c.id, c.user_id)}
                                                   title="Delete Your Comment"
-                                                  className="text-gray-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-md transition shrink-0"
+                                                  className="text-muted hover:text-red-600 hover:bg-red-50 p-1.5 rounded-md transition shrink-0"
                                                 >
                                                   🗑️ Delete
                                                 </button>
@@ -888,11 +877,11 @@ const [authChecked, setAuthChecked] = useState(false);
                                           if (e.key === "Enter") handleCommentSubmit(uq.id);
                                         }}
                                         placeholder={user ? "Add A Comment..." : "Log In To Comment..."}
-                                        className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                                        className="flex-1 border border-border rounded-lg px-3 py-2 text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-primary bg-surface"
                                       />
                                       <button
                                         onClick={() => handleCommentSubmit(uq.id)}
-                                        className="bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-amber-700 transition shrink-0"
+                                        className="bg-primary text-background px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-dark transition shrink-0"
                                       >
                                         Post
                                       </button>
@@ -927,24 +916,22 @@ const [authChecked, setAuthChecked] = useState(false);
                 <div
                   key={i}
                   id={q.id}
-                  className="bg-white border border-gray-200 rounded-xl overflow-hidden scroll-mt-24 hover:border-amber-200 hover:shadow-sm transition"
+                  className="bg-surface border border-border rounded-xl overflow-hidden scroll-mt-24 hover:border-primary transition"
                 >
-                  <div className="p-5 flex items-start justify-between gap-4 hover:bg-gray-50/60 transition-colors rounded-t-xl">
+                  <div className="p-5 flex items-start justify-between gap-4 hover:bg-background/60 transition-colors rounded-t-xl">
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap gap-2 mb-3">
-                        <span
-                          className={`inline-block text-xs font-semibold px-3 py-1 rounded-full ${getSubjectStyle(q.subject).color}`}
-                        >
-                          {getSubjectStyle(q.subject).icon} {q.subject}
+                        <span className="font-label text-[10px] uppercase tracking-[0.1em] px-2.5 py-1 rounded-md border border-border text-ink/70 bg-background">
+                          {q.subject}
                         </span>
-                        <span className="inline-block text-xs font-semibold px-3 py-1 rounded-full bg-slate-100 text-slate-700">
-                          {getFlag(q.country)} {q.country}
+                        <span className="font-label text-[10px] uppercase tracking-[0.1em] px-2.5 py-1 rounded-md border border-border text-ink/70 bg-background">
+                          {q.country}
                         </span>
                       </div>
-                      <h3 className="font-bold text-gray-900 text-lg mb-2">{q.question}</h3>
+                      <h3 className="font-display text-lg text-ink mb-2">{q.question}</h3>
                       <button
                         onClick={() => handleToggleOpen(q.id, i, isOpen)}
-                        className="text-amber-700 font-semibold text-sm flex items-center gap-1 hover:text-amber-800"
+                        className="text-primary font-semibold text-sm flex items-center gap-1 hover:text-primary-dark"
                       >
                         {isOpen ? "▲ Hide answer" : "▼ Show answer"}
                       </button>
@@ -952,94 +939,94 @@ const [authChecked, setAuthChecked] = useState(false);
 
                     {!isOpen && (
                       <div className="hidden sm:flex flex-col items-end gap-2 shrink-0 text-right">
-                        <div className="flex items-center gap-2 bg-green-50 rounded-full pl-1 pr-3 py-1">
-                          <div className="w-6 h-6 rounded-full bg-green-800 text-white flex items-center justify-center font-bold text-[10px] shrink-0">
+                        <div className="flex items-center gap-2 bg-primary/10 rounded-full pl-1 pr-3 py-1">
+                          <div className="w-6 h-6 rounded-full bg-primary text-background flex items-center justify-center font-bold text-[10px] shrink-0">
                             {q.initials}
                           </div>
-                          <p className="text-xs font-semibold text-green-900">{q.name}</p>
+                          <p className="text-xs font-semibold text-primary">{q.name}</p>
                         </div>
                         <div className="flex items-center gap-1.5">
                           <button
                             onClick={() => handleLike(q.id)}
                             className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border transition ${
                               data.liked
-                                ? "bg-amber-500 border-amber-500 text-white"
-                                : "bg-white border-gray-200 text-gray-600 hover:border-amber-400 hover:text-amber-700"
+                                ? "bg-primary border-primary text-background"
+                                : "bg-surface border-border text-ink/70 hover:border-primary hover:text-primary"
                             }`}
                           >
                             {data.liked ? "👍" : "🤍"} {data.likeCount}
                           </button>
-                          <span className="flex items-center gap-1 text-xs font-medium text-gray-400 bg-gray-50 px-2.5 py-1 rounded-full border border-gray-100">
+                          <span className="flex items-center gap-1 text-xs font-medium text-muted bg-background px-2.5 py-1 rounded-full border border-border">
                             👁 {data.viewCount}
                           </span>
-                          <span className="flex items-center gap-1 text-xs font-medium text-gray-400 bg-gray-50 px-2.5 py-1 rounded-full border border-gray-100">
+                          <span className="flex items-center gap-1 text-xs font-medium text-muted bg-background px-2.5 py-1 rounded-full border border-border">
                             💬 {data.comments.length}
                           </span>
                         </div>
-                        <p className="text-[11px] text-gray-400">{formatDate(q.date)}</p>
+                        <p className="text-[11px] text-muted">{formatDate(q.date)}</p>
                       </div>
                     )}
                   </div>
 
                   {isOpen && (
                     <>
-                      <div className="px-5 pb-5 border-t border-gray-100 pt-4 text-gray-600 leading-relaxed">
+                      <div className="px-5 pb-5 border-t border-border pt-4 text-ink/80 leading-relaxed">
                         {q.answer}
                       </div>
-                      <div className="bg-gray-50 px-5 py-3 flex items-center justify-between flex-wrap gap-2">
+                      <div className="bg-background px-5 py-3 flex items-center justify-between flex-wrap gap-2">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-green-800 text-white flex items-center justify-center font-bold text-xs shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-primary text-background flex items-center justify-center font-bold text-xs shrink-0">
                             {q.initials}
                           </div>
                           <div>
-                            <p className="font-semibold text-green-800 text-sm">{q.name}</p>
-                            <p className="text-gray-500 text-xs">
+                            <p className="font-semibold text-primary text-sm">{q.name}</p>
+                            <p className="text-muted text-xs">
                               {q.school} · {q.year} · {formatDate(q.date)}
                             </p>
                           </div>
                         </div>
                         {interactionsLoading ? (
                           <div className="flex items-center gap-4">
-                            <div className="h-4 w-28 bg-gray-200 rounded animate-pulse"></div>
-                            <div className="h-4 w-16 bg-gray-200 rounded animate-pulse"></div>
-                            <div className="h-4 w-10 bg-gray-200 rounded animate-pulse"></div>
+                            <div className="h-4 w-28 bg-border rounded animate-pulse"></div>
+                            <div className="h-4 w-16 bg-border rounded animate-pulse"></div>
+                            <div className="h-4 w-10 bg-border rounded animate-pulse"></div>
                           </div>
                         ) : (
                           <div className="flex items-center gap-4 text-sm">
                             <button
                               onClick={() => handleLike(q.id)}
                               className={`flex items-center gap-1 font-medium transition ${
-                                data.liked ? "text-amber-700" : "text-gray-500 hover:text-amber-700"
+                                data.liked ? "text-primary" : "text-muted hover:text-primary"
                               }`}
                             >
                               {data.liked ? "👍" : "🤍"} {data.likeCount} found helpful
                             </button>
-                            <span className="text-gray-500">👁 {data.viewCount} views</span>
-                            <span className="text-gray-500">💬 {data.comments.length}</span>
+                            <span className="text-muted">👁 {data.viewCount} views</span>
+                            <span className="text-muted">💬 {data.comments.length}</span>
                           </div>
                         )}
                       </div>
 
                       {/* Comments */}
-                      <div className="px-5 py-4 border-t border-gray-100 space-y-3">
+                      <div className="px-5 py-4 border-t border-border space-y-3">
                         {interactionsLoading ? (
                           <div className="space-y-3 animate-pulse">
                             {[...Array(2)].map((_, idx) => (
                               <div key={idx} className="flex items-start gap-2">
-                                <div className="w-7 h-7 rounded-full bg-gray-200 shrink-0"></div>
+                                <div className="w-7 h-7 rounded-full bg-border shrink-0"></div>
                                 <div className="flex-1 space-y-1.5">
-                                  <div className="h-3 w-24 bg-gray-200 rounded"></div>
-                                  <div className="h-3 w-full bg-gray-200 rounded"></div>
+                                  <div className="h-3 w-24 bg-border rounded"></div>
+                                  <div className="h-3 w-full bg-border rounded"></div>
                                 </div>
                               </div>
                             ))}
-                            <div className="h-9 w-full bg-gray-200 rounded-lg"></div>
+                            <div className="h-9 w-full bg-border rounded-lg"></div>
                           </div>
                         ) : (
                           <>
                             <button
                               onClick={() => toggleComments(q.id)}
-                              className="text-sm font-medium text-gray-600 hover:text-gray-900"
+                              className="text-sm font-medium text-ink/70 hover:text-ink"
                             >
                               {commentsVisible[q.id]
                                 ? "▲ Hide comments"
@@ -1052,19 +1039,19 @@ const [authChecked, setAuthChecked] = useState(false);
                                   <div className="space-y-3">
                                     {data.comments.map((c) => (
                                       <div key={c.id} className="flex items-start gap-2">
-                                        <div className="w-7 h-7 rounded-full bg-gray-300 text-gray-700 flex items-center justify-center font-bold text-xs shrink-0">
+                                        <div className="w-7 h-7 rounded-full bg-border text-ink flex items-center justify-center font-bold text-xs shrink-0">
                                           {(c.author_name || "?").charAt(0).toUpperCase()}
                                         </div>
-                                        <div className="bg-gray-50 rounded-lg px-3 py-2 flex-1 flex items-start justify-between gap-2">
+                                        <div className="bg-background rounded-lg px-3 py-2 flex-1 flex items-start justify-between gap-2">
                                           <div>
-                                            <p className="text-xs font-semibold text-gray-800">{c.author_name}</p>
-                                            <p className="text-sm text-gray-600">{c.content}</p>
+                                            <p className="text-xs font-semibold text-ink">{c.author_name}</p>
+                                            <p className="text-sm text-ink/80">{c.content}</p>
                                           </div>
                                           {user && user.id === c.user_id && (
                                             <button
                                               onClick={() => handleDeleteComment(q.id, c.id, c.user_id)}
                                               title="Delete your comment"
-                                              className="text-gray-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-md transition shrink-0"
+                                              className="text-muted hover:text-red-600 hover:bg-red-50 p-1.5 rounded-md transition shrink-0"
                                             >
                                               🗑️ Delete
                                             </button>
@@ -1084,11 +1071,11 @@ const [authChecked, setAuthChecked] = useState(false);
                                       if (e.key === "Enter") handleCommentSubmit(q.id);
                                     }}
                                     placeholder={user ? "Add a comment..." : "Log in to comment..."}
-                                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                                    className="flex-1 border border-border rounded-lg px-3 py-2 text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-primary bg-surface"
                                   />
                                   <button
                                     onClick={() => handleCommentSubmit(q.id)}
-                                    className="bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-amber-700 transition shrink-0"
+                                    className="bg-primary text-background px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-dark transition shrink-0"
                                   >
                                     Post
                                   </button>
@@ -1105,6 +1092,7 @@ const [authChecked, setAuthChecked] = useState(false);
             })}
           </div>
         </main>
+        </div>
       </div>
     </div>
   );
