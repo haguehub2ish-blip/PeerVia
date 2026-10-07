@@ -108,8 +108,8 @@ export async function GET(request) {
     if (allViewsError) throw allViewsError;
 
     const uniqueVisitorIds = new Set(
-      allViews.map((v) => v.user_id || v.visitor_id).filter(Boolean)
-    );
+  allViews.map((v) => v.user_id).filter(Boolean)
+);
 
     const viewsByDay = {};
     for (let i = 0; i < 7; i++) {

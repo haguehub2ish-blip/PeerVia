@@ -1,8 +1,14 @@
+// Event type presets for the mentor calendar.
+// `icon` is a key rendered by <EventTypeIcon /> (see Components/CalendarIcons.js).
+// `accent` is a single hex color, kept in the same warm/muted family as the
+// site's brand palette (ochre primary, deep brown ink) rather than generic
+// saturated Tailwind colors — tints/borders/dots are all derived from it at
+// render time instead of hard-coded utility classes.
 export const EVENT_TYPES = {
-  session: { label: "Mentoring Session", icon: "💬", bg: "bg-green-100", border: "border-green-300", text: "text-green-900", dot: "bg-green-600" },
-  exam: { label: "Exam", icon: "📝", bg: "bg-rose-100", border: "border-rose-300", text: "text-rose-900", dot: "bg-rose-600" },
-  deadline: { label: "Deadline", icon: "⏰", bg: "bg-amber-100", border: "border-amber-300", text: "text-amber-900", dot: "bg-amber-600" },
-  office_hours: { label: "Office Hours", icon: "🗓️", bg: "bg-blue-100", border: "border-blue-300", text: "text-blue-900", dot: "bg-blue-600" },
-  study_group: { label: "Study Group", icon: "👥", bg: "bg-purple-100", border: "border-purple-300", text: "text-purple-900", dot: "bg-purple-600" },
-  other: { label: "Other", icon: "•", bg: "bg-gray-100", border: "border-gray-300", text: "text-gray-900", dot: "bg-gray-500" },
+  session: { label: "Mentoring Session", icon: "chat", accent: "#BC6C25" },
+  exam: { label: "Exam", icon: "document", accent: "#9B4A3D" },
+  deadline: { label: "Deadline", icon: "clock", accent: "#B8872E" },
+  office_hours: { label: "Office Hours", icon: "calendar", accent: "#4F6B5C" },
+  study_group: { label: "Study Group", icon: "people", accent: "#6B4C66" },
+  other: { label: "Other", icon: "dot", accent: "#6B5B4D" },
 };

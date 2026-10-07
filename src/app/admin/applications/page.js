@@ -133,6 +133,12 @@ export default function AdminApplications() {
                     <span className="text-gray-900 font-medium">{app.field}</span>
                   </div>
                   <div>
+                    <span className="text-gray-500">Course: </span>
+                    <span className="text-gray-900 font-medium">
+                      {app.course || <span className="text-gray-400 italic">Not specified</span>}
+                    </span>
+                  </div>
+                  <div>
                     <span className="text-gray-500">Country: </span>
                     <span className="text-gray-900 font-medium">{app.country}</span>
                   </div>

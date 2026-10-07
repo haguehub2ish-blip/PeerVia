@@ -2,9 +2,68 @@
 import { useState, useEffect } from "react";
 import Navbar from "@/Components/Navbar";
 import { supabase } from "@/lib/supabase";
-import { getSubjectStyle, getFlag, subjectStyles, countryFlags, languageFlags, getLanguageStyle } from "@/data/mentors";
+import { subjectStyles, countryFlags, languageFlags, getLanguageStyle } from "@/data/mentors";
 import MentorCalendarEditor from "@/Components/MentorCalendarEditor";
 import MultiSelect from "@/Components/MultiSelect";
+
+function PencilIcon({ className = "w-3 h-3" }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </svg>
+  );
+}
+
+function ChevronIcon({ className = "w-4 h-4" }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="m9 18 6-6-6-6" />
+    </svg>
+  );
+}
+
+function StarIcon({ className = "w-3.5 h-3.5" }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M12 2.5 15 9l7 .9-5.1 4.8L18.2 21 12 17.3 5.8 21l1.3-6.3L2 9.9 9 9z" />
+    </svg>
+  );
+}
+
+// --- Standard on/off settings switch, used in place of a plain checkbox ---
+function Toggle({ checked, onChange, label }) {
+  return (
+    <label className="flex items-center gap-3 text-sm text-ink cursor-pointer select-none">
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        onClick={() => onChange(!checked)}
+        className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border transition-colors ${
+          checked ? "bg-primary border-primary" : "bg-border border-border"
+        }`}
+      >
+        <span
+          className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${
+            checked ? "translate-x-4" : "translate-x-1"
+          }`}
+        />
+      </button>
+      {label}
+    </label>
+  );
+}
+
+// --- Mono-label eyebrow used above each dashboard section, matching the site's
+// homepage typography system (font-label + tracked uppercase) ---
+function SectionEyebrow({ children }) {
+  return (
+    <p className="font-label text-[10px] tracking-[0.15em] uppercase text-primary mb-2">
+      {children}
+    </p>
+  );
+}
 
 export default function MentorDashboard() {
   const [user, setUser] = useState(null);
@@ -271,18 +330,18 @@ export default function MentorDashboard() {
       <div className="max-w-4xl mx-auto px-6 py-12">
         <div className="flex items-center justify-between flex-wrap gap-3 mb-10">
           <div>
-            <h1 className="font-display text-3xl text-ink mb-1">Mentor Dashboard</h1>
-            <p className="text-muted text-sm">
-              Welcome back, {mentorProfile?.name || user?.user_metadata?.name}.
-            </p>
+            <SectionEyebrow>Mentor Account</SectionEyebrow>
+            <h1 className="font-display text-3xl text-ink leading-tight">
+              {mentorProfile?.name || user?.user_metadata?.name}
+            </h1>
           </div>
           <span
-            className={`text-xs font-medium px-2.5 py-1 rounded-md border flex items-center gap-1.5 ${
-              available ? "text-primary border-primary/30" : "text-muted border-border"
+            className={`font-label text-[10px] tracking-[0.1em] uppercase px-3 py-1.5 rounded-full border flex items-center gap-2 ${
+              available ? "text-primary border-primary/30 bg-primary/5" : "text-muted border-border bg-surface"
             }`}
           >
             <span className={`w-1.5 h-1.5 rounded-full ${available ? "bg-primary" : "bg-muted"}`} />
-            {available ? "Open for bookings" : "Not accepting bookings"}
+            {available ? "Open For Bookings" : "Not Accepting Bookings"}
           </span>
         </div>
 
@@ -301,8 +360,8 @@ export default function MentorDashboard() {
                   {mentorProfile?.initials || "?"}
                 </div>
               )}
-              <label className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-background border border-border flex items-center justify-center text-[10px] cursor-pointer hover:bg-surface transition">
-                ✎
+              <label className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-background border border-border flex items-center justify-center text-muted cursor-pointer hover:bg-surface hover:text-ink transition">
+                <PencilIcon />
                 <input
                   type="file"
                   accept="image/*"
@@ -321,17 +380,20 @@ export default function MentorDashboard() {
               </p>
               <div className="flex flex-wrap gap-2 mt-2">
                 {mentorProfile?.subject && (
-                  <span className={`inline-block text-xs font-semibold px-3 py-1 rounded-full ${getSubjectStyle(mentorProfile.subject).color}`}>
-                    {getSubjectStyle(mentorProfile.subject).icon} {mentorProfile.subject}
+                  <span className="inline-block font-label text-[10px] tracking-[0.08em] uppercase px-3 py-1 rounded-full bg-primary/10 text-primary">
+                    {mentorProfile.subject}
                   </span>
                 )}
                 {mentorProfile?.country && (
-                  <span className="inline-block text-xs font-semibold px-3 py-1 rounded-full bg-ink/5 text-ink">
-                    {getFlag(mentorProfile.country)} {mentorProfile.country}
+                  <span className="inline-block font-label text-[10px] tracking-[0.08em] uppercase px-3 py-1 rounded-full bg-ink/5 text-ink">
+                    {mentorProfile.country}
                   </span>
                 )}
                 {mentorProfile?.verified && (
-                  <span className="inline-block text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                  <span className="inline-flex items-center gap-1 font-label text-[10px] tracking-[0.08em] uppercase px-3 py-1 rounded-full bg-ink/5 text-ink">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-2.5 h-2.5 text-primary">
+                      <path d="M20 6 9 17l-5-5" />
+                    </svg>
                     Verified
                   </span>
                 )}
@@ -369,7 +431,10 @@ export default function MentorDashboard() {
                 <p className="text-[11px] uppercase tracking-wide text-muted font-medium">Answers</p>
               </div>
               <div className="text-center">
-                <p className="font-display text-lg text-ink">{mentorProfile?.rating ?? "—"}★</p>
+                <p className="font-display text-lg text-ink flex items-center justify-center gap-1">
+                  {mentorProfile?.rating ?? "—"}
+                  <StarIcon className="w-3 h-3 text-primary" />
+                </p>
                 <p className="text-[11px] uppercase tracking-wide text-muted font-medium">Rating</p>
               </div>
             </div>
@@ -378,35 +443,42 @@ export default function MentorDashboard() {
 
         {/* Profile section */}
         <div className="bg-surface border border-border rounded-lg p-6 mb-6 shadow-sm">
+          <SectionEyebrow>Public Profile</SectionEyebrow>
           <h2 className="font-display text-xl text-ink mb-1">Your Profile</h2>
           <p className="text-muted text-sm mb-6">Shown on your public mentor card and profile page.</p>
 
           <div className="grid sm:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block text-sm text-muted mb-1">Field of study</label>
-              <select
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                className="w-full border border-border rounded-md px-4 py-2.5 text-sm text-ink bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <option value="">Select a field...</option>
-                {Object.keys(subjectStyles).map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
+              <div className="relative">
+                <select
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  className="w-full appearance-none border border-border rounded-md pl-4 pr-10 py-2.5 text-sm text-ink bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="">Select a field...</option>
+                  {Object.keys(subjectStyles).map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+                <ChevronIcon className="w-4 h-4 text-muted rotate-90 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
             </div>
             <div>
               <label className="block text-sm text-muted mb-1">Country</label>
-              <select
-                value={country}
-                onChange={(e) => setCountry(e.target.value)}
-                className="w-full border border-border rounded-md px-4 py-2.5 text-sm text-ink bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <option value="">Select a country...</option>
-                {Object.keys(countryFlags).map((c) => (
-                  <option key={c} value={c}>{countryFlags[c]} {c}</option>
-                ))}
-              </select>
+              <div className="relative">
+                <select
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
+                  className="w-full appearance-none border border-border rounded-md pl-4 pr-10 py-2.5 text-sm text-ink bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="">Select a country...</option>
+                  {Object.keys(countryFlags).map((c) => (
+                    <option key={c} value={c}>{countryFlags[c]} {c}</option>
+                  ))}
+                </select>
+                <ChevronIcon className="w-4 h-4 text-muted rotate-90 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
             </div>
           </div>
 
@@ -482,26 +554,9 @@ export default function MentorDashboard() {
             />
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mb-4">
-            <label className="flex items-center gap-2 text-sm text-ink cursor-pointer">
-              <input
-                type="checkbox"
-                checked={available}
-                onChange={(e) => setAvailable(e.target.checked)}
-                className="w-4 h-4 accent-primary"
-              />
-              Available for bookings
-            </label>
-
-            <label className="flex items-center gap-2 text-sm text-ink cursor-pointer">
-              <input
-                type="checkbox"
-                checked={calendarVisible}
-                onChange={(e) => setCalendarVisible(e.target.checked)}
-                className="w-4 h-4 accent-primary"
-              />
-              Show calendar on my public profile
-            </label>
+          <div className="flex flex-wrap items-center gap-x-8 gap-y-3 mb-4">
+            <Toggle checked={available} onChange={setAvailable} label="Available for bookings" />
+            <Toggle checked={calendarVisible} onChange={setCalendarVisible} label="Show calendar on my public profile" />
           </div>
 
           {saveError && (
@@ -524,11 +579,12 @@ export default function MentorDashboard() {
 
         {/* Calendar section */}
         <div className="bg-surface border border-border rounded-lg p-6 mb-6 shadow-sm">
+          <SectionEyebrow>Availability</SectionEyebrow>
           <button
             onClick={() => setCalendarExpanded(!calendarExpanded)}
             className="flex items-center gap-2 font-display text-xl text-ink"
           >
-            <span className={`text-primary transition-transform ${calendarExpanded ? "rotate-90" : ""}`}>›</span>
+            <ChevronIcon className={`w-4 h-4 text-primary transition-transform ${calendarExpanded ? "rotate-90" : ""}`} />
             Your Calendar
           </button>
 
@@ -544,6 +600,7 @@ export default function MentorDashboard() {
 
         {/* Unanswered questions */}
         <div className="bg-surface border border-border rounded-lg p-6 shadow-sm">
+          <SectionEyebrow>Community</SectionEyebrow>
           <h2 className="font-display text-xl text-ink mb-1">
             Unanswered Community Questions
           </h2>

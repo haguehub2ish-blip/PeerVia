@@ -2,6 +2,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { EVENT_TYPES } from "@/lib/eventTypes";
+import { ChevronIcon, XIcon, EventTypeIcon } from "@/Components/CalendarIcons";
 
 function toDateKey(date) {
   const year = date.getFullYear();
@@ -12,6 +13,10 @@ function toDateKey(date) {
 
 function isSameDay(a, b) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+function tint(hex, alphaHex) {
+  return `${hex}${alphaHex}`;
 }
 
 export default function MentorCalendarView({ mentorId }) {
@@ -62,10 +67,10 @@ export default function MentorCalendarView({ mentorId }) {
     setMonthCursor(new Date(monthCursor.getFullYear(), monthCursor.getMonth() + delta, 1));
   }
 
-  if (loading) return <p className="text-gray-500 text-sm">Loading calendar...</p>;
+  if (loading) return <p className="text-muted text-sm">Loading calendar...</p>;
 
   if (events.length === 0) {
-    return <p className="text-gray-400 text-sm italic">No upcoming events posted yet.</p>;
+    return <p className="text-muted text-sm italic">No upcoming events posted yet.</p>;
   }
 
   const selectedEvents = selectedDate ? eventsByDate[selectedDate] || [] : [];
@@ -75,17 +80,25 @@ export default function MentorCalendarView({ mentorId }) {
     <div>
       {/* Month nav */}
       <div className="flex items-center justify-between mb-4">
-        <button onClick={() => changeMonth(-1)} className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:bg-gray-100 transition">
-          ‹
+        <button
+          onClick={() => changeMonth(-1)}
+          aria-label="Previous month"
+          className="w-8 h-8 flex items-center justify-center rounded-full border border-border text-muted hover:bg-background hover:text-ink transition"
+        >
+          <ChevronIcon className="w-4 h-4 rotate-180" />
         </button>
-        <p className="font-semibold text-gray-900">{monthLabel}</p>
-        <button onClick={() => changeMonth(1)} className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:bg-gray-100 transition">
-          ›
+        <p className="font-display text-ink">{monthLabel}</p>
+        <button
+          onClick={() => changeMonth(1)}
+          aria-label="Next month"
+          className="w-8 h-8 flex items-center justify-center rounded-full border border-border text-muted hover:bg-background hover:text-ink transition"
+        >
+          <ChevronIcon className="w-4 h-4" />
         </button>
       </div>
 
       {/* Weekday header */}
-      <div className="grid grid-cols-7 gap-1.5 text-center text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wide">
+      <div className="grid grid-cols-7 gap-1.5 text-center font-label text-[10px] tracking-[0.08em] uppercase text-muted mb-1.5">
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
           <div key={d}>{d}</div>
         ))}
@@ -106,24 +119,31 @@ export default function MentorCalendarView({ mentorId }) {
               key={key}
               onClick={() => hasEvents && setSelectedDate(key)}
               disabled={!hasEvents}
-              className={`aspect-square rounded-xl border-2 text-sm p-1 flex flex-col items-center justify-center gap-1 transition ${
+              className={`aspect-square rounded-lg border text-sm p-1 flex flex-col items-center justify-center gap-1 transition ${
                 isSelected
-                  ? "border-green-600 bg-green-50 shadow-sm"
+                  ? "border-primary bg-primary/5"
                   : isToday
-                  ? "border-green-300 bg-white"
+                  ? "border-primary/40 bg-surface"
                   : hasEvents
-                  ? "border-transparent hover:bg-gray-50 cursor-pointer"
+                  ? "border-transparent hover:bg-background cursor-pointer"
                   : "border-transparent opacity-40 cursor-default"
               }`}
             >
-              <span className={`font-medium ${isSelected ? "text-green-800" : isToday ? "text-green-700 font-bold" : "text-gray-700"}`}>
+              <span className={`font-medium ${isSelected || isToday ? "text-primary" : "text-ink"}`}>
                 {date.getDate()}
               </span>
               {hasEvents && (
                 <div className="flex gap-0.5">
-                  {dayEvents.slice(0, 3).map((ev) => (
-                    <span key={ev.id} className={`w-1.5 h-1.5 rounded-full ${EVENT_TYPES[ev.color]?.dot || EVENT_TYPES.other.dot}`}></span>
-                  ))}
+                  {dayEvents.slice(0, 3).map((ev) => {
+                    const style = EVENT_TYPES[ev.color] || EVENT_TYPES.other;
+                    return (
+                      <span
+                        key={ev.id}
+                        className="w-1.5 h-1.5 rounded-full"
+                        style={{ backgroundColor: style.accent }}
+                      />
+                    );
+                  })}
                 </div>
               )}
             </button>
@@ -133,13 +153,17 @@ export default function MentorCalendarView({ mentorId }) {
 
       {/* Selected day panel — read only */}
       {selectedDate && (
-        <div className="border-t border-gray-100 pt-4">
+        <div className="border-t border-border pt-4">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold text-gray-900 text-sm">
+            <h3 className="font-display text-ink text-sm">
               {new Date(selectedDate + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
             </h3>
-            <button onClick={() => setSelectedDate(null)} className="text-gray-400 hover:text-gray-600 text-sm">
-              Close ✕
+            <button
+              onClick={() => setSelectedDate(null)}
+              className="flex items-center gap-1 text-xs font-medium text-muted hover:text-ink transition"
+            >
+              <XIcon className="w-3.5 h-3.5" />
+              Close
             </button>
           </div>
 
@@ -147,13 +171,20 @@ export default function MentorCalendarView({ mentorId }) {
             {selectedEvents.map((ev) => {
               const style = EVENT_TYPES[ev.color] || EVENT_TYPES.other;
               return (
-                <div key={ev.id} className={`border-2 rounded-xl p-3 flex items-start gap-2 ${style.bg} ${style.border}`}>
-                  <span className="text-lg leading-none">{style.icon}</span>
+                <div
+                  key={ev.id}
+                  className="border rounded-lg p-3 flex items-start gap-2.5"
+                  style={{ backgroundColor: tint(style.accent, "14"), borderColor: tint(style.accent, "40") }}
+                >
+                  <span className="shrink-0 mt-0.5" style={{ color: style.accent }}>
+                    <EventTypeIcon type={style.icon} className="w-4 h-4" />
+                  </span>
                   <div>
-                    <p className={`font-semibold text-sm ${style.text}`}>
-                      {ev.title}{ev.time_label && <span className="font-normal"> · {ev.time_label}</span>}
+                    <p className="font-semibold text-sm text-ink">
+                      {ev.title}
+                      {ev.time_label && <span className="font-normal text-muted"> · {ev.time_label}</span>}
                     </p>
-                    {ev.description && <p className={`text-xs mt-0.5 ${style.text} opacity-80`}>{ev.description}</p>}
+                    {ev.description && <p className="text-xs mt-0.5 text-muted">{ev.description}</p>}
                   </div>
                 </div>
               );

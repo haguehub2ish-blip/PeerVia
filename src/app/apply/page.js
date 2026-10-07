@@ -4,6 +4,7 @@ import Navbar from "@/Components/Navbar";
 import { supabase } from "@/lib/supabase";
 import { courseGuides } from "@/data/courseGuides";
 import { getLanguageStyle, languageFlags, getSubjectStyle, getFlag } from "@/data/mentors";
+import Link from "next/link";
 
 const fields = ["Medicine", "Mechanical Engineering", "Business", "Computer Science", "Law", "Psychology", "Other"];
 const years = ["Year 1", "Year 2", "Year 3", "Year 4", "Year 5", "Year 6", "Graduate"];
@@ -156,6 +157,7 @@ export default function Apply() {
     university: "",
     year: "",
     field: "",
+    course: "",
     country: "",
     why: "",
     support_guidance: "",
@@ -333,6 +335,7 @@ export default function Apply() {
           email: form.email,
           university: form.university,
           field: form.field,
+          course: form.course,
           country: form.country,
         }),
       }).catch((err) => console.error("Admin notification error:", err));
@@ -574,6 +577,22 @@ export default function Apply() {
                   className="mt-2 w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600"
                 />
               )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-800 mb-1">
+                Your Course At University
+              </label>
+              <input
+                required
+                value={form.course}
+                onChange={(e) => updateField("course", e.target.value)}
+                placeholder="e.g. Biomedical Sciences, LLB Law, Mechanical Engineering (BEng)"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600"
+              />
+              <p className="text-xs text-gray-400 mt-1.5">
+                The exact name of the degree you study. This is shown on your public profile.
+              </p>
             </div>
 
             <div>
@@ -869,9 +888,10 @@ export default function Apply() {
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
               {teamMentors.map((mentor) => (
-                <div
+                <Link
                   key={mentor.id}
-                  className="bg-surface border border-border rounded-2xl overflow-hidden"
+                  href={`/mentors/${mentor.id}`}
+                  className="block bg-surface border border-border rounded-2xl overflow-hidden hover:border-primary/40 transition"
                 >
                   {mentor.photo_url ? (
                     <img
@@ -887,13 +907,13 @@ export default function Apply() {
                   <div className="p-3">
                     <p className="font-display text-ink text-sm leading-tight truncate">{mentor.name}</p>
                     <p className="font-label text-[10px] tracking-[0.05em] uppercase text-muted truncate">
-                      {mentor.school} · {mentor.subject}
+                      {mentor.school} · {mentor.course || mentor.subject}
                     </p>
                     {mentor.bio && (
                       <p className="text-muted text-xs italic mt-1.5 line-clamp-2">{mentor.bio}</p>
                     )}
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           )}

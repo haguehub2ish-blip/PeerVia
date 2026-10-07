@@ -1,47 +1,12 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/Components/Navbar";
 import { questions } from "@/data/questions";
-import { getSubjectStyle, getFlag, getLanguageStyle } from "@/data/mentors";
+import { courseGuides } from "@/data/courseGuides";
+import { getFlag } from "@/data/mentors";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
-
-const categoryFilters = {
-  mentors: {
-    field: ["Medicine", "Engineering", "Law", "Computer Science", "Business", "Psychology"],
-    country: ["NL", "UK"],
-    language: ["English", "Dutch", "German", "French", "Spanish"],
-  },
-  questions: {
-    field: ["Medicine", "Engineering", "Law", "Business", "Computer Science", "Psychology", "Biology", "Architecture"],
-    country: ["NL", "UK"],
-  },
-  courseGuides: {
-    field: ["Medicine", "Engineering", "Law", "Computer Science", "Business", "Psychology"],
-    country: ["NL", "UK"],
-  },
-};
-
-const dimensionLabels = { field: "Field", country: "Country", language: "Language" };
-
-const categoryDisplayNames = {
-  mentors: "Mentors",
-  questions: "Questions",
-  courseGuides: "Course Guides",
-};
-
-const categoryTargets = {
-  mentors: { path: "/mentors", params: { field: "subject", country: "country", language: "language" } },
-  questions: { path: "/community", params: { field: "field", country: "country" } },
-  courseGuides: { path: "/course-guides", params: { field: "field", country: "country" } },
-};
-
-const exploreButtonLabels = {
-  mentors: "Find →",
-  questions: "Find →",
-  courseGuides: "Find →",
-};
 
 const howItWorksSteps = [
   {
@@ -79,13 +44,22 @@ const whyPeerVia = [
   },
 ];
 
+// How each result type is labeled/badged in the search dropdown, and how its
+// results are ordered (Mentors, then Course Guides, then Questions).
+const SEARCH_TYPE_ORDER = ["mentor", "guide", "question"];
+const SEARCH_TYPE_META = {
+  mentor: { label: "Mentor", badge: "bg-primary/10 text-primary" },
+  guide: { label: "Course Guide", badge: "bg-ink/5 text-ink" },
+  question: { label: "Question", badge: "bg-ink/5 text-ink" },
+};
+
 // Put a real photo URL here once you've picked one (Unsplash/Pexels — see note below).
 // Leave empty to keep the current plain teal background.
 const CTA_PHOTO_URL = "/images/campus-medicine.jpg";
 const HERO_PHOTO_URL = "/images/PV_HomePage.jpg"; // swap to a different file if you want a distinct hero image
 const MENTORS_PHOTO_URL = "/images/PV_HomePage2.jpg"; // swap to a different file once you have one specific to this section
 const COMMUNITY_PHOTO_URL = "/images/PV_HomePage3.jpg"; // swap to a different file once you have one specific to this section
-
+const GUIDES_PHOTO_URL = "/images/PV_HomePage4.jpg"; // swap to a different file once you have one specific to this section
 
 
 function PhotoBlock({ src, alt = "", className = "", tint = 55, opacity = 100 }) {
@@ -122,6 +96,32 @@ function MentorPhoto({ mentor, className = "" }) {
   );
 }
 
+// --- Small floating annotation card used in the Course Guides preview ---
+function AnnotationChip({ label, href, align = "left" }) {
+  return (
+    <div
+      className={`bg-surface border border-border rounded-xl px-4 py-3 ${
+        align === "right" ? "text-right" : "text-left"
+      }`}
+    >
+      <p
+        className={`font-label text-[10px] tracking-[0.1em] uppercase text-ink flex items-center gap-2 ${
+          align === "right" ? "justify-end" : ""
+        }`}
+      >
+        <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+        {label}
+      </p>
+      <Link
+        href={href}
+        className="font-label text-[10px] tracking-[0.1em] uppercase text-primary mt-1 inline-block hover:underline underline-offset-2"
+      >
+        See Full Guide →
+      </Link>
+    </div>
+  );
+}
+
 // --- Decorative background texture, low-opacity, same hue family as bg ---
 function DecorShapes() {
   return (
@@ -141,15 +141,91 @@ function DecorShapes() {
 
 export default function Home() {
   const router = useRouter();
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [activeDimension, setActiveDimension] = useState("field");
-  const [selectedChips, setSelectedChips] = useState({});
+  const searchBoxRef = useRef(null);
   const [searchText, setSearchText] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [mentors, setMentors] = useState([]);
   const [mentorsLoading, setMentorsLoading] = useState(true);
   const [mentorsError, setMentorsError] = useState(null);
+  const [guides, setGuides] = useState([]);
   const [answeredUserQuestionsCount, setAnsweredUserQuestionsCount] = useState(0);
+  const [communityQuestions, setCommunityQuestions] = useState([]);
+  const [heroIndex, setHeroIndex] = useState(0);
+  const [leavingIndex, setLeavingIndex] = useState(null);
+    const [contact, setContact] = useState({ name: "", email: "", question: "", website: "" });
+  const [contactStatus, setContactStatus] = useState("idle"); // idle | sending | sent | error
+  const [contactError, setContactError] = useState("");
+
+  const handleContactSubmit = async (e) => {
+    e.preventDefault();
+    setContactStatus("sending");
+    setContactError("");
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(contact),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Something went wrong.");
+      setContactStatus("sent");
+      setContact({ name: "", email: "", question: "", website: "" });
+    } catch (err) {
+      setContactError(err.message);
+      setContactStatus("error");
+    }
+  };
+    const [contactOpen, setContactOpen] = useState(false);
+
+  const closeContact = () => {
+    setContactOpen(false);
+    if (contactStatus === "sent" || contactStatus === "error") setContactStatus("idle");
+  };
+
+  // Close the popup with Escape
+  useEffect(() => {
+    if (!contactOpen) return;
+    const onKey = (e) => {
+      if (e.key === "Escape") closeContact();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [contactOpen, contactStatus]);
+
+  // Close the suggestions dropdown on any click/tap outside the search box,
+  // instead of relying on the input's onBlur (which races with clicking a
+  // suggestion and can close the list before the tap/click registers).
+  useEffect(() => {
+    function handleOutsideClick(e) {
+      if (searchBoxRef.current && !searchBoxRef.current.contains(e.target)) {
+        setShowSuggestions(false);
+      }
+    }
+    document.addEventListener("mousedown", handleOutsideClick);
+    document.addEventListener("touchstart", handleOutsideClick);
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener("touchstart", handleOutsideClick);
+    };
+  }, []);
+
+  // Automatically rotate the hero mentor through the top 4 rated mentors.
+  useEffect(() => {
+    const count = Math.min(4, mentors.length);
+    if (count < 2) return;
+    const t = setTimeout(() => {
+      setLeavingIndex(heroIndex);
+      setHeroIndex((heroIndex + 1) % count);
+    }, 5200);
+    return () => clearTimeout(t);
+  }, [mentors.length, heroIndex]);
+
+  // Clear the "leaving" flag once the page-turn animation has finished (1600ms).
+  useEffect(() => {
+    if (leavingIndex === null) return;
+    const t = setTimeout(() => setLeavingIndex(null), 1650);
+    return () => clearTimeout(t);
+  }, [leavingIndex]);
 
   useEffect(() => {
     async function fetchMentors() {
@@ -172,159 +248,107 @@ export default function Home() {
       }
     }
     fetchAnsweredCount();
+
+    async function fetchGuides() {
+      const { data } = await supabase
+        .from("course_guides")
+        .select("id, subject, country, country_label");
+      setGuides(data || []);
+    }
+    fetchGuides();
+
+    // Real, user-submitted community questions (separate from the
+    // hardcoded examples in data/questions.js) — only ones a mentor has
+    // actually answered are worth surfacing in search.
+    async function fetchCommunityQuestions() {
+      const [{ data: userQs }, { data: answers }] = await Promise.all([
+        supabase.from("user_questions").select("id, question, subject, country"),
+        supabase.from("question_answers").select("user_question_id"),
+      ]);
+      const answeredIds = new Set((answers || []).map((a) => a.user_question_id));
+      setCommunityQuestions((userQs || []).filter((q) => answeredIds.has(q.id)));
+    }
+    fetchCommunityQuestions();
   }, []);
 
-  const handleCategorySelect = (category) => {
-    setSelectedCategory(category === selectedCategory ? null : category);
-    setSelectedChips({});
-    setActiveDimension("field");
-  };
-
-  const handleChipSelect = (dimension, chip) => {
-    setSelectedChips((prev) => {
-      const current = prev[dimension] || [];
-      const updated = current.includes(chip)
-        ? current.filter((c) => c !== chip)
-        : [...current, chip];
-      return { ...prev, [dimension]: updated };
-    });
-  };
-
-  const handleExplore = () => {
-    const target = categoryTargets[selectedCategory] || categoryTargets.mentors;
-    const parts = Object.entries(target.params)
-      .map(([dimension, paramName]) => {
-        const values = selectedChips[dimension];
-        return values && values.length > 0
-          ? `${paramName}=${encodeURIComponent(values.join(","))}`
-          : null;
-      })
-      .filter(Boolean);
-    const query = parts.length > 0 ? `?${parts.join("&")}` : "";
-    router.push(`${target.path}${query}`);
-  };
-
-  // --- Recognize typed category/filter words ---
-  const tryRecognizeToken = (token) => {
-    const lower = token.trim().toLowerCase();
-    if (!lower) return false;
-
-    const categoryMatch = Object.keys(categoryFilters).find((cat) => cat === lower);
-    if (categoryMatch) {
-      handleCategorySelect(categoryMatch);
-      return true;
-    }
-
-    const cat = selectedCategory || "mentors";
-    const dimensions = categoryFilters[cat];
-    for (const dimension of Object.keys(dimensions)) {
-      const chipMatch = dimensions[dimension].find((chip) => chip.toLowerCase() === lower);
-      if (chipMatch) {
-        handleChipSelect(dimension, chipMatch);
-        return true;
-      }
-    }
-
-    return false;
-  };
-
-  const handleSearchChange = (e) => {
-    const value = e.target.value;
-    if (value.endsWith(" ")) {
-      const words = value.trim().split(/\s+/);
-      const lastWord = words[words.length - 1];
-      if (tryRecognizeToken(lastWord)) {
-        setSearchText("");
-        return;
-      }
-    }
-    setSearchText(value);
-  };
-
-  // --- Search index / suggestions ---
+  // --- Search index: one flat list across mentors, course guides and
+  // questions, each carrying the real page it should link to. ---
   const buildSearchIndex = () => {
     const items = [];
 
-    Object.keys(categoryFilters).forEach((cat) => {
-      items.push({ type: "category", label: cat.charAt(0).toUpperCase() + cat.slice(1), value: cat });
-    });
-
-    const filterMap = new Map();
-    Object.entries(categoryFilters).forEach(([cat, dims]) => {
-      Object.entries(dims).forEach(([dimension, chips]) => {
-        chips.forEach((chip) => {
-          const key = `${dimension}:${chip}`;
-          if (!filterMap.has(key)) {
-            filterMap.set(key, { type: "filter", label: chip, value: chip, dimension, categories: [cat] });
-          } else {
-            filterMap.get(key).categories.push(cat);
-          }
-        });
+    mentors.forEach((m) => {
+      items.push({
+        type: "mentor",
+        key: `mentor-${m.id}`,
+        label: m.name,
+        meta: [m.subject, m.school].filter(Boolean).join(" · "),
+        href: `/mentors/${m.id}`,
       });
     });
-    items.push(...filterMap.values());
 
-    mentors.forEach((m) => {
-      items.push({ type: "mentor", label: m.name, value: m.name, subject: m.subject, school: m.school });
+    guides.forEach((g) => {
+      items.push({
+        type: "guide",
+        key: `guide-${g.id}`,
+        label: `${g.subject} in ${g.country_label || g.country}`,
+        meta: "Course Guide",
+        href: `/course-guides/${g.id}`,
+      });
     });
 
     questions.forEach((q) => {
-      items.push({ type: "question", label: q.question, value: q.question, id: q.id, subject: q.subject });
+      items.push({
+        type: "question",
+        key: `question-${q.id}`,
+        label: q.question,
+        meta: q.subject,
+        href: `/community#${q.id}`,
+      });
+    });
+
+    communityQuestions.forEach((q) => {
+      items.push({
+        type: "question",
+        key: `question-${q.id}`,
+        label: q.question,
+        meta: q.subject ? q.subject.split(",")[0] : "Community Question",
+        href: `/community#${q.id}`,
+      });
     });
 
     return items;
   };
 
-  const searchResults = searchText.trim()
-    ? buildSearchIndex()
-        .filter((item) => item.label.toLowerCase().includes(searchText.trim().toLowerCase()))
-        .slice(0, 8)
+  const normalizedQuery = searchText.trim().toLowerCase();
+  const matchedResults = normalizedQuery
+    ? buildSearchIndex().filter(
+        (item) =>
+          item.label.toLowerCase().includes(normalizedQuery) ||
+          (item.meta && item.meta.toLowerCase().includes(normalizedQuery))
+      )
     : [];
 
-  const handleSuggestionClick = (item) => {
-    if (item.type === "category") {
-      handleCategorySelect(item.value);
-    } else if (item.type === "filter") {
-      const targetCategory = item.categories.includes(selectedCategory)
-        ? selectedCategory
-        : item.categories[0];
-      if (selectedCategory !== targetCategory) handleCategorySelect(targetCategory);
-      handleChipSelect(item.dimension, item.value);
-    } else if (item.type === "mentor") {
-      router.push(`/mentors?name=${encodeURIComponent(item.value)}`);
-    } else if (item.type === "question") {
-      router.push(`/community#${item.id}`);
-    }
+  // Group into sections (max 4 per section) so results read as
+  // "Mentors / Course Guides / Questions" rather than one mixed list.
+  const groupedResults = SEARCH_TYPE_ORDER.map((type) => ({
+    type,
+    items: matchedResults.filter((item) => item.type === type).slice(0, 4),
+  })).filter((group) => group.items.length > 0);
+
+  const flatResults = groupedResults.flatMap((group) => group.items);
+
+  const handleResultClick = (item) => {
+    router.push(item.href);
     setSearchText("");
     setShowSuggestions(false);
   };
 
-  const categoryButtonStyles = {
-    mentors: "bg-primary text-white border-primary",
-    questions: "bg-primary text-white border-primary",
-    courseGuides: "bg-primary text-white border-primary",
-  };
-
-  const categoryFillStyles = {
-    mentors: "bg-primary/10 text-primary",
-    questions: "bg-primary/10 text-primary",
-    courseGuides: "bg-primary/10 text-primary",
-  };
-
-  const getChipStyle = (dimension, chip) => {
-    if (dimension === "country") {
-      return { color: "bg-ink/5 text-ink", icon: getFlag(chip) };
-    }
-    if (dimension === "language") {
-      return getLanguageStyle(chip);
-    }
-    return getSubjectStyle(chip);
-  };
-
   const topMentors = [...mentors].sort((a, b) => b.rating - a.rating).slice(0, 3);
-  const heroMentor = topMentors[0] || mentors[0];
-  const stripMentors = mentors.filter((m) => m.id !== heroMentor?.id).slice(0, 4);
+  const heroMentors = [...mentors].sort((a, b) => b.rating - a.rating).slice(0, 4);
+  const heroMentor = heroMentors[heroIndex] || heroMentors[0];
   const topQuestions = [...questions].sort((a, b) => b.helpful - a.helpful).slice(0, 3);
+  const previewGuide = courseGuides.find((g) => g.id === "medicine-nl") || courseGuides[0];
+  const previewGuideUrl = "/course-guides/f6a57bf0-3656-42fc-9343-61e5a32c0499";
   const verifiedMentorsCount = mentors.filter((m) => m.verified).length;
   const questionsAnsweredCount = questions.length + answeredUserQuestionsCount;
   const careerPathsCount = new Set(mentors.map((m) => m.subject)).size;
@@ -354,8 +378,30 @@ export default function Home() {
     <main className="min-h-screen bg-background bg-grain">
       <Navbar />
 
-            {/* ============ HERO ============ */}
-            <section className="relative overflow-hidden px-6 pt-4 pb-8 md:pt-6">
+      <style>{`
+        @keyframes pageTurn {
+          0%   { transform: translate(0, 0) rotate(0deg) scale(1) rotateY(0deg); z-index: 50; }
+          35%  { transform: translate(-22%, 2%) rotate(-5deg) scale(0.98) rotateY(-90deg); z-index: 50; }
+          36%  { z-index: 5; }
+          65%  { transform: var(--back-transform) rotateY(-270deg); z-index: 5; }
+          100% { transform: var(--back-transform) rotateY(-360deg); z-index: 5; }
+        }
+        .shuffle-card {
+          transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 900ms ease;
+          backface-visibility: hidden;
+          transform-style: preserve-3d;
+        }
+        .shuffle-leaving {
+          animation: pageTurn 1600ms cubic-bezier(0.65, 0, 0.35, 1) forwards;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .shuffle-card { transition: none; }
+          .shuffle-leaving { animation: none; }
+        }
+      `}</style>
+
+      {/* ============ HERO ============ */}
+      <section className="relative overflow-hidden px-6 pt-4 pb-8 md:pt-6">
         {HERO_PHOTO_URL && (
           <div
             className="absolute right-0 top-0 w-full md:w-[55%] h-full pointer-events-none overflow-hidden"
@@ -370,25 +416,46 @@ export default function Home() {
         )}
         <DecorShapes />
         <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-[420px_1fr] gap-12 items-start relative">
-          {/* Left: spotlight mentor photo — fixed-width column so it never resizes when a filter/category is selected */}
-          <div className="relative w-full">
-            {!mentorsLoading && heroMentor ? (
-              <>
-                <MentorPhoto
-                  mentor={heroMentor}
-                  className="w-full aspect-[4/5] rounded-2xl border border-border text-6xl"
-                />
-                <div className="absolute left-4 right-4 bottom-4 bg-badge/90 backdrop-blur-sm rounded-xl px-5 py-4">
-                  <p className="font-label text-[11px] tracking-[0.15em] uppercase text-primary flex items-center gap-2 mb-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                    Verified Mentor
-                  </p>
-                  <p className="font-display text-white text-lg leading-tight">{heroMentor.name}</p>
-                  <p className="text-white/70 text-sm italic">
-                    {heroMentor.subject} · {heroMentor.school}
-                  </p>
-                </div>
-              </>
+          {/* Left: spotlight mentor photo — auto-rotates through the top 4 mentors, click to open their page */}
+          <div className="relative w-full pr-9 pb-9">
+            {!mentorsLoading && heroMentors.length > 0 ? (
+              <div className="relative w-full aspect-[4/5]" style={{ perspective: "1800px" }}>
+                {heroMentors.map((m, i) => {
+                  const n = heroMentors.length;
+                  const offset = (i - heroIndex + n) % n; // 0 = top card
+                  const isTop = offset === 0;
+                  const stackTransform = `translate(${offset * 12}px, ${offset * 12}px) rotate(${offset * 2.5}deg) scale(${1 - offset * 0.04})`;
+                  return (
+                    <Link
+                      key={m.id}
+                      href={`/mentors/${m.id}`}
+                      tabIndex={isTop ? 0 : -1}
+                      aria-hidden={!isTop}
+                      className={`shuffle-card absolute inset-0 block rounded-2xl overflow-hidden border border-border bg-surface ${
+                        isTop ? "shadow-xl" : "shadow-md pointer-events-none"
+                      } ${i === leavingIndex ? "shuffle-leaving" : ""}`}
+                      style={{
+                        transform: stackTransform,
+                        zIndex: 40 - offset * 10,
+                        "--back-transform": stackTransform,
+                        transformOrigin: "left center",
+                      }}
+                    >
+                      <MentorPhoto mentor={m} className="w-full h-full text-6xl" />
+                      <div className="absolute left-4 right-4 bottom-4 bg-badge/90 backdrop-blur-sm rounded-xl px-5 py-4">
+                        <p className="font-label text-[11px] tracking-[0.15em] uppercase text-primary flex items-center gap-2 mb-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                          Verified Mentor
+                        </p>
+                        <p className="font-display text-white text-lg leading-tight">{m.name}</p>
+                        <p className="text-white/70 text-sm italic">
+                          {m.subject} · {m.school}
+                        </p>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
             ) : (
               <div className="w-full aspect-[4/5] rounded-2xl border border-border bg-surface animate-pulse" />
             )}
@@ -409,120 +476,125 @@ export default function Home() {
               <span className="font-semibold text-ink">all completely free</span>.
             </p>
 
-            {/* Category selector */}
-            <div className="flex flex-wrap gap-2 mb-4">
-              {[
-                { key: "mentors", label: "Mentors" },
-                { key: "questions", label: "Questions" },
-                { key: "courseGuides", label: "Course Guides" },
-              ].map((cat) => (
-                <button
-                  key={cat.key}
-                  onClick={() => handleCategorySelect(cat.key)}
-                  className={`font-label text-[11px] tracking-[0.1em] uppercase px-4 py-2 rounded-full border transition ${
-                    selectedCategory === cat.key
-                      ? categoryButtonStyles[cat.key]
-                      : "bg-surface text-muted border-border hover:border-primary/40"
-                  }`}
-                >
-                  {cat.label}
-                </button>
-              ))}
-            </div>
-
-            <div className="relative">
+            {/* Search */}
+            <div className="relative" ref={searchBoxRef}>
               <div className="flex items-stretch bg-surface border border-border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-primary/30">
-                <div className="flex-1 px-4 py-2.5 flex items-center gap-2 flex-wrap">
-                  <input
-                    type="text"
-                    value={searchText}
-                    onChange={(e) => {
-                      handleSearchChange(e);
-                      setShowSuggestions(true);
-                    }}
-                    onFocus={() => setShowSuggestions(true)}
-                    onBlur={() => setShowSuggestions(false)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        if (searchResults.length > 0) {
-                          handleSuggestionClick(searchResults[0]);
-                        } else if (searchText.trim() && tryRecognizeToken(searchText.trim())) {
-                          setSearchText("");
-                        } else {
-                          setShowSuggestions(true);
-                        }
-                      }
-                    }}
-                    placeholder="Choose Mentors, Course Guides or Questions to get started…"
-                    className="flex-1 min-w-[160px] outline-none text-sm text-ink placeholder-muted bg-transparent"
-                  />
+                <div className="flex items-center pl-4 text-muted shrink-0">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="11" cy="11" r="7" />
+                    <path d="m21 21-4.3-4.3" />
+                  </svg>
                 </div>
-                <button
-                  onClick={handleExplore}
-                  className="font-label text-xs tracking-[0.1em] uppercase bg-primary text-white px-6 font-medium hover:bg-primary-dark transition shrink-0"
-                >
-                  {exploreButtonLabels[selectedCategory] || "Find →"}
-                </button>
+                <input
+                  type="text"
+                  value={searchText}
+                  onChange={(e) => {
+                    setSearchText(e.target.value);
+                    setShowSuggestions(true);
+                  }}
+                  onFocus={() => setShowSuggestions(true)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && flatResults.length > 0) {
+                      handleResultClick(flatResults[0]);
+                    } else if (e.key === "Escape") {
+                      setShowSuggestions(false);
+                    }
+                  }}
+                  placeholder="Search mentors, course guides, or questions…"
+                  className="flex-1 min-w-0 px-3 py-3.5 outline-none text-sm text-ink placeholder-muted bg-transparent"
+                />
+                {searchText && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchText("");
+                      setShowSuggestions(false);
+                    }}
+                    aria-label="Clear search"
+                    className="px-4 text-muted hover:text-ink transition shrink-0"
+                  >
+                    ✕
+                  </button>
+                )}
               </div>
 
-              {showSuggestions && searchText.trim() && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-surface border border-border rounded-lg shadow-lg z-20 text-left overflow-hidden">
-                  {searchResults.length > 0 ? (
-                    searchResults.map((item, i) => {
-                      let badgeLabel = "";
-                      let badgeStyle = "bg-ink/5 text-muted";
-                      let icon = "";
-
-                      if (item.type === "category") {
-                        badgeLabel = "Category";
-                        badgeStyle = "bg-primary/10 text-primary";
-                      } else if (item.type === "filter") {
-                        badgeLabel = dimensionLabels[item.dimension] || item.dimension;
-                        const style = getChipStyle(item.dimension, item.value);
-                        badgeStyle = style.color;
-                        icon = style.icon || "";
-                      } else if (item.type === "mentor") {
-                        badgeLabel = "Mentor";
-                        badgeStyle = "bg-primary/10 text-primary";
-                      } else if (item.type === "question") {
-                        badgeLabel = "Question";
-                        badgeStyle = "bg-ink/5 text-ink";
-                      }
-
-                      return (
-                        <button
-                          key={`${item.type}-${item.value}-${i}`}
-                          onMouseDown={() => handleSuggestionClick(item)}
-                          className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-background transition text-left border-b border-border last:border-b-0"
-                        >
-                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 ${badgeStyle}`}>
-                            {icon} {badgeLabel}
-                          </span>
-                          <span className="text-ink truncate">{item.label}</span>
-                        </button>
-                      );
-                    })
+              {showSuggestions && normalizedQuery && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-surface border border-border rounded-lg shadow-lg z-20 text-left overflow-hidden max-h-96 overflow-y-auto">
+                  {groupedResults.length > 0 ? (
+                    groupedResults.map((group) => (
+                      <div key={group.type}>
+                        <p className="font-label text-[10px] tracking-[0.1em] uppercase text-muted px-4 pt-3 pb-1">
+                          {SEARCH_TYPE_META[group.type].label}s
+                        </p>
+                        {group.items.map((item) => (
+                          <button
+                            key={item.key}
+                            type="button"
+                            onClick={() => handleResultClick(item)}
+                            className="w-full flex items-start gap-2 px-4 py-2.5 text-sm hover:bg-background transition text-left border-b border-border last:border-b-0"
+                          >
+                            <span className="min-w-0 flex-1">
+                              <span className="block text-ink truncate">{item.label}</span>
+                              {item.meta && (
+                                <span className="block text-muted text-xs truncate mt-0.5">{item.meta}</span>
+                              )}
+                            </span>
+                            <span
+                              className={`shrink-0 font-label text-[9px] tracking-[0.08em] uppercase px-2 py-1 rounded-full ${SEARCH_TYPE_META[item.type].badge}`}
+                            >
+                              {SEARCH_TYPE_META[item.type].label}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    ))
                   ) : (
-                    <div className="px-4 py-4 text-sm text-muted text-center">
-                      No results for &ldquo;<span className="font-semibold text-ink">{searchText}</span>&rdquo; — try a category, subject, or mentor name.
+                    <div className="px-4 py-5 text-sm text-muted text-center">
+                      No results for &ldquo;<span className="font-semibold text-ink">{searchText}</span>&rdquo;.
+                      <Link
+                        href="/mentors"
+                        onClick={() => setShowSuggestions(false)}
+                        className="block mt-2 font-label text-xs tracking-[0.08em] uppercase text-primary hover:underline"
+                      >
+                        Browse All Mentors →
+                      </Link>
                     </div>
                   )}
                 </div>
               )}
             </div>
 
+            {/* Quick links — fills out the hero on larger screens and gives
+                a fast path in without typing */}
+            <div className="flex flex-wrap items-center gap-2 mt-5">
+              <span className="font-label text-[10px] tracking-[0.1em] uppercase text-muted mr-1">
+                Popular:
+              </span>
+              {["Medicine", "Engineering", "Law", "Computer Science", "Psychology"].map((subject) => (
+                <Link
+                  key={subject}
+                  href={`/mentors?subject=${encodeURIComponent(subject)}`}
+                  className="font-label text-[11px] tracking-[0.05em] px-3 py-1.5 rounded-full border border-border text-muted hover:border-primary/40 hover:text-ink transition"
+                >
+                  {subject}
+                </Link>
+              ))}
+            </div>
 
-            {/* Thumbnail strip */}
-            {!mentorsLoading && stripMentors.length > 0 && (
-              <div className="flex gap-3 mt-8">
-                {stripMentors.map((m) => (
-                  <Link key={m.id} href={`/mentors/${m.id}`} className="relative w-16 h-16 md:w-20 md:h-20 shrink-0">
-                    <MentorPhoto mentor={m} className="w-full h-full rounded-lg border border-border text-xl" />
-                    <span className="absolute -bottom-1.5 -right-1.5 font-label text-[9px] tracking-wide uppercase bg-ink text-white px-1.5 py-0.5 rounded">
-                      {m.school?.split(" ")[0] || getFlag(m.country)}
-                    </span>
-                  </Link>
-                ))}
+            {/* Trust strip — reuses mentor data already in state, no extra query */}
+            {!mentorsLoading && mentors.length > 0 && (
+              <div className="flex items-center gap-3 mt-7">
+                <div className="flex -space-x-2.5">
+                  {mentors.slice(0, 5).map((m) => (
+                    <div key={m.id} className="w-8 h-8 rounded-full border-2 border-background overflow-hidden shrink-0">
+                      <MentorPhoto mentor={m} className="w-full h-full text-xs" />
+                    </div>
+                  ))}
+                </div>
+                <p className="text-sm text-muted">
+                  <span className="font-semibold text-ink">{verifiedMentorsCount}+ verified mentors</span>{" "}
+                  already answering questions
+                </p>
               </div>
             )}
           </div>
@@ -704,6 +776,115 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ============ COURSE GUIDES PREVIEW ============ */}
+      {previewGuide && (
+        <section className="relative overflow-hidden px-6 py-20 md:py-24 bg-ink">
+          {GUIDES_PHOTO_URL && (
+            <div
+              className="absolute inset-0 w-full h-full pointer-events-none"
+              style={{
+                maskImage:
+                  "linear-gradient(to bottom, transparent, rgba(0,0,0,0.5) 15%, rgba(0,0,0,0.5) 85%, transparent)",
+                WebkitMaskImage:
+                  "linear-gradient(to bottom, transparent, rgba(0,0,0,0.5) 15%, rgba(0,0,0,0.5) 85%, transparent)",
+              }}
+            >
+              <PhotoBlock src={GUIDES_PHOTO_URL} className="w-full h-full" tint={45} opacity={12} />
+            </div>
+          )}
+          <div className="max-w-5xl mx-auto relative">
+            <div className="max-w-xl mb-14">
+              <p className="font-label text-[11px] tracking-[0.15em] uppercase text-primary mb-3">
+                Course Guides
+              </p>
+              <h2 className="font-display text-3xl md:text-4xl text-white leading-tight">
+                Imagine reading the admissions notes{" "}
+                <span className="italic text-primary">a current student actually wrote.</span>
+              </h2>
+              <p className="text-background/60 mt-4 max-w-md">
+                You can, for free. Here&rsquo;s what a course guide looks like.
+              </p>
+            </div>
+
+            <div className="relative max-w-2xl mx-auto">
+              {/* Mobile: annotation chips shown stacked above the card */}
+              <div className="flex flex-wrap gap-3 mb-6 lg:hidden">
+                <AnnotationChip label="Why This Country?" href={previewGuideUrl} />
+                <AnnotationChip label="What Surprised Me" href={previewGuideUrl} />
+                <AnnotationChip label="How To Get In" href={previewGuideUrl} />
+              </div>
+
+              {/* Desktop: annotation chips floating beside the card */}
+              <div className="hidden lg:block absolute -left-4 top-16 -translate-x-full w-52">
+                <AnnotationChip label="Why This Country?" href={previewGuideUrl} align="right" />
+              </div>
+              <div className="hidden lg:block absolute -right-4 top-6 translate-x-full w-52">
+                <AnnotationChip label="What Surprised Me" href={previewGuideUrl} />
+              </div>
+              <div className="hidden lg:block absolute -right-4 bottom-24 translate-x-full w-52">
+                <AnnotationChip label="How To Get In" href={previewGuideUrl} />
+              </div>
+
+              {/* Document card */}
+              <div className="bg-background border border-border rounded-2xl p-8 md:p-10 shadow-[0_1px_0_0_rgba(36,26,18,0.04)]">
+                <div className="flex items-center justify-between border-b border-border pb-4 mb-6 gap-4 flex-wrap">
+                  <p className="font-label text-[10px] tracking-[0.15em] uppercase text-muted">
+                    Course Guide
+                  </p>
+                  <p className="font-label text-[10px] tracking-[0.15em] uppercase text-primary">
+                    {previewGuide.subject} · {previewGuide.countryLabel}
+                  </p>
+                </div>
+
+                <p className="text-ink text-[15px] leading-relaxed mb-4">
+                  {previewGuide.description}
+                </p>
+
+                {previewGuide.admission && (
+                  <p className="text-ink text-[15px] leading-relaxed mb-4">
+                    <span className="underline decoration-primary/70 decoration-2 underline-offset-2">
+                      {previewGuide.admission}
+                    </span>
+                  </p>
+                )}
+
+                {previewGuide.extracurriculars?.length > 0 && (
+                  <p className="text-muted text-[15px] leading-relaxed italic">
+                    Popular extracurriculars: {previewGuide.extracurriculars.join(", ")}.
+                  </p>
+                )}
+
+                <p className="font-label text-[10px] tracking-[0.1em] uppercase text-muted/60 mt-6">
+                  {previewGuide.writtenBy}
+                </p>
+
+                <div className="border-t border-border mt-6 pt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div>
+                    <p className="font-label text-[11px] tracking-[0.1em] uppercase text-ink mb-1">
+                      Want The Full Guide?
+                    </p>
+                    <p className="text-muted text-sm">
+                      Every course guide is free to read, in full —{" "}
+                      <span className="text-ink font-semibold">no sign-up</span> needed to browse.
+                    </p>
+                  </div>
+                  <Link
+                    href="/course-guides"
+                    className="shrink-0 text-center font-label text-xs tracking-[0.1em] uppercase bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-dark transition"
+                  >
+                    Browse Course Guides →
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            <p className="text-center font-label text-[10px] tracking-[0.1em] uppercase text-background/50 italic mt-6">
+              A real course guide, shown to illustrate what&rsquo;s inside.
+            </p>
+          </div>
+        </section>
+      )}
+
       {/* ============ WHY PEERVIA ============ */}
       <section className="px-6 py-20 md:py-24 border-t border-border bg-surface">
         <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-[280px_1fr] gap-12">
@@ -729,8 +910,136 @@ export default function Home() {
           </div>
         </div>
       </section>
+            {/* ============ CONTACT US ============ */}
+      <section id="contact" className="px-6 py-10 border-t border-border">
+        <div className="max-w-5xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h2 className="font-display text-xl text-ink">
+              Got a question? <span className="italic text-primary">Ask us.</span>
+            </h2>
+            <p className="text-muted text-sm mt-1">Feedback, questions, or want to become a mentor?</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setContactOpen(true)}
+            className="shrink-0 font-label text-xs tracking-[0.1em] uppercase bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-dark transition"
+          >
+            Send Us A Message →
+          </button>
+        </div>
 
-           {/* ============ CLOSING CTA ============ */}
+        {contactOpen && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 p-4"
+            onClick={closeContact}
+          >
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label="Contact PeerVia"
+              className="relative w-full max-w-md max-h-[90vh] overflow-y-auto bg-surface border border-border rounded-2xl p-6 shadow-xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={closeContact}
+                aria-label="Close"
+                className="absolute top-4 right-4 text-muted hover:text-ink transition"
+              >
+                ✕
+              </button>
+
+              {contactStatus === "sent" ? (
+                <div className="text-center py-8">
+                  <p className="font-display text-2xl text-ink mb-2">Message sent!</p>
+                  <p className="text-muted text-sm mb-6">We&rsquo;ll reply to your email soon.</p>
+                  <button
+                    type="button"
+                    onClick={closeContact}
+                    className="font-label text-xs tracking-[0.1em] uppercase bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-dark transition"
+                  >
+                    Close
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleContactSubmit} className="space-y-4">
+                  <h3 className="font-display text-xl text-ink pr-6">Contact PeerVia</h3>
+
+                  <div>
+                    <label htmlFor="contact-name" className="block font-label text-[10px] tracking-[0.1em] uppercase text-muted mb-1.5">
+                      Name
+                    </label>
+                    <input
+                      id="contact-name"
+                      type="text"
+                      required
+                      maxLength={200}
+                      value={contact.name}
+                      onChange={(e) => setContact({ ...contact, name: e.target.value })}
+                      className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm text-ink outline-none focus:ring-2 focus:ring-primary/30"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="contact-email" className="block font-label text-[10px] tracking-[0.1em] uppercase text-muted mb-1.5">
+                      Email
+                    </label>
+                    <input
+                      id="contact-email"
+                      type="email"
+                      required
+                      maxLength={200}
+                      value={contact.email}
+                      onChange={(e) => setContact({ ...contact, email: e.target.value })}
+                      className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm text-ink outline-none focus:ring-2 focus:ring-primary/30"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="contact-question" className="block font-label text-[10px] tracking-[0.1em] uppercase text-muted mb-1.5">
+                      Your Question
+                    </label>
+                    <textarea
+                      id="contact-question"
+                      required
+                      rows={4}
+                      maxLength={5000}
+                      value={contact.question}
+                      onChange={(e) => setContact({ ...contact, question: e.target.value })}
+                      className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm text-ink outline-none focus:ring-2 focus:ring-primary/30 resize-y"
+                    />
+                  </div>
+
+                  {/* Honeypot: hidden from humans, bots tend to fill it */}
+                  <input
+                    type="text"
+                    name="website"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    aria-hidden="true"
+                    value={contact.website}
+                    onChange={(e) => setContact({ ...contact, website: e.target.value })}
+                    className="hidden"
+                  />
+
+                  {contactStatus === "error" && (
+                    <p className="text-red-600 text-sm font-semibold">{contactError}</p>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={contactStatus === "sending"}
+                    className="w-full font-label text-xs tracking-[0.1em] uppercase bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-dark transition disabled:opacity-60"
+                  >
+                    {contactStatus === "sending" ? "Sending…" : "Send Message →"}
+                  </button>
+                </form>
+              )}
+            </div>
+          </div>
+        )}
+      </section>
+      {/* ============ CLOSING CTA ============ */}
       <section className="relative overflow-hidden px-6 py-24 text-center">
         {CTA_PHOTO_URL && (
           <>
@@ -748,7 +1057,7 @@ export default function Home() {
               "repeating-linear-gradient(45deg, var(--color-background) 0px, var(--color-background) 3px, transparent 3px, transparent 14px)",
           }}
         />
-               <div className="max-w-xl mx-auto relative">
+        <div className="max-w-xl mx-auto relative">
           <h2
             className="font-display text-4xl md:text-5xl text-ink mb-8"
             style={CTA_PHOTO_URL ? { color: "#fff", textShadow: "0 2px 12px rgba(0,0,0,0.45)" } : undefined}

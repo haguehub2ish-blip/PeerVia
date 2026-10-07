@@ -2,10 +2,10 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Navbar from "@/Components/Navbar";
-import { getSubjectStyle, getFlag, getLanguageStyle } from "@/data/mentors";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import MentorCalendarView from "@/Components/MentorCalendarView";
+import { ChevronIcon } from "@/Components/CalendarIcons";
 
 export default function MentorProfile() {
   const { id } = useParams();
@@ -241,9 +241,9 @@ async function handleSubmitBooking(e) {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <div className="max-w-6xl mx-auto px-6 py-10">
+      <div className="max-w-6xl mx-auto px-6 py-12">
         {/* Header */}
-        <div className="flex items-start gap-5 pb-6 border-b border-border mb-6">
+        <div className="flex items-start gap-5 pb-7 border-b border-border mb-10">
           {mentor.photo_url ? (
             <img
               src={mentor.photo_url}
@@ -257,7 +257,7 @@ async function handleSubmitBooking(e) {
           )}
           <div>
             {mentor.verified && (
-              <p className="flex items-center gap-1.5 font-label text-xs uppercase tracking-[0.15em] text-primary mb-1">
+              <p className="flex items-center gap-1.5 font-label text-xs uppercase tracking-[0.15em] text-primary mb-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
                 Verified Mentor
               </p>
@@ -265,13 +265,18 @@ async function handleSubmitBooking(e) {
             <h1 className="font-display text-4xl sm:text-5xl text-ink leading-tight">
               {mentor.name}
             </h1>
-            <p className="text-muted mt-2 text-base">
+            <p className="text-muted mt-2.5 text-base">
               {mentor.school}, {mentor.year} · {mentor.subject}
             </p>
+            {mentor.course && (
+              <p className="font-label text-xs uppercase tracking-[0.15em] text-primary mt-2">
+                Studying {mentor.course}
+              </p>
+            )}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
           {/* Main content */}
           <div className="lg:col-span-2">
             <p className="font-label text-xs uppercase tracking-[0.2em] text-muted mb-2">
@@ -283,7 +288,7 @@ async function handleSubmitBooking(e) {
             </p>
 
             {chatTopics.length > 0 && (
-              <div className="mt-8 pt-8 border-t border-border">
+              <div className="mt-10 pt-10 border-t border-border">
                 <p className="font-label text-xs uppercase tracking-[0.2em] text-muted mb-3">
                   Happy to Chat About
                 </p>
@@ -301,7 +306,7 @@ async function handleSubmitBooking(e) {
             )}
 
             {languages.length > 0 && (
-              <div className="mt-8 pt-8 border-t border-border">
+              <div className="mt-10 pt-10 border-t border-border">
                 <p className="font-label text-xs uppercase tracking-[0.2em] text-muted mb-3">
                   Languages
                 </p>
@@ -309,9 +314,9 @@ async function handleSubmitBooking(e) {
                   {languages.map((lang) => (
                     <span
                       key={lang}
-                      className={`text-sm font-medium px-3.5 py-1.5 rounded-full ${getLanguageStyle(lang).color}`}
+                      className="text-sm font-medium px-3.5 py-1.5 rounded-full border border-border text-ink bg-surface"
                     >
-                      {getLanguageStyle(lang).icon} {lang}
+                      {lang}
                     </span>
                   ))}
                 </div>
@@ -319,7 +324,7 @@ async function handleSubmitBooking(e) {
             )}
 
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-4 mt-8 pt-8 border-t border-border">
+            <div className="grid grid-cols-3 gap-4 mt-10 pt-10 border-t border-border">
               <div>
                 <p className="font-display text-3xl text-ink">{mentor.sessions}</p>
                 <p className="font-label text-xs uppercase tracking-wide text-muted mt-1">Sessions</p>
@@ -339,7 +344,7 @@ async function handleSubmitBooking(e) {
                 href={mentor.linkedin}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary-dark mt-6"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary-dark mt-7"
               >
                 View LinkedIn Profile
                 <span aria-hidden>→</span>
@@ -348,12 +353,12 @@ async function handleSubmitBooking(e) {
 
             {/* Calendar */}
             {mentor.calendar_visible && (
-              <div className="mt-8 pt-8 border-t border-border">
+              <div className="mt-10 pt-10 border-t border-border">
                 <button
                   onClick={() => setCalendarExpanded(!calendarExpanded)}
-                  className="flex items-center gap-2 font-display text-xl text-ink mb-4"
+                  className="flex items-center gap-2 font-display text-xl text-ink mb-5"
                 >
-                  <span className={`transition-transform text-primary ${calendarExpanded ? "rotate-90" : ""}`}>›</span>
+                  <ChevronIcon className={`w-4 h-4 text-primary transition-transform ${calendarExpanded ? "rotate-90" : ""}`} />
                   Upcoming Availability
                 </button>
                 {calendarExpanded && <MentorCalendarView mentorId={mentor.id} />}
@@ -361,13 +366,14 @@ async function handleSubmitBooking(e) {
             )}
 
             {/* Reviews */}
-            <div className="mt-8 pt-8 border-t border-border">
-              <div className="flex items-center justify-between mb-4">
+            <div className="mt-10 pt-10 border-t border-border">
+              <div className="flex items-center justify-between mb-5">
                 <button
                   onClick={() => setReviewsCollapsed(!reviewsCollapsed)}
                   className="flex items-center gap-2 font-display text-xl text-ink hover:text-primary transition"
                 >
-                  {reviewsCollapsed ? "▶" : "▼"} Reviews {reviews.length > 0 && `(${reviews.length})`}
+                  <ChevronIcon className={`w-4 h-4 text-primary transition-transform ${reviewsCollapsed ? "" : "rotate-90"}`} />
+                  Reviews {reviews.length > 0 && `(${reviews.length})`}
                 </button>
 
                 {!reviewsCollapsed && reviews.length > 1 && (
@@ -387,7 +393,7 @@ async function handleSubmitBooking(e) {
               {!reviewsCollapsed && (
                 <>
                   {currentUser ? (
-                    <form onSubmit={handleSubmitReview} className="bg-surface border border-border rounded-xl p-4 mb-6 space-y-3">
+                    <form onSubmit={handleSubmitReview} className="bg-surface border border-border rounded-xl p-5 mb-6 space-y-3">
                       <div>
                         <p className="text-sm font-medium text-ink/80 mb-1.5">Your Rating</p>
                         <div className="flex gap-1" onMouseLeave={() => setHoverRating(0)}>
@@ -398,7 +404,7 @@ async function handleSubmitBooking(e) {
                               onClick={() => setReviewRating(star)}
                               onMouseEnter={() => setHoverRating(star)}
                               className={`text-2xl transition ${
-                                star <= (hoverRating || reviewRating) ? "text-yellow-400" : "text-border"
+                                star <= (hoverRating || reviewRating) ? "text-primary" : "text-border"
                               }`}
                             >
                               ★
@@ -423,7 +429,7 @@ async function handleSubmitBooking(e) {
                       </button>
                     </form>
                   ) : (
-                    <p className="text-sm text-muted bg-surface border border-border rounded-xl p-4 mb-6">
+                    <p className="text-sm text-muted bg-surface border border-border rounded-xl p-5 mb-6">
                       <a href={`/login?redirect=/mentors/${id}`} className="text-primary font-semibold underline">
                         Sign in
                       </a>{" "}
@@ -436,21 +442,21 @@ async function handleSubmitBooking(e) {
                   ) : reviews.length === 0 ? (
                     <p className="text-muted text-sm">No reviews yet. Be the first to leave one.</p>
                   ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-5">
                       {sortedReviews.map((r) => (
-                        <div key={r.id} className="border-b border-border pb-4 last:border-0">
-                          <div className="flex items-center justify-between mb-1">
+                        <div key={r.id} className="border-b border-border pb-5 last:border-0">
+                          <div className="flex items-center justify-between mb-1.5">
                             <p className="font-semibold text-ink text-base">{r.author_name}</p>
                             <div className="flex text-sm">
                               {[1, 2, 3, 4, 5].map((star) => (
-                                <span key={star} className={star <= r.rating ? "text-yellow-400" : "text-border"}>
+                                <span key={star} className={star <= r.rating ? "text-primary" : "text-border"}>
                                   ★
                                 </span>
                               ))}
                             </div>
                           </div>
                           {r.comment && <p className="text-ink/80 text-base leading-relaxed">{r.comment}</p>}
-                          <p className="text-muted text-sm mt-1">
+                          <p className="text-muted text-sm mt-1.5">
                             {new Date(r.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
                           </p>
                         </div>
@@ -464,16 +470,19 @@ async function handleSubmitBooking(e) {
 
           {/* Sidebar */}
           <div className="lg:col-span-1">
-            <div className="lg:sticky lg:top-6 lg:max-h-[85vh] lg:overflow-y-auto bg-surface border border-border rounded-2xl p-6">
-              <div className="flex items-center gap-2.5 mb-4">
-                <span className="w-9 h-9 rounded-lg bg-background border border-border flex items-center justify-center text-base shrink-0">
-                  🎓
+            <div className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto bg-surface border border-border rounded-2xl p-7">
+              <div className="flex items-center gap-2.5 mb-5">
+                <span className="w-9 h-9 rounded-lg bg-background border border-border flex items-center justify-center text-primary shrink-0">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                    <path d="M22 10 12 5 2 10l10 5 10-5Z" />
+                    <path d="M6 12v5c0 1.5 2.7 3 6 3s6-1.5 6-3v-5" />
+                  </svg>
                 </span>
                 <div>
                   <p className="font-semibold text-ink text-sm leading-tight">{mentor.school}</p>
                   <p className="font-label text-[10px] uppercase tracking-wide text-primary flex items-center gap-1">
                     <span className="w-1 h-1 rounded-full bg-primary"></span>
-                    {getFlag(mentor.country)} {mentor.country}
+                    {mentor.country}
                   </p>
                 </div>
               </div>
@@ -481,7 +490,7 @@ async function handleSubmitBooking(e) {
               <h2 className="font-display text-xl text-ink mb-2">
                 Book a session with {firstName}
               </h2>
-              <p className="text-sm text-ink/70 leading-relaxed mb-5">
+              <p className="text-sm text-ink/70 leading-relaxed mb-6">
                 Send a message to set up a time that works for you both — there's no cost to reach out.
               </p>
 
@@ -545,7 +554,7 @@ async function handleSubmitBooking(e) {
                 </>
               )}
 
-              <div className="space-y-3 pt-5 mt-5 border-t border-border">
+              <div className="space-y-3 pt-6 mt-6 border-t border-border">
                 {[
                   `Send ${firstName} a message (free)`,
                   "Agree on a time together",
@@ -565,16 +574,16 @@ async function handleSubmitBooking(e) {
 
         {/* Recommended Mentors */}
         {!recommendedLoading && recommended.length > 0 && (
-          <div className="mt-10 pt-6 border-t border-border">
-            <h2 className="font-display text-2xl text-ink mb-4">Recommended Mentors</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="mt-14 pt-10 border-t border-border">
+            <h2 className="font-display text-2xl text-ink mb-5">Recommended Mentors</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
               {recommended.map((rec) => (
                 <a
                   key={rec.id}
                   href={`/mentors/${rec.id}`}
-                  className="bg-surface border border-border rounded-xl p-4 hover:shadow-md hover:border-primary transition flex flex-col"
+                  className="bg-surface border border-border rounded-xl p-5 hover:shadow-md hover:border-primary transition flex flex-col"
                 >
-                  <div className="flex items-center gap-3 mb-3">
+                  <div className="flex items-center gap-3 mb-4">
                     {rec.photo_url ? (
                       <img
                         src={rec.photo_url}
@@ -591,12 +600,12 @@ async function handleSubmitBooking(e) {
                       <p className="text-muted text-xs">{rec.school}</p>
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-1.5 mb-2">
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${getSubjectStyle(rec.subject).color}`}>
-                      {getSubjectStyle(rec.subject).icon} {rec.subject}
+                  <div className="flex flex-wrap gap-1.5 mb-3">
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                      {rec.subject}
                     </span>
                     <span className="text-xs font-semibold px-2 py-0.5 rounded-full border border-border text-ink bg-background">
-                      {getFlag(rec.country)} {rec.country}
+                      {rec.country}
                     </span>
                   </div>
                   <p className="text-ink/70 text-xs leading-relaxed line-clamp-2">{rec.bio}</p>
@@ -608,7 +617,7 @@ async function handleSubmitBooking(e) {
       </div>
 
         {/* ============ CLOSING CTA ============ */}
-      <section className="relative overflow-hidden px-6 py-24 text-center">
+      <section className="relative overflow-hidden px-6 py-24 text-center mt-4">
         {MENTOR_CTA_PHOTO_URL ? (
           <>
             <PhotoBlock src={MENTOR_CTA_PHOTO_URL} className="absolute inset-0 w-full h-full" tint={70} />

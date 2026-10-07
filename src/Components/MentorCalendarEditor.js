@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 // Predefined event types — mentors pick one instead of typing everything
 // from scratch. The `key` is what gets saved in the `color` column.
 import { EVENT_TYPES } from "@/lib/eventTypes";
+import { ChevronIcon, XIcon, TrashIcon, EventTypeIcon } from "@/Components/CalendarIcons";
 
 function toDateKey(date) {
   const year = date.getFullYear();
@@ -16,12 +17,18 @@ function isSameDay(a, b) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
+// Light tint / border / dot derived from one accent hex, so each event type
+// only needs to define a single color instead of four hard-coded classes.
+function tint(hex, alphaHex) {
+  return `${hex}${alphaHex}`;
+}
+
 export default function MentorCalendarEditor({ mentorId }) {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [monthCursor, setMonthCursor] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
-const [confirmingDeleteId, setConfirmingDeleteId] = useState(null);
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState(null);
   const [formType, setFormType] = useState("session");
   const [formTitle, setFormTitle] = useState("");
   const [formDescription, setFormDescription] = useState("");
@@ -108,7 +115,7 @@ const [confirmingDeleteId, setConfirmingDeleteId] = useState(null);
     if (!error) setEvents((prev) => prev.filter((ev) => ev.id !== id));
   }
 
-  if (loading) return <p className="text-gray-500 text-sm">Loading calendar...</p>;
+  if (loading) return <p className="text-muted text-sm">Loading calendar...</p>;
 
   const selectedEvents = selectedDate ? eventsByDate[selectedDate] || [] : [];
   const monthLabel = monthCursor.toLocaleDateString("en-US", { month: "long", year: "numeric" });
@@ -117,22 +124,33 @@ const [confirmingDeleteId, setConfirmingDeleteId] = useState(null);
     <div>
       {/* Month nav */}
       <div className="flex items-center justify-between mb-4">
-        <button onClick={() => changeMonth(-1)} className="w-9 h-9 flex items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:bg-gray-100 transition">
-          ‹
+        <button
+          onClick={() => changeMonth(-1)}
+          aria-label="Previous month"
+          className="w-9 h-9 flex items-center justify-center rounded-full border border-border text-muted hover:bg-background hover:text-ink transition"
+        >
+          <ChevronIcon className="w-4 h-4 rotate-180" />
         </button>
         <div className="flex items-center gap-3">
-          <p className="font-semibold text-gray-900 text-lg">{monthLabel}</p>
-          <button onClick={goToToday} className="text-xs font-medium text-green-700 border border-green-300 rounded-full px-2.5 py-1 hover:bg-green-50 transition">
+          <p className="font-display text-lg text-ink">{monthLabel}</p>
+          <button
+            onClick={goToToday}
+            className="font-label text-[10px] tracking-[0.08em] uppercase text-primary border border-primary/30 rounded-full px-2.5 py-1 hover:bg-primary/5 transition"
+          >
             Today
           </button>
         </div>
-        <button onClick={() => changeMonth(1)} className="w-9 h-9 flex items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:bg-gray-100 transition">
-          ›
+        <button
+          onClick={() => changeMonth(1)}
+          aria-label="Next month"
+          className="w-9 h-9 flex items-center justify-center rounded-full border border-border text-muted hover:bg-background hover:text-ink transition"
+        >
+          <ChevronIcon className="w-4 h-4" />
         </button>
       </div>
 
       {/* Weekday header */}
-      <div className="grid grid-cols-7 gap-1.5 text-center text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wide">
+      <div className="grid grid-cols-7 gap-1.5 text-center font-label text-[10px] tracking-[0.08em] uppercase text-muted mb-1.5">
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
           <div key={d}>{d}</div>
         ))}
@@ -151,22 +169,29 @@ const [confirmingDeleteId, setConfirmingDeleteId] = useState(null);
             <button
               key={key}
               onClick={() => setSelectedDate(key)}
-              className={`aspect-square rounded-xl border-2 text-sm p-1 flex flex-col items-center justify-center gap-1 transition ${
+              className={`aspect-square rounded-lg border text-sm p-1 flex flex-col items-center justify-center gap-1 transition ${
                 isSelected
-                  ? "border-green-600 bg-green-50 shadow-sm"
+                  ? "border-primary bg-primary/5"
                   : isToday
-                  ? "border-green-300 bg-white"
-                  : "border-transparent hover:bg-gray-50"
+                  ? "border-primary/40 bg-surface"
+                  : "border-transparent hover:bg-background"
               }`}
             >
-              <span className={`font-medium ${isSelected ? "text-green-800" : isToday ? "text-green-700 font-bold" : "text-gray-700"}`}>
+              <span className={`font-medium ${isSelected || isToday ? "text-primary" : "text-ink"}`}>
                 {date.getDate()}
               </span>
               {dayEvents.length > 0 && (
                 <div className="flex gap-0.5">
-                  {dayEvents.slice(0, 3).map((ev) => (
-                    <span key={ev.id} className={`w-1.5 h-1.5 rounded-full ${EVENT_TYPES[ev.color]?.dot || EVENT_TYPES.other.dot}`}></span>
-                  ))}
+                  {dayEvents.slice(0, 3).map((ev) => {
+                    const style = EVENT_TYPES[ev.color] || EVENT_TYPES.other;
+                    return (
+                      <span
+                        key={ev.id}
+                        className="w-1.5 h-1.5 rounded-full"
+                        style={{ backgroundColor: style.accent }}
+                      />
+                    );
+                  })}
                 </div>
               )}
             </button>
@@ -176,88 +201,106 @@ const [confirmingDeleteId, setConfirmingDeleteId] = useState(null);
 
       {/* Selected day panel */}
       {selectedDate && (
-        <div className="border-t border-gray-100 pt-5">
+        <div className="border-t border-border pt-5">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold text-gray-900">
+            <h3 className="font-display text-ink">
               {new Date(selectedDate + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
             </h3>
-            <button onClick={() => setSelectedDate(null)} className="text-gray-400 hover:text-gray-600 text-sm">
-              Close ✕
+            <button
+              onClick={() => setSelectedDate(null)}
+              className="flex items-center gap-1 text-xs font-medium text-muted hover:text-ink transition"
+            >
+              <XIcon className="w-3.5 h-3.5" />
+              Close
             </button>
           </div>
 
           <div className="space-y-2 mb-5">
             {selectedEvents.length === 0 && (
-              <p className="text-sm text-gray-400 italic">No events yet — add one below.</p>
+              <p className="text-sm text-muted italic">No events yet — add one below.</p>
             )}
-           {selectedEvents.map((ev) => {
-  const style = EVENT_TYPES[ev.color] || EVENT_TYPES.other;
-  const isConfirming = confirmingDeleteId === ev.id;
+            {selectedEvents.map((ev) => {
+              const style = EVENT_TYPES[ev.color] || EVENT_TYPES.other;
+              const isConfirming = confirmingDeleteId === ev.id;
 
-  return (
-    <div key={ev.id} className={`border-2 rounded-xl p-3 flex items-start justify-between gap-2 ${style.bg} ${style.border}`}>
-      <div className="flex items-start gap-2">
-        <span className="text-lg leading-none">{style.icon}</span>
-        <div>
-          <p className={`font-semibold text-sm ${style.text}`}>
-            {ev.title}{ev.time_label && <span className="font-normal"> · {ev.time_label}</span>}
-          </p>
-          {ev.description && <p className={`text-xs mt-0.5 ${style.text} opacity-80`}>{ev.description}</p>}
-        </div>
-      </div>
+              return (
+                <div
+                  key={ev.id}
+                  className="border rounded-lg p-3 flex items-start justify-between gap-2"
+                  style={{ backgroundColor: tint(style.accent, "14"), borderColor: tint(style.accent, "40") }}
+                >
+                  <div className="flex items-start gap-2.5">
+                    <span className="shrink-0 mt-0.5" style={{ color: style.accent }}>
+                      <EventTypeIcon type={style.icon} className="w-4 h-4" />
+                    </span>
+                    <div>
+                      <p className="font-semibold text-sm text-ink">
+                        {ev.title}
+                        {ev.time_label && <span className="font-normal text-muted"> · {ev.time_label}</span>}
+                      </p>
+                      {ev.description && <p className="text-xs mt-0.5 text-muted">{ev.description}</p>}
+                    </div>
+                  </div>
 
-      {isConfirming ? (
-        <div className="flex items-center gap-1.5 shrink-0">
-          <span className={`text-xs font-medium ${style.text}`}>Delete?</span>
-          <button
-            onClick={() => {
-              handleDeleteEvent(ev.id);
-              setConfirmingDeleteId(null);
-            }}
-            className="text-xs font-semibold bg-red-600 text-white px-2.5 py-1 rounded-md hover:bg-red-700 transition"
-          >
-            Yes
-          </button>
-          <button
-            onClick={() => setConfirmingDeleteId(null)}
-            className="text-xs font-semibold bg-white text-gray-600 border border-gray-300 px-2.5 py-1 rounded-md hover:bg-gray-50 transition"
-          >
-            Cancel
-          </button>
-        </div>
-      ) : (
-        <button
-          onClick={() => setConfirmingDeleteId(ev.id)}
-          className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg bg-white/70 hover:bg-white text-gray-500 hover:text-red-600 transition"
-          title="Delete event"
-        >
-          🗑️
-        </button>
-      )}
-    </div>
-  );
-})}
+                  {isConfirming ? (
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="text-xs font-medium text-ink">Delete?</span>
+                      <button
+                        onClick={() => {
+                          handleDeleteEvent(ev.id);
+                          setConfirmingDeleteId(null);
+                        }}
+                        className="text-xs font-semibold bg-red-600 text-white px-2.5 py-1 rounded-md hover:bg-red-700 transition"
+                      >
+                        Yes
+                      </button>
+                      <button
+                        onClick={() => setConfirmingDeleteId(null)}
+                        className="text-xs font-semibold bg-background text-ink border border-border px-2.5 py-1 rounded-md hover:bg-surface transition"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmingDeleteId(ev.id)}
+                      className="shrink-0 w-7 h-7 flex items-center justify-center rounded-md bg-background/70 hover:bg-background text-muted hover:text-red-600 transition"
+                      title="Delete event"
+                    >
+                      <TrashIcon className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
-          <form onSubmit={handleAddEvent} className="bg-gray-50 rounded-xl p-4 space-y-3">
+          <form onSubmit={handleAddEvent} className="bg-background border border-border rounded-lg p-4 space-y-3">
             {/* Event type chips */}
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Event Type</label>
+              <label className="block font-label text-[10px] tracking-[0.08em] uppercase text-muted mb-2">
+                Event Type
+              </label>
               <div className="flex flex-wrap gap-2">
-                {Object.entries(EVENT_TYPES).map(([key, style]) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setFormType(key)}
-                    className={`text-xs font-medium px-3 py-1.5 rounded-full border-2 transition ${
-                      formType === key
-                        ? `${style.bg} ${style.border} ${style.text}`
-                        : "bg-white border-gray-200 text-gray-500 hover:border-gray-300"
-                    }`}
-                  >
-                    {style.icon} {style.label}
-                  </button>
-                ))}
+                {Object.entries(EVENT_TYPES).map(([key, style]) => {
+                  const active = formType === key;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setFormType(key)}
+                      className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition"
+                      style={
+                        active
+                          ? { backgroundColor: tint(style.accent, "14"), borderColor: style.accent, color: style.accent }
+                          : { backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)", color: "var(--color-muted)" }
+                      }
+                    >
+                      <EventTypeIcon type={style.icon} className="w-3.5 h-3.5" />
+                      {style.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -267,26 +310,26 @@ const [confirmingDeleteId, setConfirmingDeleteId] = useState(null);
               required
               value={formTitle}
               onChange={(e) => setFormTitle(e.target.value)}
-             className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-black focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full border border-border rounded-md px-4 py-2.5 text-sm text-ink bg-surface focus:outline-none focus:ring-2 focus:ring-primary"
             />
             <input
               type="text"
               placeholder="Time (e.g. 3:00 PM) — optional"
               value={formTime}
               onChange={(e) => setFormTime(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-black focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full border border-border rounded-md px-4 py-2.5 text-sm text-ink bg-surface focus:outline-none focus:ring-2 focus:ring-primary"
             />
             <textarea
               placeholder="Description (optional)"
               rows={2}
               value={formDescription}
               onChange={(e) => setFormDescription(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-black resize-y focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full border border-border rounded-md px-4 py-2.5 text-sm text-ink bg-surface resize-y focus:outline-none focus:ring-2 focus:ring-primary"
             />
             <button
               type="submit"
               disabled={saving || !formTitle.trim()}
-              className="w-full bg-green-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-green-700 transition disabled:opacity-50"
+              className="w-full bg-ink text-white px-4 py-2.5 rounded-md text-sm font-semibold hover:opacity-90 transition disabled:opacity-50"
             >
               {saving ? "Adding..." : "Add Event"}
             </button>
