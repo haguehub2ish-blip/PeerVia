@@ -7,6 +7,7 @@ import { courseGuides } from "@/data/courseGuides";
 import { getFlag } from "@/data/mentors";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
+import ContactWidget from "@/Components/ContactWidget";
 
 const howItWorksSteps = [
   {
@@ -152,45 +153,6 @@ export default function Home() {
   const [communityQuestions, setCommunityQuestions] = useState([]);
   const [heroIndex, setHeroIndex] = useState(0);
   const [leavingIndex, setLeavingIndex] = useState(null);
-    const [contact, setContact] = useState({ name: "", email: "", question: "", website: "" });
-  const [contactStatus, setContactStatus] = useState("idle"); // idle | sending | sent | error
-  const [contactError, setContactError] = useState("");
-
-  const handleContactSubmit = async (e) => {
-    e.preventDefault();
-    setContactStatus("sending");
-    setContactError("");
-    try {
-      const res = await fetch("/api/contact", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(contact),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Something went wrong.");
-      setContactStatus("sent");
-      setContact({ name: "", email: "", question: "", website: "" });
-    } catch (err) {
-      setContactError(err.message);
-      setContactStatus("error");
-    }
-  };
-    const [contactOpen, setContactOpen] = useState(false);
-
-  const closeContact = () => {
-    setContactOpen(false);
-    if (contactStatus === "sent" || contactStatus === "error") setContactStatus("idle");
-  };
-
-  // Close the popup with Escape
-  useEffect(() => {
-    if (!contactOpen) return;
-    const onKey = (e) => {
-      if (e.key === "Escape") closeContact();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [contactOpen, contactStatus]);
 
   // Close the suggestions dropdown on any click/tap outside the search box,
   // instead of relying on the input's onBlur (which races with clicking a
@@ -910,135 +872,7 @@ export default function Home() {
           </div>
         </div>
       </section>
-            {/* ============ CONTACT US ============ */}
-      <section id="contact" className="px-6 py-10 border-t border-border">
-        <div className="max-w-5xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h2 className="font-display text-xl text-ink">
-              Got a question? <span className="italic text-primary">Ask us.</span>
-            </h2>
-            <p className="text-muted text-sm mt-1">Feedback, questions, or want to become a mentor?</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setContactOpen(true)}
-            className="shrink-0 font-label text-xs tracking-[0.1em] uppercase bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-dark transition"
-          >
-            Send Us A Message →
-          </button>
-        </div>
 
-        {contactOpen && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 p-4"
-            onClick={closeContact}
-          >
-            <div
-              role="dialog"
-              aria-modal="true"
-              aria-label="Contact PeerVia"
-              className="relative w-full max-w-md max-h-[90vh] overflow-y-auto bg-surface border border-border rounded-2xl p-6 shadow-xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                type="button"
-                onClick={closeContact}
-                aria-label="Close"
-                className="absolute top-4 right-4 text-muted hover:text-ink transition"
-              >
-                ✕
-              </button>
-
-              {contactStatus === "sent" ? (
-                <div className="text-center py-8">
-                  <p className="font-display text-2xl text-ink mb-2">Message sent!</p>
-                  <p className="text-muted text-sm mb-6">We&rsquo;ll reply to your email soon.</p>
-                  <button
-                    type="button"
-                    onClick={closeContact}
-                    className="font-label text-xs tracking-[0.1em] uppercase bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-dark transition"
-                  >
-                    Close
-                  </button>
-                </div>
-              ) : (
-                <form onSubmit={handleContactSubmit} className="space-y-4">
-                  <h3 className="font-display text-xl text-ink pr-6">Contact PeerVia</h3>
-
-                  <div>
-                    <label htmlFor="contact-name" className="block font-label text-[10px] tracking-[0.1em] uppercase text-muted mb-1.5">
-                      Name
-                    </label>
-                    <input
-                      id="contact-name"
-                      type="text"
-                      required
-                      maxLength={200}
-                      value={contact.name}
-                      onChange={(e) => setContact({ ...contact, name: e.target.value })}
-                      className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm text-ink outline-none focus:ring-2 focus:ring-primary/30"
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="contact-email" className="block font-label text-[10px] tracking-[0.1em] uppercase text-muted mb-1.5">
-                      Email
-                    </label>
-                    <input
-                      id="contact-email"
-                      type="email"
-                      required
-                      maxLength={200}
-                      value={contact.email}
-                      onChange={(e) => setContact({ ...contact, email: e.target.value })}
-                      className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm text-ink outline-none focus:ring-2 focus:ring-primary/30"
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="contact-question" className="block font-label text-[10px] tracking-[0.1em] uppercase text-muted mb-1.5">
-                      Your Question
-                    </label>
-                    <textarea
-                      id="contact-question"
-                      required
-                      rows={4}
-                      maxLength={5000}
-                      value={contact.question}
-                      onChange={(e) => setContact({ ...contact, question: e.target.value })}
-                      className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm text-ink outline-none focus:ring-2 focus:ring-primary/30 resize-y"
-                    />
-                  </div>
-
-                  {/* Honeypot: hidden from humans, bots tend to fill it */}
-                  <input
-                    type="text"
-                    name="website"
-                    tabIndex={-1}
-                    autoComplete="off"
-                    aria-hidden="true"
-                    value={contact.website}
-                    onChange={(e) => setContact({ ...contact, website: e.target.value })}
-                    className="hidden"
-                  />
-
-                  {contactStatus === "error" && (
-                    <p className="text-red-600 text-sm font-semibold">{contactError}</p>
-                  )}
-
-                  <button
-                    type="submit"
-                    disabled={contactStatus === "sending"}
-                    className="w-full font-label text-xs tracking-[0.1em] uppercase bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-dark transition disabled:opacity-60"
-                  >
-                    {contactStatus === "sending" ? "Sending…" : "Send Message →"}
-                  </button>
-                </form>
-              )}
-            </div>
-          </div>
-        )}
-      </section>
       {/* ============ CLOSING CTA ============ */}
       <section className="relative overflow-hidden px-6 py-24 text-center">
         {CTA_PHOTO_URL && (
@@ -1081,6 +915,7 @@ export default function Home() {
           </p>
         </div>
       </section>
+      <ContactWidget />
     </main>
   );
 }
