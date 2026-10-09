@@ -345,6 +345,27 @@ export default function MentorDashboard() {
           </span>
         </div>
 
+        {/* Documents */}
+        <div className="flex items-center gap-4 flex-wrap mb-6 text-sm">
+          <span className="font-label text-[10px] tracking-[0.1em] uppercase text-muted">Documents</span>
+          <a
+            href="/documents/PeerVia-Ambassador-Guide.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary underline underline-offset-4 hover:opacity-80"
+          >
+            Ambassador Guide and Rules ↗
+          </a>
+          <a
+            href="/documents/PeerVia-Ambassador-Privacy-Policy.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary underline underline-offset-4 hover:opacity-80"
+          >
+            Privacy Policy ↗
+          </a>
+        </div>
+
         {/* Profile summary */}
         <div className="bg-surface border border-border rounded-lg mb-6 shadow-sm p-5">
           <div className="flex items-start gap-5 flex-wrap">

@@ -88,6 +88,16 @@ function renderApprovedEmail({ siteUrl, firstName, university, field, ctaUrl }) 
               </table>
             </td>
           </tr>
+          
+          <tr>
+            <td style="padding:22px 32px 0 32px;">
+              <p style="margin:0 0 8px 0; font-size:13px; line-height:1.6; color:#7A6952;">Please keep these two documents handy:</p>
+              <p style="margin:0; font-size:14px; line-height:1.9;">
+                <a href="${siteUrl}/documents/PeerVia-Ambassador-Guide.pdf" style="color:#BC6C25;">Ambassador Guide and Rules</a><br />
+                <a href="${siteUrl}/documents/PeerVia-Ambassador-Privacy-Policy.pdf" style="color:#BC6C25;">Privacy Policy and Liability Disclaimer</a>
+              </p>
+            </td>
+          </tr>
 
           <tr>
             <td style="padding:30px 32px 28px 32px; border-top:1px solid #E3D2AE;">

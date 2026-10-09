@@ -175,6 +175,10 @@ export default function Apply() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState(null);
+  const [guideOpened, setGuideOpened] = useState(false);
+  const [policyOpened, setPolicyOpened] = useState(false);
+  const [agreeGuide, setAgreeGuide] = useState(false);
+  const [agreePolicy, setAgreePolicy] = useState(false);
 
   const [allMentors, setAllMentors] = useState([]);
   const [statsLoading, setStatsLoading] = useState(true);
@@ -285,6 +289,10 @@ export default function Apply() {
     if (!photoFile) {
       setError("Please upload a profile photo.");
       return;
+          if (!agreeGuide || !agreePolicy) {
+      setError("Please open and accept both the Ambassador Guide and the Privacy Policy.");
+      return;
+    }
     }
 
     setSubmitting(true);
@@ -316,6 +324,7 @@ export default function Apply() {
         languages: selectedLanguages.join(","),
         photo_url: urlData.publicUrl,
         status: "pending",
+                terms_accepted_at: new Date().toISOString(),
       },
     ]);
 
@@ -726,6 +735,62 @@ export default function Apply() {
             </div>
 
             {error && <p className="text-red-600 text-sm font-medium">{error}</p>}
+            <div className="border border-gray-200 rounded-xl p-4 space-y-4 bg-gray-50">
+              <div>
+                <p className="text-sm font-semibold text-gray-800">
+                  Before you submit <span className="text-red-500">*</span>
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Please open and read both documents. The tick boxes unlock once you have opened each one.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <a
+                  href="/documents/PeerVia-Ambassador-Guide.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setGuideOpened(true)}
+                  onAuxClick={() => setGuideOpened(true)}
+                  className="text-sm font-semibold text-primary underline underline-offset-4"
+                >
+                  Ambassador Guide and Rules (PDF) ↗
+                </a>
+                <label className={`flex items-start gap-2 text-sm ${guideOpened ? "text-gray-800" : "text-gray-400"}`}>
+                  <input
+                    type="checkbox"
+                    disabled={!guideOpened}
+                    checked={agreeGuide}
+                    onChange={(e) => setAgreeGuide(e.target.checked)}
+                    className="mt-1"
+                  />
+                  I have read and agree to follow the Ambassador Guide and Rules.
+                </label>
+              </div>
+
+              <div className="space-y-2">
+                <a
+                  href="/documents/PeerVia-Ambassador-Privacy-Policy.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setPolicyOpened(true)}
+                  onAuxClick={() => setPolicyOpened(true)}
+                  className="text-sm font-semibold text-primary underline underline-offset-4"
+                >
+                  Ambassador Privacy Policy and Liability Disclaimer (PDF) ↗
+                </a>
+                <label className={`flex items-start gap-2 text-sm ${policyOpened ? "text-gray-800" : "text-gray-400"}`}>
+                  <input
+                    type="checkbox"
+                    disabled={!policyOpened}
+                    checked={agreePolicy}
+                    onChange={(e) => setAgreePolicy(e.target.checked)}
+                    className="mt-1"
+                  />
+                  I have read and accept the Privacy Policy and Liability Disclaimer, and I confirm I am at least 18.
+                </label>
+              </div>
+            </div>
 
             <button
               type="submit"
