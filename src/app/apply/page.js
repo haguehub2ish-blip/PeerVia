@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Navbar from "@/Components/Navbar";
 import { supabase } from "@/lib/supabase";
 import { courseGuides } from "@/data/courseGuides";
@@ -9,10 +9,46 @@ import Link from "next/link";
 const fields = ["Medicine", "Mechanical Engineering", "Business", "Computer Science", "Law", "Psychology", "Other"];
 const years = ["Year 1", "Year 2", "Year 3", "Year 4", "Year 5", "Year 6", "Graduate"];
 const countries = ["Netherlands", "United Kingdom", "Other"];
+const dutchUniversities = [
+  "University of Amsterdam",
+  "Vrije Universiteit Amsterdam",
+  "Utrecht University",
+  "Eindhoven University of Technology",
+  "University of Twente",
+  "University of Groningen",
+  "Radboud University",
+  "Maastricht University",
+  "Wageningen University & Research",
+  "Open University of the Netherlands",
+  "Nyenrode Business University",
+  "University of Humanistic Studies",
+  "Protestant Theological University",
+  "Amsterdam University of Applied Sciences",
+  "Rotterdam University of Applied Sciences",
+  "HU University of Applied Sciences Utrecht",
+  "The Hague University of Applied Sciences",
+  "Fontys University of Applied Sciences",
+  "Hanze University of Applied Sciences",
+  "Avans University of Applied Sciences",
+  "Saxion University of Applied Sciences",
+  "Windesheim University of Applied Sciences",
+  "Inholland University of Applied Sciences",
+  "HAN University of Applied Sciences",
+  "Zuyd University of Applied Sciences",
+  "NHL Stenden University of Applied Sciences",
+  "Breda University of Applied Sciences",
+  "HZ University of Applied Sciences",
+];
+
 const universityOptions = [
-  ...new Set(courseGuides.flatMap((c) => c.popularUniversities)),
+  ...new Set([
+    ...courseGuides.flatMap((c) => c.popularUniversities),
+    ...dutchUniversities,
+  ]),
 ].sort();
+
 const languageOptions = Object.keys(languageFlags);
+const commonLanguages = languageOptions.slice(0, 20);
 
 const knownUniversityDomains = [
   "uva.nl",                  // University of Amsterdam
@@ -34,6 +70,21 @@ const knownUniversityDomains = [
   "nyenrode.nl",             // Nyenrode
   "uvh.nl",                  // Humanistic Studies
   "pthu.nl",                 // Protestant Theological University
+    "hva.nl",                  // Amsterdam UAS
+  "hr.nl",                   // Rotterdam UAS
+  "hu.nl",                   // HU Utrecht
+  "hhs.nl",                  // The Hague UAS
+  "fontys.nl",               // Fontys
+  "hanze.nl",                // Hanze
+  "avans.nl",                // Avans
+  "saxion.nl",               // Saxion
+  "windesheim.nl",           // Windesheim
+  "inholland.nl",            // Inholland
+  "han.nl",                  // HAN
+  "zuyd.nl",                 // Zuyd
+  "nhlstenden.com",          // NHL Stenden
+  "buas.nl",                 // Breda UAS
+  "hz.nl",                   // HZ
   "ox.ac.uk",                // Oxford
 ];
 
@@ -196,6 +247,20 @@ export default function Apply() {
   const [otherUniversity, setOtherUniversity] = useState(false);
   const [otherField, setOtherField] = useState(false);
   const [otherCountry, setOtherCountry] = useState(false);
+    const [uniOpen, setUniOpen] = useState(false);
+  const [uniSearch, setUniSearch] = useState("");
+  const uniRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (uniRef.current && !uniRef.current.contains(e.target)) setUniOpen(false);
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+    const [showAllLanguages, setShowAllLanguages] = useState(false);
+  const [otherLanguageOpen, setOtherLanguageOpen] = useState(false);
+  const [otherLanguage, setOtherLanguage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState(null);
@@ -303,8 +368,72 @@ export default function Apply() {
     setPhotoPreview(URL.createObjectURL(file));
   }
 
+  const customLanguages = selectedLanguages.filter((l) => !languageOptions.includes(l));
+  const visibleLanguages = [
+    ...(showAllLanguages
+      ? languageOptions
+      : [
+          ...commonLanguages,
+          ...languageOptions
+            .slice(commonLanguages.length)
+            .filter((l) => selectedLanguages.includes(l)),
+        ]),
+    ...customLanguages,
+  ];
+
+    function addOtherLanguage(value) {
+    const clean = value.replace(/,/g, " ").trim();
+    if (!clean) return;
+    const match = languageOptions.find((l) => l.toLowerCase() === clean.toLowerCase());
+    const name = match || clean.charAt(0).toUpperCase() + clean.slice(1);
+    setSelectedLanguages((prev) => (prev.includes(name) ? prev : [...prev, name]));
+    setOtherLanguage("");
+  }
+
+  const languageQuery = otherLanguage.trim().toLowerCase();
+  const alphabetical = (a, b) => a.localeCompare(b);
+  const languageSuggestions = languageQuery
+    ? [
+        ...languageOptions
+          .filter((l) => l.toLowerCase().startsWith(languageQuery))
+          .sort(alphabetical),
+        ...languageOptions
+          .filter((l) => !l.toLowerCase().startsWith(languageQuery) && l.toLowerCase().includes(languageQuery))
+          .sort(alphabetical),
+      ]
+        .filter((l) => !selectedLanguages.includes(l))
+        .slice(0, 8)
+    : [];
+  const typedAlreadySelected = selectedLanguages.some((l) => l.toLowerCase() === languageQuery);
+
+  function addTypedLanguage() {
+    addOtherLanguage(languageSuggestions[0] || otherLanguage);
+  }
+
+  const filteredUniversities = universityOptions.filter((name) =>
+    name.toLowerCase().includes(uniSearch.trim().toLowerCase())
+  );
+
+  function pickUniversity(name) {
+    setOtherUniversity(false);
+    updateField("university", name);
+    setUniOpen(false);
+    setUniSearch("");
+  }
+
+  function pickOtherUniversity(prefill = "") {
+    setOtherUniversity(true);
+    updateField("university", prefill);
+    setUniOpen(false);
+    setUniSearch("");
+  }
+
     async function handleSubmit(e) {
     e.preventDefault();
+    if (!form.university.trim()) {
+      setError("Please select your university.");
+      return;
+    }
 
     if (selectedLanguages.length === 0) {
       setError("Please select at least one language.");
@@ -557,28 +686,64 @@ export default function Apply() {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div>
+                            <div ref={uniRef} className="relative">
                 <label className="block text-sm font-semibold text-gray-800 mb-1">University</label>
-                <select
+                <input
                   required={!otherUniversity}
-                  value={otherUniversity ? "Other" : form.university}
+                  autoComplete="off"
+                  value={uniOpen ? uniSearch : otherUniversity ? "Other" : form.university}
+                  onFocus={() => {
+                    setUniSearch("");
+                    setUniOpen(true);
+                  }}
                   onChange={(e) => {
-                    if (e.target.value === "Other") {
-                      setOtherUniversity(true);
-                      updateField("university", "");
-                    } else {
-                      setOtherUniversity(false);
-                      updateField("university", e.target.value);
+                    setUniSearch(e.target.value);
+                    setUniOpen(true);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      if (filteredUniversities.length > 0) pickUniversity(filteredUniversities[0]);
+                      else pickOtherUniversity(uniSearch.trim());
+                    } else if (e.key === "Escape") {
+                      setUniOpen(false);
                     }
                   }}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-600 bg-white"
-                >
-                  <option value="">Select University</option>
-                  {universityOptions.map((name) => (
-                    <option key={name} value={name}>{name}</option>
-                  ))}
-                  <option value="Other">Other</option>
-                </select>
+                  placeholder="Search or select your university"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600 bg-white"
+                />
+
+                {uniOpen && (
+                  <div className="absolute z-20 mt-1 w-full max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg">
+                    {filteredUniversities.map((name) => (
+                      <button
+                        key={name}
+                        type="button"
+                        onClick={() => pickUniversity(name)}
+                        className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition ${
+                          form.university === name && !otherUniversity
+                            ? "font-semibold text-green-700"
+                            : "text-gray-900"
+                        }`}
+                      >
+                        {name}
+                      </button>
+                    ))}
+                    {filteredUniversities.length === 0 && uniSearch.trim() && (
+                      <p className="px-4 py-2 text-xs text-gray-500">
+                        No match in our list. Choose Other to type yours.
+                      </p>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => pickOtherUniversity(uniSearch.trim())}
+                      className="w-full text-left px-4 py-2 text-sm font-semibold text-gray-900 border-t border-gray-100 hover:bg-gray-50 transition"
+                    >
+                      Other
+                    </button>
+                  </div>
+                )}
+
                 {otherUniversity && (
                   <input
                     required
@@ -606,7 +771,7 @@ export default function Apply() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-800 mb-1">Career field</label>
+              <label className="block text-sm font-semibold text-gray-800 mb-1">Career Field</label>
               <select
                 required={!otherField}
                 value={otherField ? "Other" : form.field}
@@ -685,12 +850,12 @@ export default function Apply() {
               )}
             </div>
 
-            <div>
+                        <div>
               <label className="block text-sm font-semibold text-gray-800 mb-1">
                 Languages you speak <span className="text-gray-400 font-normal">(select at least one)</span>
               </label>
               <div className="flex flex-wrap gap-2">
-                {languageOptions.map((lang) => {
+                {visibleLanguages.map((lang) => {
                   const style = getLanguageStyle(lang);
                   const isSelected = selectedLanguages.includes(lang);
                   return (
@@ -710,7 +875,81 @@ export default function Apply() {
                     </button>
                   );
                 })}
+                <button
+                  type="button"
+                  onClick={() => setOtherLanguageOpen((o) => !o)}
+                  className={`text-xs font-semibold px-3 py-1 rounded-full transition bg-gray-100 text-gray-700 ${
+                    otherLanguageOpen ? "ring-2 ring-gray-900" : "hover:opacity-80"
+                  }`}
+                >
+                  ➕ Other
+                </button>
               </div>
+
+                           {otherLanguageOpen && (
+                <div className="mt-2">
+                  <div className="flex gap-2">
+                    <input
+                      autoFocus
+                      value={otherLanguage}
+                      onChange={(e) => setOtherLanguage(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          addTypedLanguage();
+                        }
+                      }}
+                      maxLength={30}
+                      placeholder="Start typing a language"
+                      className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600"
+                    />
+                    <button
+                      type="button"
+                      onClick={addTypedLanguage}
+                      className="px-4 py-2 rounded-lg text-sm font-semibold bg-gray-900 text-white hover:opacity-90 transition"
+                    >
+                      Add
+                    </button>
+                  </div>
+
+                  {languageQuery && (
+                    <div className="mt-1 border border-gray-200 rounded-lg bg-white shadow-sm overflow-hidden">
+                      {languageSuggestions.length > 0 ? (
+                        languageSuggestions.map((lang) => (
+                          <button
+                            key={lang}
+                            type="button"
+                            onClick={() => addOtherLanguage(lang)}
+                            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-left text-gray-900 hover:bg-gray-50 transition"
+                          >
+                            <span>{getLanguageStyle(lang).icon}</span>
+                            {lang}
+                          </button>
+                        ))
+                      ) : (
+                        <p className="px-4 py-2 text-xs text-gray-500">
+                          {typedAlreadySelected ? (
+                            "Already selected."
+                          ) : (
+                            <>No match in our list. Press Add to use &ldquo;{otherLanguage.trim()}&rdquo;.</>
+                          )}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setShowAllLanguages((s) => !s)}
+                className="mt-2 text-xs font-semibold text-green-700 hover:underline"
+              >
+                {showAllLanguages
+                  ? "Show fewer languages"
+                  : `Show ${languageOptions.length - commonLanguages.length} more languages`}
+              </button>
+
               {selectedLanguages.length === 0 && (
                 <p className="text-red-600 text-xs mt-1.5">Select at least one language.</p>
               )}

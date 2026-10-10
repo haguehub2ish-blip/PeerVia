@@ -102,14 +102,14 @@ export default function ContactWidget() {
         ref={buttonRef}
         type="button"
         onClick={openContact}
-        aria-label="Have a question? Message Guru"
+        aria-label="Have a question? Message the Team"
         aria-haspopup="dialog"
         aria-expanded={open}
         style={{ bottom: EDGE_GAP }}
         className="group fixed right-5 z-40 flex items-center gap-3"
       >
         <span className="hidden sm:block bg-ink text-white font-label text-[10px] tracking-[0.1em] uppercase px-3 py-2 rounded-full opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition pointer-events-none">
-          Questions? Ask Guru
+          Questions? Ask the Team
         </span>
         <span className="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center shadow-lg group-hover:bg-primary-dark group-hover:scale-105 transition">
           <svg
@@ -136,7 +136,7 @@ export default function ContactWidget() {
           <div
             role="dialog"
             aria-modal="true"
-            aria-label="Message Guru"
+            aria-label="Message the PeerVia team"
             className="relative w-full max-w-md max-h-[90vh] overflow-y-auto bg-surface border border-border rounded-2xl p-6 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
@@ -179,7 +179,7 @@ export default function ContactWidget() {
                   Thanks{sentName ? `, ${sentName}` : ""}!
                 </p>
                 <p className="text-muted text-sm leading-relaxed mb-6">
-                  Your message is on its way to me. I&rsquo;ll reply to your email as soon as I can.
+                 Your message is on its way to the PeerVia team. We&rsquo;ll reply to your email as soon as we can.
                 </p>
                 <button
                   type="button"
@@ -195,14 +195,14 @@ export default function ContactWidget() {
                 <div className="flex items-center gap-3 mb-4 pr-6">
                   {avatar}
                   <h3 className="font-display text-xl text-ink leading-tight">
-                    Hi, I&rsquo;m Guru - The Founder of PeerVia
+                    Hi, we&rsquo;re the PeerVia team
                   </h3>
                 </div>
 
                 <p className="text-sm text-muted leading-relaxed mb-5">
                   Got a question, some feedback, or thinking about becoming a mentor?{" "}
-                  <span className="text-ink font-semibold">Ask away</span> &mdash; I&rsquo;d love to
-                  hear from you, and I&rsquo;ll reply by email.
+                  <span className="text-ink font-semibold">Ask away</span> &mdash; we&rsquo;d love to
+hear from you, and we&rsquo;ll reply by email.
                 </p>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
@@ -248,7 +248,7 @@ export default function ContactWidget() {
                       maxLength={5000}
                       value={contact.question}
                       onChange={(e) => setContact({ ...contact, question: e.target.value })}
-                      placeholder="Ask me anything…"
+                      placeholder="Ask us anything…"
                       className={`${inputClass} resize-y`}
                     />
                   </div>

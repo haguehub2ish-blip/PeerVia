@@ -51,10 +51,10 @@ export default function MentorGuruMessage() {
         </div>
         <div className="flex-1 min-w-[200px]">
           <p className="font-label text-[10px] tracking-[0.15em] uppercase text-primary mb-1">
-            Message Guru
+          Message the PeerVia team
           </p>
           <h2 className="font-display text-lg text-ink leading-tight">
-            Got feedback or a question? Send it straight to Guru, the founder of PeerVia.
+          Got feedback or a question? Send it straight to the PeerVia team.
           </h2>
         </div>
         {!open && (
@@ -70,7 +70,7 @@ export default function MentorGuruMessage() {
       {open && status === "sent" && (
         <div className="mt-5 pt-5 border-t border-border">
           <p className="text-sm text-primary font-medium mb-3">
-            Sent. Guru will reply to your email as soon as possible.
+            Sent. The PeerVia team will reply to your email as soon as possible.
           </p>
           <div className="flex items-center gap-4">
             <button
@@ -113,8 +113,8 @@ export default function MentorGuruMessage() {
             onChange={(e) => setMessage(e.target.value)}
             placeholder={
               kind === "Question"
-                ? "Ask Guru anything about mentoring on PeerVia..."
-                : "Tell Guru what's working and what could be better..."
+                ? "Ask the team anything about mentoring on PeerVia..."
+                : "Tell the team what's working and what could be better..."
             }
             className="w-full border border-border rounded-md px-4 py-2.5 text-sm text-ink bg-background focus:outline-none focus:ring-2 focus:ring-primary resize-y mb-3"
           />

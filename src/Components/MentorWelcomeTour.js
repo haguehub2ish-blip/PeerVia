@@ -9,7 +9,7 @@ function getSteps(firstName) {
     {
       title: `Welcome to PeerVia${firstName ? `, ${firstName}` : ""}!`,
       body: [
-        "I'm Guru, the founder of PeerVia. Here's a one-minute tour of how everything works. I'll point to each part of your dashboard as we go.",
+       "Welcome from the PeerVia team! Here's a one-minute tour of how everything works. We'll point to each part of your dashboard as we go.",
         "PeerVia connects high school students with real university students like you, for honest advice about degrees, courses, applications and student life.",
       ],
     },
@@ -67,9 +67,9 @@ function getSteps(firstName) {
     },
     {
       target: "guru",
-      title: "Questions? Ask me.",
-      body: [
-        "If you have feedback or a question, write it here and it comes straight to me.",
+     title: "Questions? Ask us.",
+body: [
+  "If you have feedback or a question, write it here and it goes straight to the PeerVia team.",
         "To see this tour again, press How PeerVia works at the top of your dashboard.",
       ],
     },
@@ -163,7 +163,7 @@ export default function MentorWelcomeTour({ open, onClose, mentorId, firstName }
         </div>
         <div>
           <p className="font-label text-[10px] tracking-[0.15em] uppercase text-primary">
-            From Guru, founder of PeerVia
+            From the PeerVia Team
           </p>
           <p className="font-label text-[10px] tracking-[0.1em] uppercase text-muted">
             Step {step + 1} of {steps.length}

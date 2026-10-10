@@ -72,7 +72,7 @@ export async function POST(request) {
       siteUrl,
       preheader: `${name}: ${message}`.slice(0, 110),
       heading: `A mentor sent you ${kind === "Feedback" ? "feedback" : "a question"}.`,
-      greeting: "Hi Guru,",
+      greeting: "Hi Team,",
       bodyHtml:
         paragraph(`<strong>${escapeHtml(name)}</strong> wrote this from their mentor dashboard. Reply to this email to answer them.`) +
         quoteBox(kind, escapeHtml(message).replace(/\r?\n/g, "<br />")) +
