@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
-
+import { renderEmail, paragraph, quoteBox, escapeHtml } from "@/lib/emailShell";
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -8,11 +8,27 @@ const supabaseAdmin = createClient(
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+function renderAnswerEmail({ siteUrl, heading, intro, question, answer, mentorName, ctaUrl, ctaLabel, preheader }) {
+  const nl = (t) => escapeHtml(t).replace(/\n/g, "<br />");
+  return renderEmail({
+    siteUrl,
+    preheader,
+    heading,
+    greeting: "Hi,",
+    bodyHtml:
+      paragraph(intro) +
+      quoteBox("The question", nl(question)) +
+      quoteBox(`${escapeHtml(mentorName)}'s answer`, nl(answer)),
+    ctaLabel,
+    ctaUrl,
+    footerNote: `You're receiving this because you have an account on PeerVia. You can change what you get emailed in your <a href="${siteUrl}/settings" style="color:#BC6C25;">notification settings</a>.`,
+  });
+}
 // Shared, on-brand HTML shell for every "mentor answered" email.
 // Colors/typography mirror the app's tokens (primary #BC6C25, ink #241A12,
 // surface #F8EFD9, badge #2B1B10). Fraunces/Plex Mono are approximated with
 // system serif/mono fallbacks since custom @font-face is unreliable in inboxes.
-function renderAnswerEmail({ siteUrl, eyebrow, heading, intro, question, answer, mentorName, ctaUrl, ctaLabel, preheader }) {
+function renderAnswerEmailOld({ siteUrl, eyebrow, heading, intro, question, answer, mentorName, ctaUrl, ctaLabel, preheader }) {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>

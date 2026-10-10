@@ -1,14 +1,29 @@
 import { createClient } from "@supabase/supabase-js";
-
+import { renderEmail, paragraph, escapeHtml } from "@/lib/emailShell";
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+
+function renderApprovedEmail({ siteUrl, firstName, university, field, ctaUrl }) {
+  return renderEmail({
+    siteUrl,
+    preheader: "Your PeerVia mentor application has been approved.",
+    heading: "You're now a PeerVia mentor.",
+    greeting: `Hi ${escapeHtml(firstName)},`,
+    bodyHtml:
+      paragraph(`Your application as a ${escapeHtml(field)} mentor from ${escapeHtml(university)} has been approved. You already have a PeerVia account, so there's nothing to set up. Log in as usual and your mentor dashboard will be there.`) +
+      paragraph(`Before your first call, please read the <a href="${siteUrl}/documents/PeerVia-Ambassador-Guide.pdf" style="color:#BC6C25;">Ambassador Guide</a> and the <a href="${siteUrl}/documents/PeerVia-Ambassador-Privacy-Policy.pdf" style="color:#BC6C25;">Privacy Policy</a>.`),
+    ctaLabel: "Log in to PeerVia",
+    ctaUrl,
+    footerNote: "You're receiving this because you applied to become a mentor on PeerVia.",
+  });
+}
 // Same shell/tokens as notify-answer's renderAnswerEmail — primary #BC6C25,
 // ink #241A12, surface #F8EFD9, badge #2B1B10. Serif/mono roles approximated
 // with system fallbacks since custom @font-face is unreliable in inboxes.
-function renderApprovedEmail({ siteUrl, firstName, university, field, ctaUrl }) {
+function renderApprovedEmailOld({ siteUrl, firstName, university, field, ctaUrl }) {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>

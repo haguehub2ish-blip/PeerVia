@@ -164,6 +164,7 @@ export default function Apply() {
     extracurriculars: "",
     final_grade: "",
     linkedin: "",
+        backup_email: "",
   });
   const [selectedLanguages, setSelectedLanguages] = useState(["English"]);
   const [photoFile, setPhotoFile] = useState(null);
@@ -505,6 +506,24 @@ export default function Apply() {
                 placeholder="e.emma@student.uva.nl"
                 className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600"
               />
+                            <p className="text-xs text-muted mt-1.5">
+                Use an address you check regularly. Some university inboxes block outside email, so if you don't hear from us within a few days, check your spam folder or write to info.peervia@gmail.com.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-800 mb-1">Backup Email</label>
+              <input
+                type="email"
+
+                value={form.backup_email}
+                onChange={(e) => updateField("backup_email", e.target.value)}
+                placeholder="you@gmail.com"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600"
+              />
+              <p className="text-xs text-muted mt-1.5">
+                A personal address (Gmail, Outlook, iCloud). We only use it if an email to your university address doesn't get through.
+              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -795,7 +814,7 @@ export default function Apply() {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full bg-green-700 text-white py-3 rounded-lg font-semibold hover:bg-green-800 transition disabled:opacity-50"
+              className="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark transition disabled:opacity-50"
             >
               {photoUploading ? "Uploading Photo..." : submitting ? "Submitting..." : "Submit Application →"}
             </button>

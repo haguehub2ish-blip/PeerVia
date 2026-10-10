@@ -110,6 +110,7 @@ export default function AdminApplications() {
                         {app.first_name} {app.last_name}
                       </h3>
                       <p className="text-gray-500 text-sm">{app.email}</p>
+                                            {app.backup_email && <p className="text-gray-500 text-sm">Backup: {app.backup_email}</p>}
                     </div>
                   </div>
                   <span

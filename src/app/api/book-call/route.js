@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
+import { renderEmail, paragraph, quoteBox, escapeHtml } from "@/lib/emailShell";
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -8,10 +9,25 @@ const supabaseAdmin = createClient(
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+function renderBookingRequestEmail({ siteUrl, mentorName, studentEmail, message, ctaUrl, ctaLabel }) {
+  const first = escapeHtml(mentorName.split(" ")[0]);
+  return renderEmail({
+    siteUrl,
+    preheader: `${studentEmail} would like to book a call with you.`,
+    heading: `${first}, a student wants to talk to you.`,
+    greeting: `Hi ${first},`,
+    bodyHtml:
+      paragraph(`A student found your profile on PeerVia and asked for a call. Their email is ${escapeHtml(studentEmail)}, and if you reply to this email it will go straight to them.`) +
+      quoteBox("What they want to talk about", escapeHtml(message).replace(/\n/g, "<br />")),
+    ctaLabel,
+    ctaUrl,
+    footerNote: "You're receiving this because you're a mentor on PeerVia and this student found you through your profile.",
+  });
+}
 // Same shell/tokens as the other Resend emails — primary #BC6C25, ink #241A12,
 // surface #F8EFD9, badge #2B1B10. Serif/mono roles approximated with system
 // fallbacks since custom @font-face is unreliable in inboxes.
-function renderBookingRequestEmail({ mentorName, studentEmail, message, ctaUrl, ctaLabel }) {
+function renderBookingRequestEmailOld({ mentorName, studentEmail, message, ctaUrl, ctaLabel }) {
   const messageHtml = message.replace(/\n/g, "<br/>");
   return `<!DOCTYPE html>
 <html lang="en">
@@ -157,6 +173,7 @@ export async function POST(request) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || new URL(request.url).origin;
 
   const html = renderBookingRequestEmail({
+        siteUrl,
     mentorName: mentor.name,
     studentEmail: email,
     message,
