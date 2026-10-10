@@ -5,6 +5,8 @@ import { supabase } from "@/lib/supabase";
 import { subjectStyles, countryFlags, languageFlags, getLanguageStyle } from "@/data/mentors";
 import MentorCalendarEditor from "@/Components/MentorCalendarEditor";
 import MultiSelect from "@/Components/MultiSelect";
+import MentorGuruMessage from "@/Components/MentorGuruMessage";
+import MentorWelcomeTour from "@/Components/MentorWelcomeTour";
 
 function PencilIcon({ className = "w-3 h-3" }) {
   return (
@@ -88,9 +90,11 @@ export default function MentorDashboard() {
     const [personalEmail, setPersonalEmail] = useState("");
   const [showPersonalEmail, setShowPersonalEmail] = useState(false);
   const [extracurriculars, setExtracurriculars] = useState("");
-  const [showExtracurriculars, setShowExtracurriculars] = useState(false);
+  const [showExtracurriculars, setShowExtracurriculars] = useState(true);
   const [finalGrade, setFinalGrade] = useState("");
-  const [showFinalGrade, setShowFinalGrade] = useState(false);
+  const [showFinalGrade, setShowFinalGrade] = useState(true);
+    const [supportGuidance, setSupportGuidance] = useState("");
+  const [showSupportGuidance, setShowSupportGuidance] = useState(true);
 
     const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
@@ -99,6 +103,7 @@ export default function MentorDashboard() {
   const [unansweredQuestions, setUnansweredQuestions] = useState([]);
   const [answerDrafts, setAnswerDrafts] = useState({});
   const [submittingId, setSubmittingId] = useState(null);
+    const [showTour, setShowTour] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -112,6 +117,7 @@ export default function MentorDashboard() {
       }
 
       setUser(currentUser);
+            if (!currentUser.user_metadata?.welcome_tour_seen) setShowTour(true);
       setPersonalEmail(currentUser.user_metadata?.personal_email || "");
 
       const { data: profile } = await supabase
@@ -131,11 +137,13 @@ export default function MentorDashboard() {
         setCalendarVisible(profile.calendar_visible ?? false);
         setSubject(profile.subject || "");
         setCountry(profile.country || "");
+                setSupportGuidance(profile.support_guidance || "");
+        setShowSupportGuidance(profile.show_support_guidance ?? true);
                 setExtracurriculars(profile.extracurriculars || "");
         setFinalGrade(profile.final_grade || "");
         setShowPersonalEmail(profile.show_personal_email ?? false);
-        setShowExtracurriculars(profile.show_extracurriculars ?? false);
-        setShowFinalGrade(profile.show_final_grade ?? false);
+        setShowExtracurriculars(profile.show_extracurriculars ?? true);
+        setShowFinalGrade(profile.show_final_grade ?? true);
         setLanguages(
           typeof profile.languages === "string"
             ? profile.languages.split(",").map((l) => l.trim()).filter(Boolean)
@@ -218,6 +226,14 @@ export default function MentorDashboard() {
     }
   }
 
+  async function handleCloseTour() {
+    setShowTour(false);
+    if (!user?.user_metadata?.welcome_tour_seen) {
+      const { data } = await supabase.auth.updateUser({ data: { welcome_tour_seen: true } });
+      if (data?.user) setUser(data.user);
+    }
+  }
+
    async function handleSaveProfile() {
     setSaving(true);
     setSaved(false);
@@ -262,6 +278,8 @@ export default function MentorDashboard() {
         languages: languages.join(","),
         extracurriculars: extracurriculars.trim(),
         final_grade: finalGrade.trim(),
+                support_guidance: supportGuidance.trim(),
+        show_support_guidance: showSupportGuidance,
         show_extracurriculars: showExtracurriculars,
         show_final_grade: showFinalGrade,
         show_personal_email: showPersonalEmail,
@@ -369,9 +387,15 @@ export default function MentorDashboard() {
     );
   }
 
-  return (
+   return (
     <div className="min-h-screen bg-background">
       <Navbar />
+      <MentorWelcomeTour
+        open={showTour}
+        onClose={handleCloseTour}
+        mentorId={mentorProfile?.id}
+        firstName={(mentorProfile?.name || user?.user_metadata?.name || "").split(" ")[0]}
+      />
       <div className="max-w-4xl mx-auto px-6 py-12">
         <div className="flex items-center justify-between flex-wrap gap-3 mb-10">
           <div>
@@ -380,18 +404,29 @@ export default function MentorDashboard() {
               {mentorProfile?.name || user?.user_metadata?.name}
             </h1>
           </div>
-          <span
-            className={`font-label text-[10px] tracking-[0.1em] uppercase px-3 py-1.5 rounded-full border flex items-center gap-2 ${
-              available ? "text-primary border-primary/30 bg-primary/5" : "text-muted border-border bg-surface"
-            }`}
-          >
-            <span className={`w-1.5 h-1.5 rounded-full ${available ? "bg-primary" : "bg-muted"}`} />
-            {available ? "Open For Bookings" : "Not Accepting Bookings"}
-          </span>
+          <div className="flex items-center gap-3 flex-wrap">
+            <button
+              onClick={() => setShowTour(true)}
+              className="font-label text-[10px] tracking-[0.1em] uppercase px-3 py-1.5 rounded-full border border-border text-ink hover:border-primary hover:text-primary transition"
+            >
+              How PeerVia works
+            </button>
+            <span
+              className={`font-label text-[10px] tracking-[0.1em] uppercase px-3 py-1.5 rounded-full border flex items-center gap-2 ${
+                available ? "text-primary border-primary/30 bg-primary/5" : "text-muted border-border bg-surface"
+              }`}
+            >
+              <span className={`w-1.5 h-1.5 rounded-full ${available ? "bg-primary" : "bg-muted"}`} />
+              {available ? "Open For Bookings" : "Not Accepting Bookings"}
+            </span>
+          </div>
+        </div>
+               <div data-tour="guru">
+          <MentorGuruMessage />
         </div>
 
-        {/* Documents */}
-        <div className="flex items-center gap-4 flex-wrap mb-6 text-sm">
+               {/* Documents */}
+        <div data-tour="documents" className="flex items-center gap-4 flex-wrap mb-6 text-sm">
           <span className="font-label text-[10px] tracking-[0.1em] uppercase text-muted">Documents</span>
           <a
             href="/documents/PeerVia-Ambassador-Guide.pdf"
@@ -411,8 +446,8 @@ export default function MentorDashboard() {
           </a>
         </div>
 
-        {/* Profile summary */}
-        <div className="bg-surface border border-border rounded-lg mb-6 shadow-sm p-5">
+              {/* Profile summary */}
+        <div data-tour="summary" className="bg-surface border border-border rounded-lg mb-6 shadow-sm p-5">
           <div className="flex items-start gap-5 flex-wrap">
             <div className="relative shrink-0">
               {photoPreview || mentorProfile?.photo_url ? (
@@ -507,8 +542,8 @@ export default function MentorDashboard() {
           </div>
         </div>
 
-        {/* Profile section */}
-        <div className="bg-surface border border-border rounded-lg p-6 mb-6 shadow-sm">
+                {/* Profile section */}
+        <div data-tour="profile" className="bg-surface border border-border rounded-lg p-6 mb-6 shadow-sm">
           <SectionEyebrow>Public Profile</SectionEyebrow>
           <h2 className="font-display text-xl text-ink mb-1">Your Profile</h2>
           <p className="text-muted text-sm mb-6">Shown on your public mentor card and profile page.</p>
@@ -620,6 +655,20 @@ export default function MentorDashboard() {
             />
           </div>
 
+          <div className="mb-4">
+            <label className="block text-sm text-muted mb-1">How can you support and guide students?</label>
+            <p className="text-xs text-muted mb-1">
+              Explain how you can help students through their journey. This comes from your application and shows on your full profile.
+            </p>
+            <textarea
+              rows={4}
+              value={supportGuidance}
+              onChange={(e) => setSupportGuidance(e.target.value)}
+              className="w-full border border-border rounded-md px-4 py-2.5 text-ink bg-background focus:outline-none focus:ring-2 focus:ring-primary resize-y mb-2"
+            />
+            <Toggle checked={showSupportGuidance} onChange={setShowSupportGuidance} label="Show this on my public profile" />
+          </div>
+
           <div className="mt-6 pt-6 border-t border-border mb-4">
             <SectionEyebrow>Extra Details</SectionEyebrow>
             <p className="text-xs text-muted mb-5">
@@ -688,8 +737,8 @@ export default function MentorDashboard() {
           </div>
         </div>
 
-        {/* Calendar section */}
-        <div className="bg-surface border border-border rounded-lg p-6 mb-6 shadow-sm">
+               {/* Calendar section */}
+        <div data-tour="calendar" className="bg-surface border border-border rounded-lg p-6 mb-6 shadow-sm">
           <SectionEyebrow>Availability</SectionEyebrow>
           <button
             onClick={() => setCalendarExpanded(!calendarExpanded)}
@@ -709,8 +758,8 @@ export default function MentorDashboard() {
           )}
         </div>
 
-        {/* Unanswered questions */}
-        <div className="bg-surface border border-border rounded-lg p-6 shadow-sm">
+              {/* Unanswered questions */}
+        <div data-tour="questions" className="bg-surface border border-border rounded-lg p-6 shadow-sm">
           <SectionEyebrow>Community</SectionEyebrow>
           <h2 className="font-display text-xl text-ink mb-1">
             Unanswered Community Questions

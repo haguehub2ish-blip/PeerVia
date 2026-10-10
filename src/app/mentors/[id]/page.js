@@ -287,6 +287,20 @@ async function handleSubmitBooking(e) {
               {aboutText}
             </p>
 
+            {mentor.show_support_guidance !== false && mentor.support_guidance && (
+              <div className="mt-10 pt-10 border-t border-border">
+                <p className="font-label text-xs uppercase tracking-[0.2em] text-muted mb-2">
+                  How I Can Help
+                </p>
+                <h2 className="font-display text-2xl text-ink mb-4">
+                  Supporting you through the journey
+                </h2>
+                <p className="text-ink/90 leading-relaxed text-base whitespace-pre-line">
+                  {mentor.support_guidance}
+                </p>
+              </div>
+            )}
+
             {chatTopics.length > 0 && (
               <div className="mt-10 pt-10 border-t border-border">
                 <p className="font-label text-xs uppercase tracking-[0.2em] text-muted mb-3">
@@ -323,7 +337,7 @@ async function handleSubmitBooking(e) {
               </div>
             )}
 
-            {mentor.show_extracurriculars && mentor.extracurriculars && (
+            {mentor.show_extracurriculars !== false && mentor.extracurriculars && (
               <div className="mt-10 pt-10 border-t border-border">
                 <p className="font-label text-xs uppercase tracking-[0.2em] text-muted mb-3">
                   Extracurriculars
@@ -334,7 +348,7 @@ async function handleSubmitBooking(e) {
               </div>
             )}
 
-            {mentor.show_final_grade && mentor.final_grade && (
+            {mentor.show_final_grade !== false && mentor.final_grade && (
               <div className="mt-10 pt-10 border-t border-border">
                 <p className="font-label text-xs uppercase tracking-[0.2em] text-muted mb-3">
                   Final High School Grade
