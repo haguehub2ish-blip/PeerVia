@@ -179,7 +179,7 @@ export async function POST(request) {
     const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
       application.email,
       {
-        data: { name: fullName, role: "mentor" },
+        data: { name: fullName, role: "mentor", personal_email: application.backup_email || "" },
         redirectTo: `${siteUrl}/mentor-account/set-password`,
       }
     );
@@ -207,10 +207,11 @@ export async function POST(request) {
           existingUser.id,
           {
             user_metadata: {
-              ...existingUser.user_metadata,
-              name: fullName,
-              role: "mentor",
-            },
+  ...existingUser.user_metadata,
+  name: fullName,
+  role: "mentor",
+  personal_email: application.backup_email || "",
+},
           }
         );
 
@@ -244,6 +245,8 @@ export async function POST(request) {
         country: countryMap[application.country] || application.country,
         languages: applicantLanguages,
         bio: application.why,
+        extracurriculars: application.extracurriculars || null,
+        final_grade: application.final_grade || null,
         sessions: 0,
         answers: 0,
         rating: 0,

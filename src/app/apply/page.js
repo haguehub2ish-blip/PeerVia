@@ -303,7 +303,7 @@ export default function Apply() {
     setPhotoPreview(URL.createObjectURL(file));
   }
 
-  async function handleSubmit(e) {
+    async function handleSubmit(e) {
     e.preventDefault();
 
     if (selectedLanguages.length === 0) {
@@ -313,12 +313,11 @@ export default function Apply() {
     if (!photoFile) {
       setError("Please upload a profile photo.");
       return;
-          if (!agreeGuide || !agreePolicy) {
+    }
+    if (!agreeGuide || !agreePolicy) {
       setError("Please open and accept both the Ambassador Guide and the Privacy Policy.");
       return;
     }
-    }
-
         if (universityOptions.includes(form.university) && form.year !== "Graduate") {
       const domain = form.email.split("@")[1]?.toLowerCase() || "";
       const ok = knownUniversityDomains.some((d) => domain === d || domain.endsWith("." + d));
@@ -784,7 +783,7 @@ export default function Apply() {
               />
             </div>
 
-            {error && <p className="text-red-600 text-sm font-medium">{error}</p>}
+
             <div className="border border-gray-200 rounded-xl p-4 space-y-4 bg-gray-50">
               <div>
                 <p className="text-sm font-semibold text-gray-800">
@@ -841,6 +840,12 @@ export default function Apply() {
                 </label>
               </div>
             </div>
+
+            {error && (
+              <p role="alert" className="text-red-600 text-sm font-medium">
+                {error}
+              </p>
+            )}
 
             <button
               type="submit"

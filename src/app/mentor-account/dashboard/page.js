@@ -85,6 +85,12 @@ export default function MentorDashboard() {
   const [subject, setSubject] = useState("");
   const [country, setCountry] = useState("");
   const [languages, setLanguages] = useState([]);
+    const [personalEmail, setPersonalEmail] = useState("");
+  const [showPersonalEmail, setShowPersonalEmail] = useState(false);
+  const [extracurriculars, setExtracurriculars] = useState("");
+  const [showExtracurriculars, setShowExtracurriculars] = useState(false);
+  const [finalGrade, setFinalGrade] = useState("");
+  const [showFinalGrade, setShowFinalGrade] = useState(false);
 
     const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
@@ -106,6 +112,7 @@ export default function MentorDashboard() {
       }
 
       setUser(currentUser);
+      setPersonalEmail(currentUser.user_metadata?.personal_email || "");
 
       const { data: profile } = await supabase
         .from("mentorss")
@@ -124,6 +131,11 @@ export default function MentorDashboard() {
         setCalendarVisible(profile.calendar_visible ?? false);
         setSubject(profile.subject || "");
         setCountry(profile.country || "");
+                setExtracurriculars(profile.extracurriculars || "");
+        setFinalGrade(profile.final_grade || "");
+        setShowPersonalEmail(profile.show_personal_email ?? false);
+        setShowExtracurriculars(profile.show_extracurriculars ?? false);
+        setShowFinalGrade(profile.show_final_grade ?? false);
         setLanguages(
           typeof profile.languages === "string"
             ? profile.languages.split(",").map((l) => l.trim()).filter(Boolean)
@@ -206,7 +218,7 @@ export default function MentorDashboard() {
     }
   }
 
-  async function handleSaveProfile() {
+   async function handleSaveProfile() {
     setSaving(true);
     setSaved(false);
     setSaveError("");
@@ -223,6 +235,18 @@ export default function MentorDashboard() {
       return;
     }
 
+    const cleanEmail = personalEmail.trim();
+    if (cleanEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      setSaving(false);
+      setSaveError("Please enter a valid personal email address.");
+      return;
+    }
+    if (showPersonalEmail && !cleanEmail) {
+      setSaving(false);
+      setSaveError("Add a personal email before showing it on your profile.");
+      return;
+    }
+
     const { error } = await supabase
       .from("mentorss")
       .update({
@@ -236,17 +260,38 @@ export default function MentorDashboard() {
         subject,
         country,
         languages: languages.join(","),
+        extracurriculars: extracurriculars.trim(),
+        final_grade: finalGrade.trim(),
+        show_extracurriculars: showExtracurriculars,
+        show_final_grade: showFinalGrade,
+        show_personal_email: showPersonalEmail,
+        public_email: showPersonalEmail ? cleanEmail : null,
       })
       .eq("user_id", user.id);
-    setSaving(false);
 
     if (error) {
+      setSaving(false);
       setSaveError(error.message);
-    } else {
-      setMentorProfile((prev) => (prev ? { ...prev, subject, country, languages: languages.join(",") } : prev));
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
+      return;
     }
+
+    // Private copy of the personal email lives on the login account
+    if (cleanEmail !== (user.user_metadata?.personal_email || "")) {
+      const { data: updated, error: metaError } = await supabase.auth.updateUser({
+        data: { personal_email: cleanEmail },
+      });
+      if (metaError) {
+        setSaving(false);
+        setSaveError(metaError.message);
+        return;
+      }
+      if (updated?.user) setUser(updated.user);
+    }
+
+    setSaving(false);
+    setMentorProfile((prev) => (prev ? { ...prev, subject, country, languages: languages.join(",") } : prev));
+    setSaved(true);
+    setTimeout(() => setSaved(false), 3000);
   }
 
   async function handleSubmitAnswer(userQuestionId) {
@@ -573,6 +618,51 @@ export default function MentorDashboard() {
               onChange={(e) => setHappyToChat(e.target.value)}
               className="w-full border border-border rounded-md px-4 py-2.5 text-ink bg-background focus:outline-none focus:ring-2 focus:ring-primary resize-y"
             />
+          </div>
+
+          <div className="mt-6 pt-6 border-t border-border mb-4">
+            <SectionEyebrow>Extra Details</SectionEyebrow>
+            <p className="text-xs text-muted mb-5">
+              Choose what students can see on your public profile. Anything switched off stays private.
+            </p>
+
+            <div className="mb-5">
+              <label className="block text-sm text-muted mb-1">Personal email</label>
+              <p className="text-xs text-muted mb-1">
+                Your university email stays private. If you switch this on, students can contact you directly at this address.
+              </p>
+              <input
+                type="email"
+                value={personalEmail}
+                onChange={(e) => setPersonalEmail(e.target.value)}
+                placeholder="you@gmail.com"
+                className="w-full border border-border rounded-md px-4 py-2.5 text-ink bg-background focus:outline-none focus:ring-2 focus:ring-primary mb-2"
+              />
+              <Toggle checked={showPersonalEmail} onChange={setShowPersonalEmail} label="Show personal email on my public profile" />
+            </div>
+
+            <div className="mb-5">
+              <label className="block text-sm text-muted mb-1">Extracurriculars</label>
+              <textarea
+                rows={3}
+                value={extracurriculars}
+                onChange={(e) => setExtracurriculars(e.target.value)}
+                placeholder="Clubs, sports, volunteering, leadership roles..."
+                className="w-full border border-border rounded-md px-4 py-2.5 text-ink bg-background focus:outline-none focus:ring-2 focus:ring-primary resize-y mb-2"
+              />
+              <Toggle checked={showExtracurriculars} onChange={setShowExtracurriculars} label="Show extracurriculars on my public profile" />
+            </div>
+
+            <div>
+              <label className="block text-sm text-muted mb-1">Final high school grade</label>
+              <input
+                value={finalGrade}
+                onChange={(e) => setFinalGrade(e.target.value)}
+                placeholder="e.g. A-Level: AAB, IB: 38, VWO: 7.8 Average"
+                className="w-full border border-border rounded-md px-4 py-2.5 text-ink bg-background focus:outline-none focus:ring-2 focus:ring-primary mb-2"
+              />
+              <Toggle checked={showFinalGrade} onChange={setShowFinalGrade} label="Show final grade on my public profile" />
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-x-8 gap-y-3 mb-4">

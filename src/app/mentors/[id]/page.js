@@ -323,6 +323,28 @@ async function handleSubmitBooking(e) {
               </div>
             )}
 
+            {mentor.show_extracurriculars && mentor.extracurriculars && (
+              <div className="mt-10 pt-10 border-t border-border">
+                <p className="font-label text-xs uppercase tracking-[0.2em] text-muted mb-3">
+                  Extracurriculars
+                </p>
+                <p className="text-ink/90 leading-relaxed text-base whitespace-pre-line">
+                  {mentor.extracurriculars}
+                </p>
+              </div>
+            )}
+
+            {mentor.show_final_grade && mentor.final_grade && (
+              <div className="mt-10 pt-10 border-t border-border">
+                <p className="font-label text-xs uppercase tracking-[0.2em] text-muted mb-3">
+                  Final High School Grade
+                </p>
+                <span className="inline-block text-sm font-medium px-3.5 py-1.5 rounded-full border border-border text-ink bg-surface">
+                  {mentor.final_grade}
+                </span>
+              </div>
+            )}
+
             {/* Stats */}
             <div className="grid grid-cols-3 gap-4 mt-10 pt-10 border-t border-border">
               <div>
@@ -349,6 +371,19 @@ async function handleSubmitBooking(e) {
                 View LinkedIn Profile
                 <span aria-hidden>→</span>
               </a>
+            )}
+
+                        {mentor.show_personal_email && mentor.public_email && (
+              <div className="mt-4">
+                <a
+                  href={`mailto:${mentor.public_email}`}
+                  className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary-dark"
+                >
+                  Email {firstName}
+                  <span aria-hidden>→</span>
+                </a>
+                <p className="text-xs text-muted mt-1">{mentor.public_email}</p>
+              </div>
             )}
 
             {/* Calendar */}
