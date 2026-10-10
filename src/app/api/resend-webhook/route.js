@@ -37,6 +37,18 @@ function verifySignature(payload, headers, secret) {
   });
 }
 
+// Finds a personal email to fall back on for a bounced address.
+// The email a mentor set on their dashboard wins, then the application's backup email.
+async function findFallbackEmail(address, app) {
+  const { data: usersList } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+  const mentorUser = usersList?.users?.find(
+    (u) => u.email?.toLowerCase() === address.toLowerCase() && u.user_metadata?.role === "mentor"
+  );
+  const meta = mentorUser?.user_metadata;
+  if (meta && "personal_email" in meta) return meta.personal_email || null;
+  return app?.backup_email || null;
+}
+
 export async function POST(request) {
   const payload = await request.text();
 
@@ -57,10 +69,10 @@ export async function POST(request) {
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || new URL(request.url).origin;
 
-  for (const address of recipients) {
+    for (const address of recipients) {
     if (!address || address.toLowerCase() === ADMIN_EMAIL) continue; // avoid loops
 
-    // Is this address a mentor applicant? If so, include their backup email.
+    // Is this address a mentor applicant? If so, we may have a backup email.
     const { data: app } = await supabaseAdmin
       .from("mentor_applications")
       .select("first_name, last_name, backup_email")
@@ -68,13 +80,42 @@ export async function POST(request) {
       .limit(1)
       .maybeSingle();
 
+    // Try to resend the original email to their personal address.
+    // The "(Resent)" subject prefix stops this from ever looping.
+    let resentTo = null;
+    const alreadyResent = subject.startsWith("(Resent) ");
+    const fallback = alreadyResent ? null : await findFallbackEmail(address, app);
+
+    if (fallback && fallback.toLowerCase() !== address.toLowerCase() && event.data?.email_id) {
+      try {
+        const { data: original, error: getError } = await resend.emails.get(event.data.email_id);
+        if (getError || !original?.html) {
+          throw new Error(getError?.message || "Original email has no content");
+        }
+        const replyTo = original.reply_to || original.replyTo;
+        const { error: sendError } = await resend.emails.send({
+          from: "PeerVia <info@peervia.org>",
+          to: fallback,
+          ...(replyTo ? { replyTo } : {}),
+          subject: `(Resent) ${original.subject || subject}`,
+          html: original.html,
+        });
+        if (sendError) throw new Error(sendError.message);
+        resentTo = fallback;
+      } catch (err) {
+        console.error("Fallback resend failed:", err);
+      }
+    }
+
     const who = app
-      ? `${escapeHtml(app.first_name)} ${escapeHtml(app.last_name)} applied to be a mentor.${
-          app.backup_email
-            ? ` Their backup email is ${escapeHtml(app.backup_email)}.`
-            : " They did not give a backup email."
-        }`
+      ? `${escapeHtml(app.first_name)} ${escapeHtml(app.last_name)} applied to be a mentor.`
       : "This address doesn't match a mentor application.";
+
+    const resendNote = resentTo
+      ? `We automatically resent it to their personal email, ${escapeHtml(resentTo)}.`
+      : fallback
+      ? `We tried to resend it to their personal email (${escapeHtml(fallback)}) but that failed. Check the logs.`
+      : "No personal email on file, so it was not resent.";
 
     try {
       await resend.emails.send({
@@ -89,7 +130,7 @@ export async function POST(request) {
           bodyHtml:
             paragraph(`An email to <strong>${escapeHtml(address)}</strong> bounced.`) +
             paragraph(`Subject: ${escapeHtml(subject)}<br />Reason: ${escapeHtml(reason)}`) +
-            paragraph(who),
+            paragraph(`${who} ${resendNote}`),
           footerNote: "This alert is sent automatically when Resend reports a bounce.",
         }),
       });
