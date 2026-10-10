@@ -46,6 +46,27 @@ export default function AdminApplications() {
     loadApplications();
   }, []);
 
+  async function handleResendInvite(app) {
+    if (!confirm(`Send a new invite email to ${app.email}?`)) return;
+    setProcessingId(app.id);
+
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData?.session?.access_token;
+
+    const res = await fetch("/api/admin/resend-invite", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ id: app.id }),
+    });
+
+    const result = await res.json();
+    setProcessingId(null);
+    alert(result.error ? "Error: " + result.error : "Invite sent to " + app.email);
+  }
+
   async function handleDecision(app, status) {
     setProcessingId(app.id);
 
@@ -177,6 +198,18 @@ export default function AdminApplications() {
                   >
                     View LinkedIn →
                   </a>
+                )}
+
+                {app.status === "approved" && (
+                  <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100">
+                    <button
+                      onClick={() => handleResendInvite(app)}
+                      disabled={processingId === app.id}
+                      className="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-50 transition disabled:opacity-50"
+                    >
+                      {processingId === app.id ? "Sending..." : "Resend invite"}
+                    </button>
+                  </div>
                 )}
 
                 {app.status === "pending" && (
