@@ -14,6 +14,29 @@ const universityOptions = [
 ].sort();
 const languageOptions = Object.keys(languageFlags);
 
+const knownUniversityDomains = [
+  "uva.nl",                  // University of Amsterdam
+  "vu.nl",                   // VU Amsterdam
+  "leidenuniv.nl",           // Leiden
+  "uu.nl",                   // Utrecht
+  "eur.nl",                  // Erasmus Rotterdam
+  "eur.student.nl",
+  "tudelft.nl",              // TU Delft
+  "tue.nl",                  // TU Eindhoven
+  "utwente.nl",              // Twente
+  "rug.nl",                  // Groningen
+  "ru.nl",                   // Radboud Nijmegen
+  "maastrichtuniversity.nl", // Maastricht
+  "tilburguniversity.edu",   // Tilburg
+  "uvt.nl",                  // Tilburg (older address)
+  "wur.nl",                  // Wageningen
+  "ou.nl",                   // Open University
+  "nyenrode.nl",             // Nyenrode
+  "uvh.nl",                  // Humanistic Studies
+  "pthu.nl",                 // Protestant Theological University
+  "ox.ac.uk",                // Oxford
+];
+
 const mentorSteps = [
   {
     numeral: "i.",
@@ -296,6 +319,14 @@ export default function Apply() {
     }
     }
 
+        if (universityOptions.includes(form.university) && form.year !== "Graduate") {
+      const domain = form.email.split("@")[1]?.toLowerCase() || "";
+      const ok = knownUniversityDomains.some((d) => domain === d || domain.endsWith("." + d));
+      if (!ok) {
+        setError("That doesn't look like a university email address we recognise. Please check it for typos, for example @student.eur.nl rather than @eur.student.nl. If you're sure it's right, write to info.peervia@gmail.com.");
+        return;
+      }
+    }
     setSubmitting(true);
     setError(null);
     setPhotoUploading(true);
