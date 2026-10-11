@@ -138,9 +138,10 @@ function CourseGuidesContent() {
           <p className="font-label text-sm uppercase tracking-wide text-muted">Loading course guides...</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredGuides.map((guide) => (
+            {filteredGuides.map((guide, guideIndex) => (
               <Link
                 key={guide.id}
+                data-tour={guideIndex === 0 ? "guides-first" : undefined}
                 href={`/course-guides/${guide.id}`}
                 className="group bg-border/40 hover:bg-primary/20 rounded-2xl p-2 transition-colors duration-200"
               >

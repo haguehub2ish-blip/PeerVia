@@ -1,8 +1,9 @@
 "use client";
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import Image from "next/image";
+import StudentWelcomeTour from "@/Components/StudentWelcomeTour";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -10,6 +11,10 @@ export default function Navbar() {
     const [mentorPhoto, setMentorPhoto] = useState(null);
   const [userLoaded, setUserLoaded] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+    const [showStudentTour, setShowStudentTour] = useState(false);
+    const [tourMinor, setTourMinor] = useState(false);
+  const [tourStart, setTourStart] = useState(0);
+  const tourHandled = useRef(false);
 
   function getInitials(user) {
     const name = user?.user_metadata?.name;
@@ -32,6 +37,24 @@ export default function Navbar() {
       supabase.auth.getUser().then(({ data: freshData }) => {
         if (freshData?.user) {
           setUser(freshData.user);
+                    supabase
+            .from("student_profiles")
+                        .select("date_of_birth, consent_status")
+            .eq("user_id", freshData.user.id)
+            .maybeSingle()
+            .then(async ({ data: sp }) => {
+                            let age = 99;
+              if (sp) {
+                const [y, mo, d] = sp.date_of_birth.split("-").map(Number);
+                const now = new Date();
+                age = now.getFullYear() - y;
+                if (now.getMonth() + 1 < mo || (now.getMonth() + 1 === mo && now.getDate() < d)) age--;
+              }
+              if (sp && age < 18 && sp.consent_status !== "approved") {
+                await supabase.auth.signOut();
+                window.location.href = "/login?reason=parent";
+              }
+            });
           if (freshData.user.user_metadata?.role === "mentor") {
             supabase
               .from("mentorss")
@@ -59,6 +82,69 @@ export default function Navbar() {
   useEffect(() => {
     setMenuOpen(false);
   }, [pathname]);
+
+  // Works out whether the student is under 18, then opens the tour at a given step
+  async function openStudentTour(startAt = 0) {
+    if (!user) return;
+    const { data: sp } = await supabase
+      .from("student_profiles")
+      .select("date_of_birth, consent_status")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    let minor = false;
+    if (sp) {
+      const [y, mo, d] = sp.date_of_birth.split("-").map(Number);
+      const now = new Date();
+      let age = now.getFullYear() - y;
+      if (now.getMonth() + 1 < mo || (now.getMonth() + 1 === mo && now.getDate() < d)) age--;
+      minor = age < 18;
+      if (minor && sp.consent_status !== "approved") return; // account not approved yet
+    }
+    setTourMinor(minor);
+    setTourStart(startAt);
+    setShowStudentTour(true);
+  }
+
+  // Show the tour once for students, carry on after a page change, and reopen it from Settings
+  useEffect(() => {
+    if (!user) return;
+    const meta = user.user_metadata || {};
+    if (meta.role === "mentor") return; // mentors have their own tour
+
+    const replay = () => openStudentTour(0);
+    window.addEventListener("peervia:open-tour", replay);
+
+    if (!tourHandled.current) {
+      tourHandled.current = true;
+      let saved = null;
+      try {
+        saved = sessionStorage.getItem("peervia_tour_step");
+      } catch (e) {}
+
+      if (saved !== null) {
+        openStudentTour(Number(saved) || 0);
+      } else {
+        const quietPage = ["/login", "/signup", "/apply", "/verify-age", "/forgot-password", "/reset-password"];
+        if (!meta.student_tour_seen && !quietPage.includes(pathname) && !pathname.startsWith("/parent")) {
+          openStudentTour(0);
+        }
+      }
+    }
+
+    return () => window.removeEventListener("peervia:open-tour", replay);
+  }, [user, pathname]);
+
+  async function closeStudentTour() {
+    try {
+      sessionStorage.removeItem("peervia_tour_step");
+    } catch (e) {}
+    setShowStudentTour(false);
+    if (!user?.user_metadata?.student_tour_seen) {
+      const { data } = await supabase.auth.updateUser({ data: { student_tour_seen: true } });
+      if (data?.user) setUser(data.user);
+    }
+  }
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -224,6 +310,13 @@ export default function Navbar() {
           )}
         </div>
       )}
+            <StudentWelcomeTour
+        open={showStudentTour}
+        onClose={closeStudentTour}
+        firstName={user?.user_metadata?.firstName}
+        isMinor={tourMinor}
+                startStep={tourStart}
+      />
     </header>
   );
 }

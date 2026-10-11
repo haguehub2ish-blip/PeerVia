@@ -434,7 +434,7 @@ function QAFeedContent() {
             </div>
 
             {/* Ask box, embedded in hero */}
-            <div className="mt-10 bg-white/10 border border-white/15 rounded-xl px-5 py-4 flex items-center gap-3 backdrop-blur-sm">
+            <div data-tour="community-ask" className="mt-10 bg-white/10 border border-white/15 rounded-xl px-5 py-4 flex items-center gap-3 backdrop-blur-sm">
               <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-semibold text-sm shrink-0">
                 {(user?.user_metadata?.name || "?").charAt(0).toUpperCase()}
               </div>
@@ -916,6 +916,7 @@ function QAFeedContent() {
                 <div
                   key={i}
                   id={q.id}
+                                    data-tour={i === 0 ? "community-feed" : undefined}
                   className="bg-surface border border-border rounded-xl overflow-hidden scroll-mt-24 hover:border-primary transition"
                 >
                   <div className="p-5 flex items-start justify-between gap-4 hover:bg-background/60 transition-colors rounded-t-xl">

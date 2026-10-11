@@ -173,7 +173,7 @@ export default function Home() {
 
   // Automatically rotate the hero mentor through the top 4 rated mentors.
   useEffect(() => {
-    const count = Math.min(4, mentors.length);
+        const count = mentors.length;
     if (count < 2) return;
     const t = setTimeout(() => {
       setLeavingIndex(heroIndex);
@@ -306,7 +306,7 @@ export default function Home() {
   };
 
   const topMentors = [...mentors].sort((a, b) => b.rating - a.rating).slice(0, 3);
-  const heroMentors = [...mentors].sort((a, b) => b.rating - a.rating).slice(0, 4);
+   const heroMentors = [...mentors].sort((a, b) => b.rating - a.rating);
   const heroMentor = heroMentors[heroIndex] || heroMentors[0];
   const topQuestions = [...questions].sort((a, b) => b.helpful - a.helpful).slice(0, 3);
   const previewGuide = courseGuides.find((g) => g.id === "medicine-nl") || courseGuides[0];
@@ -349,7 +349,7 @@ export default function Home() {
           100% { transform: var(--back-transform) rotateY(-360deg); z-index: 5; }
         }
         .shuffle-card {
-          transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 900ms ease;
+                    transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 900ms ease, opacity 900ms ease;
           backface-visibility: hidden;
           transform-style: preserve-3d;
         }
@@ -386,7 +386,12 @@ export default function Home() {
                   const n = heroMentors.length;
                   const offset = (i - heroIndex + n) % n; // 0 = top card
                   const isTop = offset === 0;
-                  const stackTransform = `translate(${offset * 12}px, ${offset * 12}px) rotate(${offset * 2.5}deg) scale(${1 - offset * 0.04})`;
+                                   const isLeaving = i === leavingIndex;
+                  // only the first few cards are drawn; the rest wait their turn
+                  if (offset > 4 && !isLeaving) return null;
+                  const visual = Math.min(offset, isLeaving ? 3 : 4);
+                  const hidden = offset > 3 && !isLeaving;
+                  const stackTransform = `translate(${visual * 12}px, ${visual * 12}px) rotate(${visual * 2.5}deg) scale(${1 - visual * 0.04})`;
                   return (
                     <Link
                       key={m.id}
@@ -398,7 +403,8 @@ export default function Home() {
                       } ${i === leavingIndex ? "shuffle-leaving" : ""}`}
                       style={{
                         transform: stackTransform,
-                        zIndex: 40 - offset * 10,
+                                                zIndex: 40 - visual * 10,
+                        opacity: hidden ? 0 : 1,
                         "--back-transform": stackTransform,
                         transformOrigin: "left center",
                       }}

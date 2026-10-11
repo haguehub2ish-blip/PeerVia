@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { renderEmail, paragraph, quoteBox, escapeHtml } from "@/lib/emailShell";
+import { createParentRequest, calcAge } from "@/lib/parentalConsent";
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -163,6 +164,47 @@ export async function POST(request) {
   }
   if (!mentor.available) {
     return Response.json({ error: "This mentor isn't open for bookings right now." }, { status: 400 });
+  }
+
+  const { data: profile } = await supabaseAdmin
+    .from("student_profiles")
+        .select("date_of_birth, parent_email, consent_status")
+    .eq("user_id", userData.user.id)
+    .maybeSingle();
+
+  if (!profile) {
+    return Response.json(
+      { error: "Before you can book a call, please confirm your age at peervia.org/verify-age." },
+      { status: 403 }
+    );
+  }
+
+    if (calcAge(profile.date_of_birth) < 18) {
+    if (profile.consent_status !== "approved") {
+      return Response.json(
+        { error: "A parent or guardian needs to approve your account before you can book a call." },
+        { status: 403 }
+      );
+    }
+
+    const origin = process.env.NEXT_PUBLIC_SITE_URL || new URL(request.url).origin;
+    try {
+      await createParentRequest({
+        kind: "call",
+        studentId: userData.user.id,
+        studentEmail: email,
+        studentName: userData.user.user_metadata?.name,
+        parentEmail: profile.parent_email,
+        mentorId,
+        mentorName: mentor.name,
+        message,
+        siteUrl: origin,
+      });
+    } catch (err) {
+      return Response.json({ error: "Couldn't email your parent or guardian: " + err.message }, { status: 500 });
+    }
+
+    return Response.json({ success: true, pendingParent: true });
   }
 
   const { data: mentorUser, error: mentorUserError } = await supabaseAdmin.auth.admin.getUserById(mentor.user_id);

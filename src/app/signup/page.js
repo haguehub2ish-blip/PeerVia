@@ -2,8 +2,10 @@
 import { useState, useEffect } from "react";
 import Navbar from "@/Components/Navbar";
 import MultiSelect from "@/Components/MultiSelect";
+import { ALL_UNIVERSITIES, ALL_LANGUAGES, ALL_FIELDS, ALL_COUNTRIES, mergeOptions } from "@/data/options";
 import { supabase } from "@/lib/supabase";
 import { courseGuides, allUniversityNames } from "@/data/courseGuides";
+import DateOfBirthPicker from "@/Components/DateOfBirthPicker";
 
 const emailProviders = {
   "gmail.com": { name: "Gmail", url: "https://mail.google.com" },
@@ -32,6 +34,19 @@ export default function Signup() {
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const [resent, setResent] = useState(false);
+    const [dateOfBirth, setDateOfBirth] = useState("");
+  const [parentEmail, setParentEmail] = useState("");
+  const [minorSignup, setMinorSignup] = useState(false);
+
+  const isMinor = (() => {
+    if (!dateOfBirth) return false;
+    const d = new Date(dateOfBirth);
+    const t = new Date();
+    let age = t.getFullYear() - d.getFullYear();
+    const m = t.getMonth() - d.getMonth();
+    if (m < 0 || (m === 0 && t.getDate() < d.getDate())) age--;
+    return age < 18;
+  })();
 
   const [customizePrefs, setCustomizePrefs] = useState(false);
   const [allMentors, setAllMentors] = useState([]);
@@ -72,6 +87,46 @@ export default function Signup() {
   ];
 
   async function handleSignup(e) {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    const res = await fetch("/api/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email,
+        password,
+        dateOfBirth,
+        parentEmail: isMinor ? parentEmail : "",
+        data: {
+          firstName,
+          lastName,
+          name: `${firstName} ${lastName}`.trim(),
+          ...(customizePrefs && {
+            emailPreferences: {
+              fields: selectedFields,
+              languages: selectedLanguages,
+              schools: selectedSchools,
+              mentors: selectedMentors,
+              countries: selectedCountries,
+            },
+          }),
+        },
+      }),
+    });
+    const result = await res.json();
+    setLoading(false);
+
+    if (result.error) {
+      setError(result.error);
+    } else {
+      setMinorSignup(!!result.minor);
+      setSuccess(true);
+    }
+  }
+
+  async function handleSignupold(e) {
     e.preventDefault();
     setError(null);
     setLoading(true);
@@ -137,6 +192,12 @@ export default function Signup() {
                 account, then you can log in.
               </p>
             </div>
+
+            {minorSignup && (
+              <p className="text-sm text-ink border border-border rounded-md bg-background px-3 py-2.5">
+                Because you're under 18, we've also emailed your parent or guardian. You can use your account once they approve it.
+              </p>
+            )}
 
             {(() => {
               const provider = getEmailProvider(email);
@@ -220,6 +281,31 @@ export default function Signup() {
               />
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-ink mb-1.5">
+                Date of birth
+              </label>
+                           <DateOfBirthPicker onChange={setDateOfBirth} />
+            </div>
+
+            {isMinor && (
+              <div>
+                <label className="block text-sm font-medium text-ink mb-1.5">
+                  Parent or guardian's email
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={parentEmail}
+                  onChange={(e) => setParentEmail(e.target.value)}
+                  className="w-full border border-border rounded-md px-3 py-2.5 text-sm text-ink bg-background focus:outline-none focus:ring-2 focus:ring-ink/20"
+                />
+                <p className="text-xs text-muted mt-1.5">
+                  Because you're under 18, we'll email them to approve your account. They'll also approve each call request, and they must be with you during calls.
+                </p>
+              </div>
+            )}
+
             {/* Optional email preferences */}
             <div className="border-t border-border pt-4">
               <label className="flex items-center gap-2 cursor-pointer">
@@ -242,7 +328,7 @@ export default function Signup() {
                   <div className="grid grid-cols-1 sm:grid-cols-[100px_1fr] gap-2 sm:gap-0 px-4 py-3 items-center">
                     <span className="text-sm text-muted">Field</span>
                     <MultiSelect
-                      options={fieldOptions}
+                      options={mergeOptions(ALL_FIELDS, fieldOptions)}
                       selected={selectedFields}
                       onChange={setSelectedFields}
                     />
@@ -250,15 +336,15 @@ export default function Signup() {
                   <div className="grid grid-cols-1 sm:grid-cols-[100px_1fr] gap-2 sm:gap-0 px-4 py-3 items-center">
                     <span className="text-sm text-muted">Language</span>
                     <MultiSelect
-                      options={languageOptions}
+                      options={mergeOptions(ALL_LANGUAGES, languageOptions)}
                       selected={selectedLanguages}
                       onChange={setSelectedLanguages}
                     />
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-[100px_1fr] gap-2 sm:gap-0 px-4 py-3 items-center">
-                    <span className="text-sm text-muted">School</span>
+                    <span className="text-sm text-muted">University</span>
                     <MultiSelect
-                      options={schoolOptions}
+                      options={mergeOptions(ALL_UNIVERSITIES, schoolOptions)}
                       selected={selectedSchools}
                       onChange={setSelectedSchools}
                     />
@@ -274,7 +360,7 @@ export default function Signup() {
                   <div className="grid grid-cols-1 sm:grid-cols-[100px_1fr] gap-2 sm:gap-0 px-4 py-3 items-center">
                     <span className="text-sm text-muted">Country</span>
                     <MultiSelect
-                      options={countryOptions}
+                      options={mergeOptions(ALL_COUNTRIES, countryOptions)}
                       selected={selectedCountries}
                       onChange={setSelectedCountries}
                     />

@@ -355,6 +355,8 @@ export default function MentorDashboard() {
           subject: answeredQuestion?.subject,
           country: answeredQuestion?.country,
           askerUserId: answeredQuestion?.user_id,
+                    mentorSchool: mentorProfile?.school,
+          mentorLanguages: mentorProfile?.languages,
         }),
       }).catch((err) => console.error("Notification error:", err));
 

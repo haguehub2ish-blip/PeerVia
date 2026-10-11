@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import Navbar from "@/Components/Navbar";
 import MultiSelect from "@/Components/MultiSelect";
+import { ALL_UNIVERSITIES, ALL_LANGUAGES, ALL_FIELDS, ALL_COUNTRIES, mergeOptions } from "@/data/options";
 import { supabase } from "@/lib/supabase";
 import { courseGuides, allUniversityNames } from "@/data/courseGuides"
 import { getSubjectStyle, getFlag, getLanguageStyle } from "@/data/mentors";
@@ -240,9 +241,19 @@ export default function Settings() {
           Manage your account details, notification preferences, and data.
         </p>
 
+        <div className="mb-8 -mt-6">
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new Event("peervia:open-tour"))}
+            className="text-sm font-semibold text-primary underline underline-offset-4 hover:opacity-80"
+          >
+            How PeerVia works
+          </button>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-10">
           {/* Sidebar nav */}
-          <nav className="flex md:flex-col gap-1 overflow-x-auto md:overflow-visible border-b md:border-b-0 md:border-r border-border pb-2 md:pb-0 md:pr-6">
+          <nav data-tour="settings-nav" className="flex md:flex-col gap-1 overflow-x-auto md:overflow-visible border-b md:border-b-0 md:border-r border-border pb-2 md:pb-0 md:pr-6">
             {sections.map((s) => (
               <button
                 key={s.id}
@@ -266,7 +277,7 @@ export default function Settings() {
                 <h2 className="font-display text-xl text-ink mb-1">Account</h2>
                 <p className="text-muted text-sm mb-6">Your basic account information.</p>
 
-                <div className="flex items-center gap-4 bg-surface border border-border rounded-lg p-5 mb-6 shadow-sm">
+                <div data-tour="settings-avatar" className="flex items-center gap-4 bg-surface border border-border rounded-lg p-5 mb-6 shadow-sm">
                   <div className="relative shrink-0">
                     {avatarPreview || mentorPhoto || user?.user_metadata?.avatar_url ? (
                       <img
@@ -391,7 +402,7 @@ export default function Settings() {
                     <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-2 sm:gap-0 px-5 py-4 items-center hover:bg-background/60 transition-colors">
                       <span className="text-sm text-muted">Field</span>
                       <MultiSelect
-                        options={fieldOptions}
+                        options={mergeOptions(ALL_FIELDS, fieldOptions)}
                         selected={selectedFields}
                         onChange={setSelectedFields}
                       />
@@ -399,15 +410,15 @@ export default function Settings() {
                     <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-2 sm:gap-0 px-5 py-4 items-center hover:bg-background/60 transition-colors">
                       <span className="text-sm text-muted">Language</span>
                       <MultiSelect
-                        options={languageOptions}
+                        options={mergeOptions(ALL_LANGUAGES, languageOptions)}
                         selected={selectedLanguages}
                         onChange={setSelectedLanguages}
                       />
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-2 sm:gap-0 px-5 py-4 items-center hover:bg-background/60 transition-colors">
-                      <span className="text-sm text-muted">School</span>
+                      <span className="text-sm text-muted">University</span>
                       <MultiSelect
-                        options={schoolOptions}
+                        options={mergeOptions(ALL_UNIVERSITIES, schoolOptions)}
                         selected={selectedSchools}
                         onChange={setSelectedSchools}
                       />
@@ -423,7 +434,7 @@ export default function Settings() {
                     <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-2 sm:gap-0 px-5 py-4 items-center hover:bg-background/60 transition-colors">
                       <span className="text-sm text-muted">Country</span>
                       <MultiSelect
-                        options={countryOptions}
+                        options={mergeOptions(ALL_COUNTRIES, countryOptions)}
                         selected={selectedCountries}
                         onChange={setSelectedCountries}
                       />

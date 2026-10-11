@@ -133,7 +133,7 @@ const sortedMentors = [...filteredMentors].sort((a, b) => {
         </p>
 
  {/* Filter tabs */}
-        <div className="mb-8">
+        <div data-tour="mentors-filters" className="mb-8">
           <div className="flex items-center justify-between flex-wrap gap-3 mb-3">
             <div className="flex gap-2">
               {filterTabs.map((tab) => (
@@ -229,9 +229,10 @@ const sortedMentors = [...filteredMentors].sort((a, b) => {
           <p className="text-muted">Loading Mentors...</p>
         ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {sortedMentors.map((mentor) => (
+          {sortedMentors.map((mentor, mentorIndex) => (
                    <Link
               key={mentor.id}
+              data-tour={mentorIndex === 0 ? "mentors-first" : undefined}
               href={`/mentors/${mentor.id}`}
               className="bg-surface border border-border rounded-2xl overflow-hidden hover:shadow-md transition"
             >

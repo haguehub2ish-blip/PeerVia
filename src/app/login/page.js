@@ -47,6 +47,12 @@ function LoginContent() {
         <h1 className="font-display text-2xl text-ink mb-1">Welcome back</h1>
         <p className="text-muted text-sm mb-8">Log in to your PeerVia account.</p>
 
+        {reason === "parent" && (
+          <div className="border border-amber-200 bg-amber-50 text-amber-800 rounded-md px-4 py-3 mb-6 text-sm">
+            Your account hasn't been approved by a parent or guardian yet, so it can't be used. We emailed them when you signed up.
+          </div>
+        )}
+
         {reason === "interact" && (
           <div className="border border-amber-200 bg-amber-50 text-amber-800 rounded-md px-4 py-3 mb-6 text-sm">
             You need an account to like or comment on questions. Log in below to continue.

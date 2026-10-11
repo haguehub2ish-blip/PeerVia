@@ -136,7 +136,7 @@ function renderAnswerEmailOld({ siteUrl, eyebrow, heading, intro, question, answ
 }
 
 export async function POST(request) {
-  const { userQuestionId, question, answer, mentorName, subject, country, askerUserId } =
+  const { userQuestionId, question, answer, mentorName, subject, country, askerUserId, mentorSchool, mentorLanguages } =
     await request.json();
 
   if (!userQuestionId || !question || !answer) {
@@ -161,7 +161,16 @@ export async function POST(request) {
     const matchesField = prefs.fields?.includes(subject);
     const matchesCountry = prefs.countries?.includes(country);
 
-    return matchesField || matchesCountry;
+        const matchesSchool = Boolean(mentorSchool) && prefs.schools?.includes(mentorSchool);
+    const matchesMentor = Boolean(mentorName) && prefs.mentors?.includes(mentorName);
+
+    // languages: English is ignored, because almost every mentor speaks it
+    const mentorLangs = (Array.isArray(mentorLanguages) ? mentorLanguages : String(mentorLanguages || "").split(","))
+      .map((l) => l.trim())
+      .filter((l) => l && l !== "English");
+    const matchesLanguage = mentorLangs.some((l) => prefs.languages?.includes(l));
+
+    return matchesField || matchesCountry || matchesSchool || matchesMentor || matchesLanguage;
   });
 
   const sendResults = [];

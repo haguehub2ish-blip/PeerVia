@@ -19,6 +19,7 @@ const [formMessage, setFormMessage] = useState("");
 const [bookError, setBookError] = useState("");
 const [submitting, setSubmitting] = useState(false);
 const [submitted, setSubmitted] = useState(false);
+const [pendingParent, setPendingParent] = useState(false);
 
 const [reviews, setReviews] = useState([]);
 const [reviewsLoading, setReviewsLoading] = useState(true);
@@ -158,6 +159,15 @@ async function handleBookClick() {
     setBookError("You need to sign in to book a call.");
     return;
   }
+    const { data: sp } = await supabase
+    .from("student_profiles")
+    .select("user_id")
+    .eq("user_id", data.user.id)
+    .maybeSingle();
+  if (!sp) {
+    window.location.href = "/verify-age?next=" + encodeURIComponent(window.location.pathname);
+    return;
+  }
   setFormEmail(data.user.email || "");
   setShowForm(true);
 }
@@ -183,6 +193,7 @@ async function handleSubmitBooking(e) {
     setBookError(result.error);
   } else {
     setSubmitted(true);
+        setPendingParent(!!result.pendingParent);
     setShowForm(false);
   }
 }
@@ -519,7 +530,7 @@ async function handleSubmitBooking(e) {
 
           {/* Sidebar */}
           <div className="lg:col-span-1">
-            <div className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto bg-surface border border-border rounded-2xl p-7">
+            <div data-tour="book" className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto bg-surface border border-border rounded-2xl p-7">
               <div className="flex items-center gap-2.5 mb-5">
                 <span className="w-9 h-9 rounded-lg bg-background border border-border flex items-center justify-center text-primary shrink-0">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
@@ -545,7 +556,9 @@ async function handleSubmitBooking(e) {
 
               {submitted ? (
                 <p className="text-center text-primary font-semibold bg-primary/10 py-3 rounded-lg text-sm">
-                  Request sent! {mentor.name} will get back to you by email.
+                                    {pendingParent
+                    ? `Almost there! We've emailed your parent or guardian. Your request only goes to ${mentor.name} once they approve it, and they'll need to be with you during the call.`
+                    : `Request sent! ${mentor.name} will get back to you by email.`}
                 </p>
               ) : !mentor.available ? (
                 <button disabled className="w-full bg-border text-muted font-semibold py-3 rounded-lg cursor-not-allowed text-sm">
