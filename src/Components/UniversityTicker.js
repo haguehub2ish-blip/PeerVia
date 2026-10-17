@@ -65,13 +65,15 @@ const SPEED = 0.04; // pixels per millisecond (about 40px per second)
 export default function UniversityTicker({ mentors = [] }) {
   const scrollRef = useRef(null);
 
-  const universities = useMemo(() => {
-    const names = new Set();
+    const universities = useMemo(() => {
+    const byKey = new Map();
     for (const m of mentors) {
-      const name = (m.school || "").trim();
-      if (name) names.add(name);
+      const name = (m.school || "").trim().replace(/\s+/g, " ");
+      if (!name) continue;
+      const key = name.toLowerCase();
+      if (!byKey.has(key)) byKey.set(key, name);
     }
-    return [...names].sort((a, b) => a.localeCompare(b));
+    return [...byKey.values()].sort((a, b) => a.localeCompare(b));
   }, [mentors]);
 
   useEffect(() => {

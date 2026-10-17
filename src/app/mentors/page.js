@@ -8,10 +8,12 @@ import Link from "next/link";
 
 const filters = ["All", "Medicine", "Engineering", "Law", "Computer Science", "Business", "Psychology"];
 const countries = ["All", "NL", "UK"];
-const filterTabs = ["Field", "Country", "Sort"];
+const filterTabs = ["Field", "Country", "University", "Language", "Sort"];
 const filterTabStyles = {
   Field: "bg-primary text-white border-primary",
   Country: "bg-ink text-white border-ink",
+  University: "bg-ink text-white border-ink",
+  Language: "bg-ink text-white border-ink",
   Sort: "bg-ink text-white border-ink",
 };
 
@@ -31,9 +33,10 @@ function MentorsContent() {
   const [activeCountries, setActiveCountries] = useState([]);
   const [activeLanguages, setActiveLanguages] = useState([]);
     const [activeSchool, setActiveSchool] = useState("");
+      const [searchText, setSearchText] = useState("");
  const [availableOnly, setAvailableOnly] = useState(false);
   const [sortBy, setSortBy] = useState("");
- const [activeFilterTabs, setActiveFilterTabs] = useState(["Field"]);
+ const [activeFilterTabs, setActiveFilterTabs] = useState([]);
   const [fetchError, setFetchError] = useState(null);
 
   useEffect(() => {
@@ -56,7 +59,11 @@ function MentorsContent() {
     if (languageParam) {
       setActiveLanguages(languageParam.split(","));
     }
-        setActiveSchool(searchParams.get("school") || "");
+            const schoolParam = searchParams.get("school") || "";
+    setActiveSchool(schoolParam);
+    if (schoolParam) {
+      setActiveFilterTabs((prev) => (prev.includes("University") ? prev : [...prev, "University"]));
+    }
   }, [searchParams]);
 
 
@@ -113,14 +120,66 @@ function MentorsContent() {
       activeLanguages.length === 0 ||
       activeLanguages.some((lang) => mentorLanguages.includes(lang));
     const matchesAvailability = !availableOnly || mentor.available;
-        const matchesSchool = !activeSchool || mentor.school === activeSchool;
-    return matchesFilter && matchesCountry && matchesLanguage && matchesAvailability && matchesSchool;
+           const norm = (s) => (s || "").trim().replace(/\s+/g, " ").toLowerCase();
+    const matchesSchool = !activeSchool || norm(mentor.school) === norm(activeSchool);
+        const words = searchText.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    const haystack = [mentor.name, mentor.school, mentor.subject, mentor.course, mentor.country]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    const matchesSearch = words.every((w) => haystack.includes(w));
+    return matchesFilter && matchesCountry && matchesLanguage && matchesAvailability && matchesSchool && matchesSearch;
   });
 
 const sortedMentors = [...filteredMentors].sort((a, b) => {
     if (!sortBy) return 0;
     return (Number(b[sortBy]) || 0) - (Number(a[sortBy]) || 0);
   });
+
+  const norm = (s) => (s || "").trim().replace(/\s+/g, " ").toLowerCase();
+  const uniq = (list) => [...new Set(list.filter(Boolean))].sort((a, b) => a.localeCompare(b));
+
+  const fieldOptions = [
+    ...filters,
+    ...uniq(mentors.map((m) => m.subject)).filter((f) => !filters.includes(f)),
+  ];
+  const countryOptions = [
+    ...countries,
+    ...uniq(mentors.map((m) => m.country)).filter((c) => !countries.includes(c)),
+  ];
+
+  const schoolMap = new Map();
+  mentors.forEach((m) => {
+    const name = (m.school || "").trim().replace(/\s+/g, " ");
+    if (name && !schoolMap.has(name.toLowerCase())) schoolMap.set(name.toLowerCase(), name);
+  });
+  const schoolOptions = [...schoolMap.values()].sort((a, b) => a.localeCompare(b));
+
+  const languageOptions = uniq(
+    mentors.flatMap((m) =>
+      typeof m.languages === "string"
+        ? m.languages.split(",").map((l) => l.trim())
+        : m.languages || []
+    )
+  );
+
+  const hasActiveFilters = Boolean(
+    activeFilters.length ||
+      activeCountries.length ||
+      activeLanguages.length ||
+      availableOnly ||
+      activeSchool ||
+      searchText.trim()
+  );
+
+  function clearAllFilters() {
+    setActiveFilters([]);
+    setActiveCountries([]);
+    setActiveLanguages([]);
+    setAvailableOnly(false);
+    setActiveSchool("");
+    setSearchText("");
+  }
 
   return (
     <div className="min-h-screen bg-cream">
@@ -137,20 +196,15 @@ const sortedMentors = [...filteredMentors].sort((a, b) => {
           University students at top Dutch and UK institutions. Every mentor is reviewed before joining.
         </p>
 
-        {activeSchool && (
-          <div className="mb-6 flex items-center gap-3">
-            <span className="font-label text-[11px] tracking-[0.08em] uppercase px-4 py-1.5 rounded-full border border-primary text-primary bg-primary/10">
-              {activeSchool}
-            </span>
-            <button
-              type="button"
-              onClick={() => setActiveSchool("")}
-              className="text-sm text-muted underline underline-offset-4 hover:text-ink"
-            >
-              Clear
-            </button>
-          </div>
-        )}
+            <div className="mb-5">
+          <input
+            type="search"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            placeholder="Search by name, university, course or field…"
+            className="w-full border border-border rounded-xl bg-background px-5 py-3 text-ink placeholder-muted/60 focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+        </div>   
 
  {/* Filter tabs */}
         <div data-tour="mentors-filters" className="mb-8">
@@ -186,7 +240,7 @@ const sortedMentors = [...filteredMentors].sort((a, b) => {
 
           {activeFilterTabs.includes("Field") && (
             <div className="flex flex-wrap gap-2 mb-3">
-              {filters.map((filter) => {
+              {fieldOptions.map((filter) => {
                 const isActive =
                   filter === "All" ? activeFilters.length === 0 : activeFilters.includes(filter);
 
@@ -209,7 +263,7 @@ const sortedMentors = [...filteredMentors].sort((a, b) => {
 
           {activeFilterTabs.includes("Country") && (
             <div className="flex flex-wrap gap-2 mb-3">
-              {countries.map((c) => {
+              {countryOptions.map((c) => {
                 const isActive = c === "All" ? activeCountries.length === 0 : activeCountries.includes(c);
                 return (
                   <button
@@ -222,6 +276,46 @@ const sortedMentors = [...filteredMentors].sort((a, b) => {
                     }`}
                   >
                     {c === "All" ? "All countries" : c}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {activeFilterTabs.includes("University") && (
+            <select
+              value={schoolOptions.find((s) => norm(s) === norm(activeSchool)) || ""}
+              onChange={(e) => setActiveSchool(e.target.value)}
+              className="font-label text-[11px] tracking-[0.05em] uppercase border border-border rounded-lg px-4 py-2 text-ink bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 mb-3 max-w-full"
+            >
+              <option value="">All universities</option>
+              {schoolOptions.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          )}
+
+          {activeFilterTabs.includes("Language") && (
+            <div className="flex flex-wrap gap-2 mb-3">
+              {languageOptions.map((l) => {
+                const isActive = activeLanguages.includes(l);
+                return (
+                  <button
+                    key={l}
+                    onClick={() =>
+                      setActiveLanguages((prev) =>
+                        prev.includes(l) ? prev.filter((x) => x !== l) : [...prev, l]
+                      )
+                    }
+                    className={`font-label text-[11px] tracking-[0.05em] uppercase px-4 py-1.5 rounded-full border transition ${
+                      isActive
+                        ? "border-primary text-primary bg-primary/10"
+                        : "border-border text-muted bg-background hover:border-ink/30"
+                    }`}
+                  >
+                    {l}
                   </button>
                 );
               })}
@@ -241,6 +335,30 @@ const sortedMentors = [...filteredMentors].sort((a, b) => {
             </select>
           )}
         </div>
+
+        {!loading && !fetchError && (
+          <div className="flex items-center justify-between mb-4">
+            <p className="font-label text-[11px] tracking-[0.08em] uppercase text-muted">
+              {sortedMentors.length} {sortedMentors.length === 1 ? "mentor" : "mentors"}
+            </p>
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={clearAllFilters}
+                className="text-sm text-muted underline underline-offset-4 hover:text-ink"
+              >
+                Clear all filters
+              </button>
+            )}
+          </div>
+        )}
+
+        {!loading && !fetchError && sortedMentors.length === 0 && (
+          <div className="border border-border rounded-2xl bg-surface p-10 text-center">
+            <p className="font-display text-xl text-ink mb-1">No mentors match those filters</p>
+            <p className="text-muted text-sm">Try a different search, or clear the filters.</p>
+          </div>
+        )}
 
        {/* Mentor cards */}
        {fetchError ? (
