@@ -19,7 +19,7 @@ const filterTabStyles = {
 
 export default function Mentors() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#FFF9F2]" />}>
+    <Suspense fallback={<div className="min-h-screen bg-cream" />}>
       <MentorsContent />
     </Suspense>
   );

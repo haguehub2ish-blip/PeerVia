@@ -767,12 +767,12 @@ export default function MentorDashboard() {
             Unanswered Community Questions
           </h2>
           <p className="text-sm text-muted mb-6">
-            Answer a student's question — it'll appear publicly on the community page.
+            Answer a student's question. It will appear publicly on the community page.
           </p>
 
           {unansweredQuestions.length === 0 ? (
             <div className="text-center py-8 border border-dashed border-border rounded-lg">
-              <p className="text-muted text-sm">You're all caught up — no unanswered questions right now.</p>
+              <p className="text-muted text-sm">You're all caught up. No unanswered questions right now.</p>
             </div>
           ) : (
             <div className="space-y-4">

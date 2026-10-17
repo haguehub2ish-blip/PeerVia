@@ -93,25 +93,25 @@ const mentorSteps = [
     numeral: "i.",
     image: "https://yknxdyuanwsuemgtredi.supabase.co/storage/v1/object/public/mentor-page-images/step-1-message.jpg",
     title: "Answer real questions",
-    text: "A student posts a question on the community page, and you answer it in your own words. No scripts, no commitment — every relationship begins here.",
+    text: "A student posts a question on the community page, and you answer it in your own words. No scripts, no commitment. Every relationship starts here.",
   },
   {
     numeral: "ii.",
     image: "https://yknxdyuanwsuemgtredi.supabase.co/storage/v1/object/public/mentor-page-images/step-2-profile.jpg",
     title: "Share your story",
-    text: "Your profile shows your journey — course, university, and what you wish you knew. Setting it up is the easy part; students want to hear the personal details.",
+    text: "Your profile shows your course, your university, and what you wish you had known. Setting it up is the easy part; students want to hear the personal details.",
   },
   {
     numeral: "iii.",
     image: "https://yknxdyuanwsuemgtredi.supabase.co/storage/v1/object/public/mentor-page-images/step-3-call.jpg",
     title: "Take a call, if you want to",
-    text: "Talk course choices, campus life, and what success actually looks like. Walk a student through their options — whatever they need, you've lived it.",
+    text: "Talk course choices, campus life, and what success actually looks like. Walk a student through their options. Whatever they need, you've lived it.",
   },
   {
     numeral: "iv.",
     image: "https://yknxdyuanwsuemgtredi.supabase.co/storage/v1/object/public/mentor-page-images/step-4-portfolio.jpg",
     title: "Build your portfolio",
-    text: "Every answer you write becomes part of your public mentor profile, rated by real students — something you can point to, beyond just volunteering.",
+    text: "Every answer you write becomes part of your public mentor profile, rated by real students, something you can point to beyond just volunteering.",
   },
 ];
 
@@ -187,19 +187,19 @@ function PhotoBlock({ src, alt = "", className = "", tint = 55, opacity = 100 })
 
 const honestQuestions = [
   {
-    question: "Is this legit — and how am I verified?",
+    question: "Is this legit, and how am I verified?",
     answer:
-      "Yes. Every mentor application is manually reviewed by our team before approval — we check your university email, your course, and your application answers. Once approved, your profile carries a verified badge so students know they're talking to a real, vetted university student.",
+      "Yes. Every mentor application is manually reviewed by our team before approval. We check your university email, your course, and your application answers. Once approved, your profile carries a verified badge so students know they're talking to a real, vetted university student.",
   },
   {
     question: "How much time does it really take?",
     answer:
-      "As much or as little as you want. Answering a community question takes a few minutes whenever it suits you — there's no schedule to keep. 1-on-1 calls are entirely optional and only happen if you choose to accept a booking.",
+      "As much or as little as you want. Answering a community question takes a few minutes whenever it suits you. There's no schedule to keep. 1-on-1 calls are entirely optional and only happen if you choose to accept a booking.",
   },
   {
     question: "Who would I actually be helping?",
     answer:
-      "High schoolers who are trying to figure out what they want to study or where — the same decisions you had to make, usually with far less honest information than they deserve. You'll answer their real questions about your course, university, and what the day-to-day is actually like.",
+      "High schoolers who are trying to figure out what they want to study or where. These are the same decisions you had to make, usually with far less honest information than they deserve. You'll answer their real questions about your course, university, and what the day-to-day is actually like.",
   },
 ];
 
@@ -515,7 +515,7 @@ export default function Apply() {
     return (
       <div className="min-h-screen bg-cream">
         <Navbar />
-        <div className="max-w-2xl mx-auto px-6 py-24 text-center text-gray-500">
+        <div className="max-w-2xl mx-auto px-6 py-24 text-center text-muted">
           Checking Your Application Status...
         </div>
       </div>
@@ -528,10 +528,10 @@ export default function Apply() {
         <Navbar />
         <div className="max-w-2xl mx-auto px-6 py-24 text-center">
           <div className="text-5xl mb-4">⏳</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          <h1 className="font-display text-2xl text-ink mb-2">
             Your Application Is Pending Approval
           </h1>
-          <p className="text-gray-600">
+          <p className="text-muted">
             Thank you for applying! We review every application and aim to get back within 48 hours.
           </p>
         </div>
@@ -545,16 +545,16 @@ export default function Apply() {
         <Navbar />
         <div className="max-w-2xl mx-auto px-6 py-24 text-center">
           <div className="text-5xl mb-4">✉️</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          <h1 className="font-display text-2xl text-ink mb-2">
             Your Application Wasn't Approved This Time
           </h1>
-          <p className="text-gray-600 mb-6">
+          <p className="text-muted mb-6">
             Thank you for your interest in becoming a PeerVia mentor. Unfortunately, we couldn't
             approve your application at this time.
           </p>
           <button
             onClick={() => setExistingApplication(null)}
-            className="bg-green-600 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-green-700 transition"
+            className="bg-primary text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-primary-dark transition"
           >
             Apply Again
           </button>
@@ -569,10 +569,10 @@ export default function Apply() {
         <Navbar />
         <div className="max-w-2xl mx-auto px-6 py-24 text-center">
           <div className="text-5xl mb-4">✅</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          <h1 className="font-display text-2xl text-ink mb-2">
             Application Submitted
           </h1>
-          <p className="text-gray-600">
+          <p className="text-muted">
             Thank you for applying! We review every application and aim to get back within 48 hours.
           </p>
         </div>
@@ -588,7 +588,7 @@ export default function Apply() {
         <div className="max-w-3xl mx-auto px-6 py-12">
           <button
             onClick={() => setShowForm(false)}
-            className="text-sm font-semibold text-gray-500 hover:text-gray-800 transition mb-4 flex items-center gap-1"
+            className="text-sm font-semibold text-muted hover:text-ink transition mb-4 flex items-center gap-1"
           >
             ← Back
           </button>
@@ -600,9 +600,9 @@ export default function Apply() {
             It takes just 5 minutes of your time. We review every application and aim to get back within 48 hours.
           </p>
 
-          <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-2xl p-6 space-y-5">
+          <form onSubmit={handleSubmit} className="bg-surface border border-border rounded-2xl p-6 space-y-5">
             <div>
-              <label className="block text-sm font-semibold text-gray-800 mb-1">
+              <label className="block text-sm font-semibold text-ink mb-1">
                 Profile Photo <span className="text-red-500">*</span>
               </label>
               <div className="flex items-center gap-4">
@@ -610,14 +610,14 @@ export default function Apply() {
                   <img
                     src={photoPreview}
                     alt="Preview"
-                    className="w-20 h-20 rounded-full object-cover border border-gray-300"
+                    className="w-20 h-20 rounded-full object-cover border border-border"
                   />
                 ) : (
-                  <div className="w-20 h-20 rounded-full bg-gray-100 border border-dashed border-gray-300 flex items-center justify-center text-gray-400 text-xs text-center">
+                  <div className="w-20 h-20 rounded-full bg-surface border border-dashed border-border flex items-center justify-center text-muted/60 text-xs text-center">
                     No Photo
                   </div>
                 )}
-                <label className="cursor-pointer bg-white border border-gray-300 rounded-lg px-4 py-2 text-sm font-semibold text-gray-700 hover:border-gray-400 transition">
+                <label className="cursor-pointer bg-surface border border-border rounded-lg px-4 py-2 text-sm font-semibold text-ink hover:border-ink/30 transition">
                   {photoFile ? "Change Photo" : "Upload Photo"}
                   <input
                     type="file"
@@ -627,43 +627,43 @@ export default function Apply() {
                   />
                 </label>
               </div>
-              <p className="text-xs text-gray-400 mt-1.5">
+              <p className="text-xs text-muted/60 mt-1.5">
                 A Clear, Recent Photo Of Yourself. Max 5MB.
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-1">First name</label>
+                <label className="block text-sm font-semibold text-ink mb-1">First name</label>
                 <input
                   required
                   value={form.first_name}
                   onChange={(e) => updateField("first_name", e.target.value)}
                   placeholder="Emma"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600"
+                  className="w-full border border-border rounded-lg px-4 py-2.5 text-ink placeholder-muted/60 focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-1">Last name</label>
+                <label className="block text-sm font-semibold text-ink mb-1">Last name</label>
                 <input
                   required
                   value={form.last_name}
                   onChange={(e) => updateField("last_name", e.target.value)}
                   placeholder="Johnson"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600"
+                  className="w-full border border-border rounded-lg px-4 py-2.5 text-ink placeholder-muted/60 focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-800 mb-1">University Email</label>
+              <label className="block text-sm font-semibold text-ink mb-1">University Email</label>
               <input
                 type="email"
                 required
                 value={form.email}
                 onChange={(e) => updateField("email", e.target.value)}
                 placeholder="e.emma@student.uva.nl"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600"
+                className="w-full border border-border rounded-lg px-4 py-2.5 text-ink placeholder-muted/60 focus:outline-none focus:ring-2 focus:ring-primary"
               />
                             <p className="text-xs text-muted mt-1.5">
                 Use an address you check regularly. Some university inboxes block outside email, so if you don't hear from us within a few days, check your spam folder or write to info.peervia@gmail.com.
@@ -671,14 +671,14 @@ export default function Apply() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-800 mb-1">Backup Email</label>
+              <label className="block text-sm font-semibold text-ink mb-1">Backup Email</label>
               <input
                 type="email"
 
                 value={form.backup_email}
                 onChange={(e) => updateField("backup_email", e.target.value)}
                 placeholder="you@gmail.com"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600"
+                className="w-full border border-border rounded-lg px-4 py-2.5 text-ink placeholder-muted/60 focus:outline-none focus:ring-2 focus:ring-primary"
               />
               <p className="text-xs text-muted mt-1.5">
                 A personal address (Gmail, Outlook, iCloud). We only use it if an email to your university address doesn't get through.
@@ -687,7 +687,7 @@ export default function Apply() {
 
             <div className="grid grid-cols-2 gap-4">
                             <div ref={uniRef} className="relative">
-                <label className="block text-sm font-semibold text-gray-800 mb-1">University</label>
+                <label className="block text-sm font-semibold text-ink mb-1">University</label>
                 <input
                   required={!otherUniversity}
                   autoComplete="off"
@@ -710,34 +710,34 @@ export default function Apply() {
                     }
                   }}
                   placeholder="Search or select your university"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600 bg-white"
+                  className="w-full border border-border rounded-lg px-4 py-2.5 text-ink placeholder-muted/60 focus:outline-none focus:ring-2 focus:ring-primary bg-surface"
                 />
 
                 {uniOpen && (
-                  <div className="absolute z-20 mt-1 w-full max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg">
+                  <div className="absolute z-20 mt-1 w-full max-h-60 overflow-y-auto bg-surface border border-border rounded-lg shadow-lg">
                     {filteredUniversities.map((name) => (
                       <button
                         key={name}
                         type="button"
                         onClick={() => pickUniversity(name)}
-                        className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition ${
+                        className={`w-full text-left px-4 py-2 text-sm hover:bg-border/40 transition ${
                           form.university === name && !otherUniversity
-                            ? "font-semibold text-green-700"
-                            : "text-gray-900"
+                            ? "font-semibold text-primary"
+                            : "text-ink"
                         }`}
                       >
                         {name}
                       </button>
                     ))}
                     {filteredUniversities.length === 0 && uniSearch.trim() && (
-                      <p className="px-4 py-2 text-xs text-gray-500">
+                      <p className="px-4 py-2 text-xs text-muted">
                         No match in our list. Choose Other to type yours.
                       </p>
                     )}
                     <button
                       type="button"
                       onClick={() => pickOtherUniversity(uniSearch.trim())}
-                      className="w-full text-left px-4 py-2 text-sm font-semibold text-gray-900 border-t border-gray-100 hover:bg-gray-50 transition"
+                      className="w-full text-left px-4 py-2 text-sm font-semibold text-ink border-t border-border hover:bg-border/40 transition"
                     >
                       Other
                     </button>
@@ -750,17 +750,17 @@ export default function Apply() {
                     value={form.university}
                     onChange={(e) => updateField("university", e.target.value)}
                     placeholder="Enter your University"
-                    className="mt-2 w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600"
+                    className="mt-2 w-full border border-border rounded-lg px-4 py-2.5 text-ink placeholder-muted/60 focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 )}
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-1">Year of Study</label>
+                <label className="block text-sm font-semibold text-ink mb-1">Year of Study</label>
                 <select
                   required
                   value={form.year}
                   onChange={(e) => updateField("year", e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-600 bg-white"
+                  className="w-full border border-border rounded-lg px-4 py-2.5 text-ink focus:outline-none focus:ring-2 focus:ring-primary bg-surface"
                 >
                   <option value="">Select Year</option>
                   {years.map((y) => (
@@ -771,7 +771,7 @@ export default function Apply() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-800 mb-1">Career Field</label>
+              <label className="block text-sm font-semibold text-ink mb-1">Career Field</label>
               <select
                 required={!otherField}
                 value={otherField ? "Other" : form.field}
@@ -784,7 +784,7 @@ export default function Apply() {
                     updateField("field", e.target.value);
                   }
                 }}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-600 bg-white"
+                className="w-full border border-border rounded-lg px-4 py-2.5 text-ink focus:outline-none focus:ring-2 focus:ring-primary bg-surface"
               >
                 <option value="">Select Field</option>
                 {fields.map((f) => (
@@ -797,13 +797,13 @@ export default function Apply() {
                   value={form.field}
                   onChange={(e) => updateField("field", e.target.value)}
                   placeholder="Enter your Career Field"
-                  className="mt-2 w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600"
+                  className="mt-2 w-full border border-border rounded-lg px-4 py-2.5 text-ink placeholder-muted/60 focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-800 mb-1">
+              <label className="block text-sm font-semibold text-ink mb-1">
                 Your Course At University
               </label>
               <input
@@ -811,15 +811,15 @@ export default function Apply() {
                 value={form.course}
                 onChange={(e) => updateField("course", e.target.value)}
                 placeholder="e.g. Biomedical Sciences, LLB Law, Mechanical Engineering (BEng)"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600"
+                className="w-full border border-border rounded-lg px-4 py-2.5 text-ink placeholder-muted/60 focus:outline-none focus:ring-2 focus:ring-primary"
               />
-              <p className="text-xs text-gray-400 mt-1.5">
+              <p className="text-xs text-muted/60 mt-1.5">
                 The exact name of the degree you study. This is shown on your public profile.
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-800 mb-1">Country focus</label>
+              <label className="block text-sm font-semibold text-ink mb-1">Country focus</label>
               <select
                 required={!otherCountry}
                 value={otherCountry ? "Other" : form.country}
@@ -832,7 +832,7 @@ export default function Apply() {
                     updateField("country", e.target.value);
                   }
                 }}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-600 bg-white"
+                className="w-full border border-border rounded-lg px-4 py-2.5 text-ink focus:outline-none focus:ring-2 focus:ring-primary bg-surface"
               >
                 <option value="">Select Country</option>
                 {countries.map((c) => (
@@ -845,14 +845,14 @@ export default function Apply() {
                   value={form.country}
                   onChange={(e) => updateField("country", e.target.value)}
                   placeholder="Enter your Country"
-                  className="mt-2 w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600"
+                  className="mt-2 w-full border border-border rounded-lg px-4 py-2.5 text-ink placeholder-muted/60 focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               )}
             </div>
 
                         <div>
-              <label className="block text-sm font-semibold text-gray-800 mb-1">
-                Languages you speak <span className="text-gray-400 font-normal">(select at least one)</span>
+              <label className="block text-sm font-semibold text-ink mb-1">
+                Languages you speak <span className="text-muted/60 font-normal">(select at least one)</span>
               </label>
               <div className="flex flex-wrap gap-2">
                 {visibleLanguages.map((lang) => {
@@ -868,7 +868,7 @@ export default function Apply() {
                         )
                       }
                       className={`text-xs font-semibold px-3 py-1 rounded-full transition ${style.color} ${
-                        isSelected ? "ring-2 ring-gray-900" : "hover:opacity-80"
+                        isSelected ? "ring-2 ring-primary" : "hover:opacity-80"
                       }`}
                     >
                       {style.icon} {lang}
@@ -878,8 +878,8 @@ export default function Apply() {
                 <button
                   type="button"
                   onClick={() => setOtherLanguageOpen((o) => !o)}
-                  className={`text-xs font-semibold px-3 py-1 rounded-full transition bg-gray-100 text-gray-700 ${
-                    otherLanguageOpen ? "ring-2 ring-gray-900" : "hover:opacity-80"
+                  className={`text-xs font-semibold px-3 py-1 rounded-full transition bg-surface text-ink ${
+                    otherLanguageOpen ? "ring-2 ring-primary" : "hover:opacity-80"
                   }`}
                 >
                   ➕ Other
@@ -901,33 +901,33 @@ export default function Apply() {
                       }}
                       maxLength={30}
                       placeholder="Start typing a language"
-                      className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600"
+                      className="flex-1 border border-border rounded-lg px-4 py-2 text-sm text-ink placeholder-muted/60 focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                     <button
                       type="button"
                       onClick={addTypedLanguage}
-                      className="px-4 py-2 rounded-lg text-sm font-semibold bg-gray-900 text-white hover:opacity-90 transition"
+                      className="px-4 py-2 rounded-lg text-sm font-semibold bg-ink text-white hover:opacity-90 transition"
                     >
                       Add
                     </button>
                   </div>
 
                   {languageQuery && (
-                    <div className="mt-1 border border-gray-200 rounded-lg bg-white shadow-sm overflow-hidden">
+                    <div className="mt-1 border border-border rounded-lg bg-surface shadow-sm overflow-hidden">
                       {languageSuggestions.length > 0 ? (
                         languageSuggestions.map((lang) => (
                           <button
                             key={lang}
                             type="button"
                             onClick={() => addOtherLanguage(lang)}
-                            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-left text-gray-900 hover:bg-gray-50 transition"
+                            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-left text-ink hover:bg-border/40 transition"
                           >
                             <span>{getLanguageStyle(lang).icon}</span>
                             {lang}
                           </button>
                         ))
                       ) : (
-                        <p className="px-4 py-2 text-xs text-gray-500">
+                        <p className="px-4 py-2 text-xs text-muted">
                           {typedAlreadySelected ? (
                             "Already selected."
                           ) : (
@@ -943,7 +943,7 @@ export default function Apply() {
               <button
                 type="button"
                 onClick={() => setShowAllLanguages((s) => !s)}
-                className="mt-2 text-xs font-semibold text-green-700 hover:underline"
+                className="mt-2 text-xs font-semibold text-primary hover:underline"
               >
                 {showAllLanguages
                   ? "Show fewer languages"
@@ -956,8 +956,8 @@ export default function Apply() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-800 mb-1">
-                Why do you want to mentor? <span className="text-gray-400 font-normal">(2–3 sentences)</span>
+              <label className="block text-sm font-semibold text-ink mb-1">
+                Why do you want to mentor? <span className="text-muted/60 font-normal">(2–3 sentences)</span>
               </label>
               <textarea
                 required
@@ -965,12 +965,12 @@ export default function Apply() {
                 value={form.why}
                 onChange={(e) => updateField("why", e.target.value)}
                 placeholder="What do you wish you knew before starting your degree? What would you tell your 16-year-old self?"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600 resize-y"
+                className="w-full border border-border rounded-lg px-4 py-2.5 text-ink placeholder-muted/60 focus:outline-none focus:ring-2 focus:ring-primary resize-y"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-800 mb-1">
+              <label className="block text-sm font-semibold text-ink mb-1">
                 How Can You Support And Guide The Students Through Their Journey?
               </label>
               <textarea
@@ -979,12 +979,12 @@ export default function Apply() {
                 value={form.support_guidance}
                 onChange={(e) => updateField("support_guidance", e.target.value)}
                 placeholder="What topics, questions, or experiences could you help a student with?"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600 resize-y"
+                className="w-full border border-border rounded-lg px-4 py-2.5 text-ink placeholder-muted/60 focus:outline-none focus:ring-2 focus:ring-primary resize-y"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-800 mb-1">
+              <label className="block text-sm font-semibold text-ink mb-1">
                 Extracurriculars
               </label>
               <textarea
@@ -993,12 +993,12 @@ export default function Apply() {
                 value={form.extracurriculars}
                 onChange={(e) => updateField("extracurriculars", e.target.value)}
                 placeholder="Clubs, sports, volunteering, leadership roles, or other activities you were involved in."
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600 resize-y"
+                className="w-full border border-border rounded-lg px-4 py-2.5 text-ink placeholder-muted/60 focus:outline-none focus:ring-2 focus:ring-primary resize-y"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-800 mb-1">
+              <label className="block text-sm font-semibold text-ink mb-1">
                 Final High School Grade
               </label>
               <input
@@ -1006,29 +1006,29 @@ export default function Apply() {
                 value={form.final_grade}
                 onChange={(e) => updateField("final_grade", e.target.value)}
                 placeholder="e.g. A-Level: AAB, IB: 38, VWO: 7.8 Average"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600"
+                className="w-full border border-border rounded-lg px-4 py-2.5 text-ink placeholder-muted/60 focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-800 mb-1">
-                LinkedIn profile <span className="text-gray-400 font-normal">(optional)</span>
+              <label className="block text-sm font-semibold text-ink mb-1">
+                LinkedIn profile <span className="text-muted/60 font-normal">(optional)</span>
               </label>
               <input
                 value={form.linkedin}
                 onChange={(e) => updateField("linkedin", e.target.value)}
                 placeholder="linkedin.com/in/yourname"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600"
+                className="w-full border border-border rounded-lg px-4 py-2.5 text-ink placeholder-muted/60 focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
 
 
-            <div className="border border-gray-200 rounded-xl p-4 space-y-4 bg-gray-50">
+            <div className="border border-border rounded-xl p-4 space-y-4 bg-surface">
               <div>
-                <p className="text-sm font-semibold text-gray-800">
+                <p className="text-sm font-semibold text-ink">
                   Before you submit <span className="text-red-500">*</span>
                 </p>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-muted mt-1">
                   Please open and read both documents. The tick boxes unlock once you have opened each one.
                 </p>
               </div>
@@ -1044,7 +1044,7 @@ export default function Apply() {
                 >
                   Ambassador Guide and Rules (PDF) ↗
                 </a>
-                <label className={`flex items-start gap-2 text-sm ${guideOpened ? "text-gray-800" : "text-gray-400"}`}>
+                <label className={`flex items-start gap-2 text-sm ${guideOpened ? "text-ink" : "text-muted/60"}`}>
                   <input
                     type="checkbox"
                     disabled={!guideOpened}
@@ -1067,7 +1067,7 @@ export default function Apply() {
                 >
                   Ambassador Privacy Policy and Liability Disclaimer (PDF) ↗
                 </a>
-                <label className={`flex items-start gap-2 text-sm ${policyOpened ? "text-gray-800" : "text-gray-400"}`}>
+                <label className={`flex items-start gap-2 text-sm ${policyOpened ? "text-ink" : "text-muted/60"}`}>
                   <input
                     type="checkbox"
                     disabled={!policyOpened}
@@ -1122,7 +1122,7 @@ export default function Apply() {
           </h1>
           <p className="text-white/70 text-lg mb-8 max-w-xl mx-auto">
             Join a community of university students helping high schoolers make honest, informed
-            decisions about their future — completely free, on your own time.
+            decisions about their future. Completely free, on your own time.
           </p>
           <button
             onClick={() => setShowForm(true)}

@@ -322,7 +322,7 @@ export default function Signup() {
                 </span>
               </label>
               <p className="text-xs text-muted mt-1">
-                Optional — you can always change this later in Settings.
+                Optional. You can always change this later in Settings.
               </p>
 
               {customizePrefs && (

@@ -377,7 +377,7 @@ function QAFeedContent() {
       {authChecked && !user && (
         <div className="fixed inset-0 top-[65px] z-30 flex items-center justify-center bg-background/60 backdrop-blur-[1px]">
           <div className="bg-surface border border-border rounded-2xl p-8 max-w-sm text-center shadow-lg mx-4">
-            <h2 className="font-display text-xl text-ink mb-2">Unlock Community Access</h2>
+            <h2 className="font-display text-xl text-ink mb-2">Join the community</h2>
             <p className="text-muted text-sm mb-6">
               Sign up or log in to see mentor answers, ask your own questions, and join the conversation.
             </p>

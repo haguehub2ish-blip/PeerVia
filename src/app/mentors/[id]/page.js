@@ -359,7 +359,7 @@ async function handleSubmitBooking(e) {
                   How I Can Help
                 </p>
                 <h2 className="font-display text-2xl text-ink mb-4">
-                  Supporting you through the journey
+                  What I can help you with
                 </h2>
                 <p className="text-ink/90 leading-relaxed text-base whitespace-pre-line">
                   {mentor.support_guidance}
@@ -606,7 +606,7 @@ async function handleSubmitBooking(e) {
                 Book a session with {firstName}
               </h2>
               <p className="text-sm text-ink/70 leading-relaxed mb-6">
-                Send a message to set up a time that works for you both — there's no cost to reach out.
+                Send a message to set up a time that works for you both. There's no cost to reach out.
               </p>
 
               {submitted ? (

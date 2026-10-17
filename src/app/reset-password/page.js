@@ -51,19 +51,19 @@ export default function ResetPassword() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FFF9F2]">
+    <div className="min-h-screen bg-cream">
       <Navbar />
 
       <div className="max-w-md mx-auto px-6 py-16">
-        <h1 className="text-3xl font-extrabold text-gray-900 mb-2">
+        <h1 className="font-display text-3xl text-ink mb-2">
           Set a New Password
         </h1>
-        <p className="text-gray-600 mb-8">
+        <p className="text-muted mb-8">
           Choose a new password for your account.
         </p>
 
         {success ? (
-          <div className="bg-green-50 border border-green-200 text-green-800 rounded-lg p-4 text-sm">
+          <div className="bg-primary/10 border border-primary/30 text-ink rounded-lg p-4 text-sm">
             Your password has been updated.{" "}
             <a href="/login" className="font-semibold underline">
               Log in now
@@ -74,9 +74,9 @@ export default function ResetPassword() {
             Waiting for a valid reset link. If you arrived here directly, please use the link from your reset email.
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-2xl p-6 space-y-4">
+          <form onSubmit={handleSubmit} className="bg-surface border border-border rounded-2xl p-6 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-ink mb-1">
                 New Password
               </label>
               <input
@@ -85,12 +85,12 @@ export default function ResetPassword() {
                 minLength={6}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-600"
+                className="w-full border border-border bg-background rounded-lg px-4 py-2.5 text-ink focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-ink mb-1">
                 Confirm New Password
               </label>
               <input
@@ -99,7 +99,7 @@ export default function ResetPassword() {
                 minLength={6}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-600"
+                className="w-full border border-border bg-background rounded-lg px-4 py-2.5 text-ink focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
 
@@ -110,7 +110,7 @@ export default function ResetPassword() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-green-600 text-white py-2.5 rounded-lg font-semibold hover:bg-green-700 transition disabled:opacity-50"
+              className="w-full bg-primary text-white py-2.5 rounded-lg font-semibold hover:bg-primary-dark transition disabled:opacity-50"
             >
               {loading ? "Updating..." : "Update password"}
             </button>

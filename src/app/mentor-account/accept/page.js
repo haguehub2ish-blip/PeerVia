@@ -34,14 +34,14 @@ export default function MentorAcceptInvite() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FFF9F2]">
+    <div className="min-h-screen bg-cream">
       <Navbar />
 
       <div className="max-w-md mx-auto px-6 py-16">
-        <h1 className="text-3xl font-extrabold text-gray-900 mb-2">
+        <h1 className="font-display text-3xl text-ink mb-2">
           Welcome To PeerVia
         </h1>
-        <p className="text-gray-600 mb-8">
+        <p className="text-muted mb-8">
           Press the button below to accept your mentor invite.
         </p>
 
@@ -50,13 +50,13 @@ export default function MentorAcceptInvite() {
             This link is incomplete. Please use the link from your invite email.
           </div>
         ) : (
-          <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-4">
+          <div className="bg-surface border border-border rounded-2xl p-6 space-y-4">
             {error && <p className="text-red-600 text-sm font-medium">{error}</p>}
             <button
               type="button"
               onClick={handleAccept}
               disabled={loading || !tokenHash}
-              className="w-full bg-green-600 text-white py-2.5 rounded-lg font-semibold hover:bg-green-700 transition disabled:opacity-50"
+              className="w-full bg-primary text-white py-2.5 rounded-lg font-semibold hover:bg-primary-dark transition disabled:opacity-50"
             >
               {loading ? "Accepting..." : "Accept Invite & Continue"}
             </button>

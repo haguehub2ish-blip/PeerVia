@@ -217,7 +217,7 @@ export default function MentorCalendarEditor({ mentorId }) {
 
           <div className="space-y-2 mb-5">
             {selectedEvents.length === 0 && (
-              <p className="text-sm text-muted italic">No events yet — add one below.</p>
+              <p className="text-sm text-muted italic">No events yet. Add one below.</p>
             )}
             {selectedEvents.map((ev) => {
               const style = EVENT_TYPES[ev.color] || EVENT_TYPES.other;
@@ -314,7 +314,7 @@ export default function MentorCalendarEditor({ mentorId }) {
             />
             <input
               type="text"
-              placeholder="Time (e.g. 3:00 PM) — optional"
+              placeholder="Time (optional, e.g. 3:00 PM)"
               value={formTime}
               onChange={(e) => setFormTime(e.target.value)}
               className="w-full border border-border rounded-md px-4 py-2.5 text-sm text-ink bg-surface focus:outline-none focus:ring-2 focus:ring-primary"

@@ -453,8 +453,8 @@ export default function Home() {
               <span className="italic text-primary">From the people living it.</span>
             </h1>
             <p className="text-muted text-lg mb-9 max-w-lg">
-              Connect with verified university students for honest, first-hand advice about courses, universities, applications and student life —{" "}
-              <span className="font-semibold text-ink">all completely free</span>.
+              Connect with verified university students for honest, first-hand advice about courses, universities, applications and student life.{" "}
+              <span className="font-semibold text-ink">All completely free</span>.
             </p>
 
             {/* Search */}
@@ -848,8 +848,8 @@ export default function Home() {
                       Want The Full Guide?
                     </p>
                     <p className="text-muted text-sm">
-                      Every course guide is free to read, in full —{" "}
-                      <span className="text-ink font-semibold">no sign-up</span> needed to browse.
+                      Every course guide is free to read, in full.{" "}
+                      <span className="text-ink font-semibold">No sign-up</span> needed to browse.
                     </p>
                   </div>
                   <Link

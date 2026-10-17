@@ -32,7 +32,7 @@ function renderApprovedEmailOld({ siteUrl, firstName, university, field, ctaUrl 
 <title>PeerVia</title>
 </head>
 <body style="margin:0; padding:0; background-color:#F1E7CC; font-family: Helvetica, Arial, sans-serif;">
-  <div style="display:none; max-height:0; overflow:hidden; opacity:0;">You're officially a verified PeerVia mentor — log in to see your dashboard.</div>
+  <div style="display:none; max-height:0; overflow:hidden; opacity:0;">You're officially a verified PeerVia mentor. Log in to see your dashboard.</div>
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F1E7CC; padding:32px 16px;">
     <tr>
       <td align="center">
