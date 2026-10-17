@@ -30,6 +30,7 @@ function MentorsContent() {
   const [activeFilters, setActiveFilters] = useState([]);
   const [activeCountries, setActiveCountries] = useState([]);
   const [activeLanguages, setActiveLanguages] = useState([]);
+    const [activeSchool, setActiveSchool] = useState("");
  const [availableOnly, setAvailableOnly] = useState(false);
   const [sortBy, setSortBy] = useState("");
  const [activeFilterTabs, setActiveFilterTabs] = useState(["Field"]);
@@ -55,7 +56,10 @@ function MentorsContent() {
     if (languageParam) {
       setActiveLanguages(languageParam.split(","));
     }
+        setActiveSchool(searchParams.get("school") || "");
   }, [searchParams]);
+
+
 
   useEffect(() => {
     async function fetchMentors() {
@@ -109,7 +113,8 @@ function MentorsContent() {
       activeLanguages.length === 0 ||
       activeLanguages.some((lang) => mentorLanguages.includes(lang));
     const matchesAvailability = !availableOnly || mentor.available;
-    return matchesFilter && matchesCountry && matchesLanguage && matchesAvailability;
+        const matchesSchool = !activeSchool || mentor.school === activeSchool;
+    return matchesFilter && matchesCountry && matchesLanguage && matchesAvailability && matchesSchool;
   });
 
 const sortedMentors = [...filteredMentors].sort((a, b) => {
@@ -131,6 +136,21 @@ const sortedMentors = [...filteredMentors].sort((a, b) => {
         <p className="text-muted mb-6">
           University students at top Dutch and UK institutions. Every mentor is reviewed before joining.
         </p>
+
+        {activeSchool && (
+          <div className="mb-6 flex items-center gap-3">
+            <span className="font-label text-[11px] tracking-[0.08em] uppercase px-4 py-1.5 rounded-full border border-primary text-primary bg-primary/10">
+              {activeSchool}
+            </span>
+            <button
+              type="button"
+              onClick={() => setActiveSchool("")}
+              className="text-sm text-muted underline underline-offset-4 hover:text-ink"
+            >
+              Clear
+            </button>
+          </div>
+        )}
 
  {/* Filter tabs */}
         <div data-tour="mentors-filters" className="mb-8">

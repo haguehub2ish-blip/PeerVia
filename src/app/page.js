@@ -8,6 +8,7 @@ import { getFlag } from "@/data/mentors";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import ContactWidget from "@/Components/ContactWidget";
+import UniversityTicker from "@/Components/UniversityTicker";
 
 const howItWorksSteps = [
   {
@@ -361,9 +362,12 @@ export default function Home() {
                     transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 900ms ease, opacity 900ms ease;
           backface-visibility: hidden;
           transform-style: preserve-3d;
+                    will-change: transform;
         }
-        .shuffle-leaving {
+               .shuffle-leaving {
           animation: pageTurn 1600ms cubic-bezier(0.65, 0, 0.35, 1) forwards;
+          transition: none;
+          pointer-events: none;
         }
         @media (prefers-reduced-motion: reduce) {
           .shuffle-card { transition: none; }
@@ -408,7 +412,7 @@ export default function Home() {
                       tabIndex={isTop ? 0 : -1}
                       aria-hidden={!isTop}
                       className={`shuffle-card absolute inset-0 block rounded-2xl overflow-hidden border border-border bg-surface ${
-                        isTop ? "shadow-xl" : "shadow-md pointer-events-none"
+                        isTop && leavingIndex === null ? "shadow-xl" : isTop ? "shadow-xl pointer-events-none" : "shadow-md pointer-events-none"
                       } ${i === leavingIndex ? "shuffle-leaving" : ""}`}
                       style={{
                         transform: stackTransform,
@@ -673,7 +677,8 @@ export default function Home() {
           </div>
         </div>
       </section>
-
+      
+      
       {/* ============ HOW IT WORKS ============ */}
       <section className="px-6 py-20 md:py-24 border-y border-border bg-surface">
         <div className="max-w-5xl mx-auto">
@@ -696,6 +701,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+
 
       {/* ============ COMMUNITY ============ */}
       <section className="relative overflow-hidden px-6 py-20 md:py-24">
@@ -753,6 +759,7 @@ export default function Home() {
         </div>
       </section>
 
+<UniversityTicker mentors={mentors} />
       {/* ============ COURSE GUIDES PREVIEW ============ */}
       {previewGuide && (
         <section className="relative overflow-hidden px-6 py-20 md:py-24 bg-ink">

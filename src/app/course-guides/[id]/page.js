@@ -182,6 +182,7 @@ export default function CourseGuideDetail() {
                 </div>
               </div>
             )}
+            
             {guide.popular_universities?.length > 0 && (
               <div className="mb-8 pb-8 border-b border-border">
                 <p className="font-label text-xs uppercase tracking-[0.15em] text-muted mb-3">

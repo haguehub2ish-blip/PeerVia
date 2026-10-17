@@ -151,6 +151,32 @@ async function handleSubmitReview(e) {
   setReviewSubmitting(false);
 }
 const [calendarExpanded, setCalendarExpanded] = useState(true);
+const [shareCopied, setShareCopied] = useState(false);
+
+async function handleShare() {
+  const url = `${window.location.origin}/mentors/${id}`;
+  const title = mentor ? `${mentor.name} on PeerVia` : "PeerVia mentor";
+  const text = mentor
+    ? `Check out ${mentor.name}, a verified PeerVia mentor studying ${mentor.subject} at ${mentor.school}.`
+    : "";
+
+  try {
+    if (navigator.share) {
+      await navigator.share({ title, text, url });
+      return;
+    }
+  } catch (err) {
+    if (err?.name === "AbortError") return; // person closed the share menu
+  }
+
+  try {
+    await navigator.clipboard.writeText(url);
+    setShareCopied(true);
+    setTimeout(() => setShareCopied(false), 2000);
+  } catch {
+    window.prompt("Copy this link:", url);
+  }
+}
 
 async function handleBookClick() {
   setBookError("");
@@ -273,9 +299,36 @@ async function handleSubmitBooking(e) {
                 Verified Mentor
               </p>
             )}
-            <h1 className="font-display text-4xl sm:text-5xl text-ink leading-tight">
-              {mentor.name}
-            </h1>
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+              <h1 className="font-display text-4xl sm:text-5xl text-ink leading-tight">
+                {mentor.name}
+              </h1>
+              <button
+                type="button"
+                onClick={handleShare}
+                className="inline-flex items-center gap-2 bg-primary text-white font-label text-[11px] tracking-[0.1em] uppercase font-semibold px-4 py-2 rounded-full hover:bg-primary-dark transition shadow-sm"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <circle cx="18" cy="5" r="3" />
+                  <circle cx="6" cy="12" r="3" />
+                  <circle cx="18" cy="19" r="3" />
+                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                  <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+                </svg>
+                {shareCopied ? "Link copied ✓" : "Share"}
+              </button>
+            </div>
             <p className="text-muted mt-2.5 text-base">
               {mentor.school}, {mentor.year} · {mentor.subject}
             </p>
@@ -286,6 +339,8 @@ async function handleSubmitBooking(e) {
             )}
           </div>
         </div>
+
+    
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
           {/* Main content */}
