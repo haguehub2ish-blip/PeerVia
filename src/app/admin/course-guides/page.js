@@ -294,7 +294,7 @@ useEffect(() => {
           .filter(Boolean),
         journeySteps: form.journeySteps,
         applicationRules: form.applicationRules,
-        entryPaths: form.entryPaths.map((p) => ({ ...p, points: (p.points || "").split("\n").map((s) => s.trim()).filter(Boolean) })),
+                entryPaths: form.entryPaths.map((p) => ({ ...p, points: (p.points || "").trim().split("\n").map((s) => s.trim()) })),
         pipelineStages: form.pipelineStages,
         specializations: form.specializations,
         careerSteps: form.careerSteps,
@@ -579,7 +579,7 @@ useEffect(() => {
               { key: "title", label: "Path Title", placeholder: "e.g. Entry via the International Baccalaureate (IB)" },
               { key: "points", label: "Requirements (one per line)", type: "list", placeholder: "Biology, Chemistry, and Physics at HL...\nDeficiency exams via Boswell-Bèta..." },
             ]}
-            emptyItem={{ title: "", points: "" }}
+                        emptyItem={{ title: "", points: "", bulleted: true }}
             addLabel="Add Entry Path"
           />
 
@@ -748,7 +748,7 @@ useEffect(() => {
                             <div>
                               <p className="font-semibold text-[#241A12] text-sm">{step.title}</p>
                               {step.description && (
-                                <p className="text-sm text-[#241A12]/70">{step.description}</p>
+                                <p className="text-sm text-[#241A12]/70 whitespace-pre-line">{step.description}</p>
                               )}
                             </div>
                           </div>
@@ -765,7 +765,7 @@ useEffect(() => {
                           <li key={i}>
                             <p className="font-semibold text-[#241A12] text-sm">{rule.title}</p>
                             {rule.description && (
-                              <p className="text-sm text-[#241A12]/70">{rule.description}</p>
+                              <p className="text-sm text-[#241A12]/70 whitespace-pre-line">{rule.description}</p>
                             )}
                           </li>
                         ))}
@@ -780,15 +780,21 @@ useEffect(() => {
                         {form.entryPaths.map((path, i) => (
                           <div key={i}>
                             <p className="font-semibold text-[#241A12] text-sm mb-1.5">{path.title}</p>
-                            {(path.points || "").split("\n").map((s) => s.trim()).filter(Boolean).length > 0 && (
-                              <ul className="text-sm text-[#241A12]/70 space-y-1">
-                                {(path.points || "").split("\n").map((s) => s.trim()).filter(Boolean).map((point, j) => (
-                                  <li key={j} className="flex items-start gap-2">
-                                    <span className="mt-1.5 w-1 h-1 rounded-full bg-[#BC6C25] shrink-0"></span>
-                                    <span>{point}</span>
-                                  </li>
-                                ))}
-                              </ul>
+                                                       {(path.points || "").trim() && (
+                              path.bulleted === false ? (
+                                <p className="text-sm text-[#241A12]/70 whitespace-pre-line">
+                                  {(path.points || "").trim()}
+                                </p>
+                              ) : (
+                                <ul className="text-sm text-[#241A12]/70 space-y-1">
+                                  {(path.points || "").split("\n").map((s) => s.trim()).filter(Boolean).map((point, j) => (
+                                    <li key={j} className="flex items-start gap-2">
+                                      <span className="mt-1.5 w-1 h-1 rounded-full bg-[#BC6C25] shrink-0"></span>
+                                      <span>{point}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              )
                             )}
                           </div>
                         ))}
@@ -824,7 +830,7 @@ useEffect(() => {
                           <div key={i}>
                             <p className="font-semibold text-[#241A12] text-sm mb-1">{stage.title}</p>
                             {stage.description && (
-                              <p className="text-sm text-[#241A12]/70">{stage.description}</p>
+                              <p className="text-sm text-[#241A12]/70 whitespace-pre-line">{stage.description}</p>
                             )}
                           </div>
                         ))}
@@ -875,7 +881,7 @@ useEffect(() => {
                           <div key={i}>
                             <p className="font-semibold text-[#241A12] text-sm mb-1">{step.title}</p>
                             {step.description && (
-                              <p className="text-sm text-[#241A12]/70">{step.description}</p>
+                              <p className="text-sm text-[#241A12]/70 whitespace-pre-line">{step.description}</p>
                             )}
                           </div>
                         ))}
@@ -890,7 +896,7 @@ useEffect(() => {
                         {form.glossary.map((entry, i) => (
                           <div key={i} className="text-sm">
                             <dt className="font-semibold text-[#241A12] inline">{entry.term}: </dt>
-                            <dd className="text-[#241A12]/70 inline">{entry.definition}</dd>
+                            <dd className="text-[#241A12]/70 inline whitespace-pre-line">{entry.definition}</dd>
                           </div>
                         ))}
                       </dl>

@@ -125,7 +125,7 @@ export default function CourseGuideDetail() {
                       <div>
                         <p className="font-semibold text-ink text-sm">{step.title}</p>
                         {step.description && (
-                          <p className="text-base text-ink/90 leading-relaxed">{step.description}</p>
+                          <p className="text-base text-ink/90 leading-relaxed whitespace-pre-line">{step.description}</p>
                         )}
                       </div>
                     </div>
@@ -144,7 +144,7 @@ export default function CourseGuideDetail() {
                     <li key={i}>
                       <p className="font-semibold text-ink text-sm">{rule.title}</p>
                       {rule.description && (
-                        <p className="text-base text-ink/90 leading-relaxed">{rule.description}</p>
+                        <p className="text-base text-ink/90 leading-relaxed whitespace-pre-line">{rule.description}</p>
                       )}
                     </li>
                   ))}
@@ -152,7 +152,7 @@ export default function CourseGuideDetail() {
               </div>
             )}
 
-            {guide.entry_paths?.length > 0 && (
+                        {guide.entry_paths?.length > 0 && (
               <div className="mb-8 pb-8 border-b border-border">
                 <p className="font-label text-xs uppercase tracking-[0.15em] text-muted mb-4">
                   Entry Paths
@@ -161,22 +161,27 @@ export default function CourseGuideDetail() {
                   {guide.entry_paths.map((path, i) => (
                     <div key={i}>
                       <p className="font-semibold text-ink text-sm mb-2">{path.title}</p>
-                      {path.points?.length > 0 && (
-                        <ul className="text-base text-ink/90 space-y-1.5">
-                          {path.points.map((point, j) => (
-                            <li key={j} className="flex items-start gap-2">
-                              <span className="mt-1.5 w-1 h-1 rounded-full bg-primary shrink-0"></span>
-                              <span>{point}</span>
-                            </li>
-                          ))}
-                        </ul>
+                      {path.points?.filter(Boolean).length > 0 && (
+                        path.bulleted === false ? (
+                          <p className="text-base text-ink/90 leading-relaxed whitespace-pre-line">
+                            {path.points.join("\n")}
+                          </p>
+                        ) : (
+                          <ul className="text-base text-ink/90 space-y-1.5">
+                            {path.points.filter(Boolean).map((point, j) => (
+                              <li key={j} className="flex items-start gap-2">
+                                <span className="mt-1.5 w-1 h-1 rounded-full bg-primary shrink-0"></span>
+                                <span>{point}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )
                       )}
                     </div>
                   ))}
                 </div>
               </div>
             )}
-
             {guide.popular_universities?.length > 0 && (
               <div className="mb-8 pb-8 border-b border-border">
                 <p className="font-label text-xs uppercase tracking-[0.15em] text-muted mb-3">
@@ -214,7 +219,7 @@ export default function CourseGuideDetail() {
                     <div key={i}>
                       <p className="font-semibold text-ink mb-1">{stage.title}</p>
                       {stage.description && (
-                        <p className="text-base text-ink/90 leading-relaxed">{stage.description}</p>
+                        <p className="text-base text-ink/90 leading-relaxed whitespace-pre-line">{stage.description}</p>
                       )}
                     </div>
                   ))}
@@ -279,7 +284,7 @@ export default function CourseGuideDetail() {
                     <div key={i}>
                       <p className="font-semibold text-ink mb-1">{step.title}</p>
                       {step.description && (
-                        <p className="text-base text-ink/90 leading-relaxed">{step.description}</p>
+                        <p className="text-base text-ink/90 leading-relaxed whitespace-pre-line">{step.description}</p>
                       )}
                     </div>
                   ))}
@@ -296,7 +301,7 @@ export default function CourseGuideDetail() {
                   {guide.glossary.map((entry, i) => (
                     <div key={i} className="text-sm">
                       <dt className="font-semibold text-ink inline">{entry.term}: </dt>
-                      <dd className="text-ink/70 inline">{entry.definition}</dd>
+                      <dd className="text-ink/70 inline whitespace-pre-line">{entry.definition}</dd>
                     </div>
                   ))}
                 </dl>

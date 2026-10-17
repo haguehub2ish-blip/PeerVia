@@ -236,16 +236,17 @@ export default function Settings() {
       <Navbar />
 
       <div className="max-w-6xl mx-auto px-6 py-12">
-        <h1 className="font-display text-3xl text-ink mb-1">Settings</h1>
-        <p className="text-muted text-sm mb-10">
-          Manage your account details, notification preferences, and data.
-        </p>
-
-        <div className="mb-8 -mt-6">
+                <div className="flex items-center justify-between flex-wrap gap-3 mb-10">
+          <div>
+            <h1 className="font-display text-3xl text-ink mb-1">Settings</h1>
+            <p className="text-muted text-sm">
+              Manage your account details, notification preferences, and data.
+            </p>
+          </div>
           <button
             type="button"
             onClick={() => window.dispatchEvent(new Event("peervia:open-tour"))}
-            className="text-sm font-semibold text-primary underline underline-offset-4 hover:opacity-80"
+            className="font-label text-[10px] tracking-[0.1em] uppercase px-3 py-1.5 rounded-full border border-border text-ink hover:border-primary hover:text-primary transition"
           >
             How PeerVia works
           </button>

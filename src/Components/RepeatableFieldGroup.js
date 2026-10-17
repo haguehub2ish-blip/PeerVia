@@ -40,14 +40,27 @@ export default function RepeatableFieldGroup({ title, description, items, onChan
               {fields.map((f) => (
                 <div key={f.key}>
                   <label className="block text-xs font-medium text-muted mb-1">{f.label}</label>
-                  {f.type === "textarea" || f.type === "list" ? (
-                    <textarea
-                      rows={f.type === "list" ? 3 : 2}
-                      value={item[f.key] || ""}
-                      onChange={(e) => updateItem(index, f.key, e.target.value)}
-                      placeholder={f.placeholder}
-                      className="w-full border border-border rounded-md px-3 py-2 text-sm text-ink placeholder-muted/60 bg-surface focus:outline-none focus:ring-2 focus:ring-primary resize-y"
-                    />
+                                  {f.type === "textarea" || f.type === "list" ? (
+                    <>
+                      <textarea
+                        rows={f.type === "list" ? 3 : 2}
+                        value={item[f.key] || ""}
+                        onChange={(e) => updateItem(index, f.key, e.target.value)}
+                        placeholder={f.placeholder}
+                        className="w-full border border-border rounded-md px-3 py-2 text-sm text-ink placeholder-muted/60 bg-surface focus:outline-none focus:ring-2 focus:ring-primary resize-y"
+                      />
+                      {f.type === "list" && (
+                        <label className="mt-1.5 flex items-center gap-2 text-xs text-muted cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={item.bulleted !== false}
+                            onChange={(e) => updateItem(index, "bulleted", e.target.checked)}
+                            className="accent-[#BC6C25]"
+                          />
+                          Show as bullet points
+                        </label>
+                      )}
+                    </>
                   ) : (
                     <input
                       type="text"

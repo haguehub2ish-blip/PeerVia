@@ -108,6 +108,12 @@ export function renderEmail({
             <td style="padding:8px 32px 32px 32px;">
               <div style="border-top:1px solid ${BORDER}; padding-top:20px;">
                 ${footerNote ? `<p style="margin:0 0 10px 0; font-size:12px; line-height:1.6; color:${MUTED}; font-family:${SANS};">${footerNote}</p>` : ""}
+                                <p style="margin:0 0 10px 0; font-size:12px; line-height:1.6; color:${MUTED}; font-family:${SANS};">
+                  By using PeerVia, you agree to our
+                  <a href="${siteUrl}/documents/PeerVia-Terms-of-Service.pdf" style="color:${PRIMARY_DARK}; text-decoration:underline;">Terms of Service</a>
+                  and
+                  <a href="${siteUrl}/documents/PeerVia-Privacy-Policy.pdf" style="color:${PRIMARY_DARK}; text-decoration:underline;">Privacy Policy</a>.
+                </p>
                 <p style="margin:0; font-size:12px; color:${MUTED}; font-family:${SANS};">© ${year} PeerVia · By students, for students.</p>
               </div>
             </td>
