@@ -2,9 +2,29 @@ export default function Footer() {
   return (
        <footer className="bg-ink py-8 px-6 mt-auto">
       <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-        <p className="text-sm text-white/50">
-          © {new Date().getFullYear()} PeerVia. All rights reserved.
-        </p>
+        <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-6">
+          <p className="text-sm text-white/50">
+            © {new Date().getFullYear()} PeerVia. All rights reserved.
+          </p>
+          <div className="flex items-center gap-4 text-sm text-white/50">
+            <a
+              href="/documents/PeerVia-Terms-of-Service.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-white transition"
+            >
+              Terms
+            </a>
+            <a
+              href="/documents/PeerVia-Privacy-Policy.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-white transition"
+            >
+              Privacy
+            </a>
+          </div>
+        </div>
 
         <div className="flex items-center gap-4">
           <a

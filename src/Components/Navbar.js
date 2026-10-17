@@ -313,7 +313,7 @@ export default function Navbar() {
             <StudentWelcomeTour
         open={showStudentTour}
         onClose={closeStudentTour}
-        firstName={user?.user_metadata?.firstName}
+                firstName={user?.user_metadata?.firstName || (user?.user_metadata?.name || "").split(" ")[0]}
         isMinor={tourMinor}
                 startStep={tourStart}
       />

@@ -10,6 +10,8 @@ export default function sitemap() {
     "/apply",
     "/login",
     "/signup",
+    "/terms",
+    "/privacy",
   ];
 
   return routes.map((route) => ({

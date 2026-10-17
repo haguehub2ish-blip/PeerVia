@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import Navbar from "@/Components/Navbar";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { getSubjectStyle } from "@/data/mentors";
 import RepeatableFieldGroup from "@/Components/RepeatableFieldGroup";
@@ -321,16 +322,16 @@ useEffect(() => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FFF9F2]">
+      <div className="min-h-screen bg-background">
         <Navbar />
-        <p className="text-gray-500 text-center py-16">Loading...</p>
+        <p className="text-muted text-center py-16">Loading...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-[#FFF9F2]">
+      <div className="min-h-screen bg-background">
         <Navbar />
         <p className="text-red-600 font-semibold text-center py-16">{error}</p>
       </div>
@@ -338,45 +339,49 @@ useEffect(() => {
   }
 
   return (
-    <div className="min-h-screen bg-[#FFF9F2]">
+    <div className="min-h-screen bg-background">
       <Navbar />
       <div className="max-w-3xl mx-auto px-6 py-10">
-        <div className="flex items-center gap-3 mb-2">
-          <span className="w-10 h-10 rounded-xl bg-green-100 text-green-700 flex items-center justify-center text-lg shrink-0">
-            📚
-          </span>
-          <h1 className="text-3xl font-extrabold text-gray-900">
-            Manage Course Guides
-          </h1>
-        </div>
-        <p className="text-gray-600 mb-8">
+        <Link
+          href="/admin"
+          className="font-label text-[10px] tracking-[0.1em] uppercase text-muted hover:text-ink transition"
+        >
+          ← Admin Dashboard
+        </Link>
+        <p className="font-label text-[10px] tracking-[0.15em] uppercase text-primary mt-4 mb-2">
+          Admin
+        </p>
+        <h1 className="font-display text-3xl text-ink leading-tight mb-2">
+          Manage Course Guides
+        </h1>
+        <p className="text-muted text-sm mb-8">
           Add a new course guide. It will appear on the public Course Guides page immediately.
         </p>
 
         {editingId && (
-          <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-4 py-2.5 mb-3 text-sm flex items-center justify-between">
+          <div className="bg-primary/10 border border-primary/30 text-ink rounded-lg px-4 py-2.5 mb-3 text-sm flex items-center justify-between">
             <span className="flex items-center gap-1.5">✏️ Editing an existing course guide.</span>
             <button
               type="button"
               onClick={handleCancelEdit}
-              className="text-amber-800 font-semibold hover:underline"
+              className="text-primary font-semibold hover:underline"
             >
               Cancel
             </button>
           </div>
         )}
 
-        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 mb-6">
+        <div className="bg-surface border border-border rounded-lg shadow-sm p-6 mb-6">
   <div className="flex items-center gap-2 mb-2">
-    <span className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center text-sm shrink-0">
+    <span className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center text-sm shrink-0">
       ✨
     </span>
-    <h2 className="text-base font-bold text-gray-900">Auto-fill from a PDF</h2>
+    <h2 className="font-display text-lg text-ink">Auto-fill from a PDF</h2>
   </div>
-  <p className="text-sm text-gray-600 mb-3">
+  <p className="text-sm text-muted mb-3">
     Upload a course/career guide PDF and AI will fill out the form below for you — review and edit before saving.
   </p>
-  <label className="inline-flex items-center gap-2 bg-indigo-50 text-indigo-700 border border-indigo-200 px-4 py-2 rounded-lg text-sm font-semibold cursor-pointer hover:bg-indigo-100 transition">
+  <label className="inline-flex items-center gap-2 bg-background text-ink border border-border px-4 py-2 rounded-md text-sm font-semibold cursor-pointer hover:border-primary hover:text-primary transition">
     {pdfParsing ? "Reading PDF..." : "📄 Choose PDF"}
     <input
       type="file"
@@ -388,7 +393,7 @@ useEffect(() => {
   </label>
   {pdfParsing && (
     <div className="mt-3">
-      <div className="flex items-center justify-between text-xs text-gray-500 mb-1.5">
+      <div className="flex items-center justify-between text-xs text-muted mb-1.5">
         <span>Analyzing PDF with AI…</span>
         <span>
           {pdfProgress >= 100
@@ -398,13 +403,13 @@ useEffect(() => {
             : "Starting…"}
         </span>
       </div>
-      <div className="w-full bg-indigo-100 rounded-full h-2 overflow-hidden">
+      <div className="w-full bg-border rounded-full h-2 overflow-hidden">
         <div
-          className="h-2 bg-indigo-600 rounded-full transition-[width] duration-200 ease-out"
+          className="h-2 bg-primary rounded-full transition-[width] duration-200 ease-out"
           style={{ width: `${pdfProgress}%` }}
         />
       </div>
-      <p className="text-right text-xs text-gray-400 mt-1">{Math.round(pdfProgress)}%</p>
+      <p className="text-right text-xs text-muted mt-1">{Math.round(pdfProgress)}%</p>
     </div>
   )}
   {pdfParseError && (
@@ -414,17 +419,17 @@ useEffect(() => {
 
         <form
           onSubmit={handleSubmit}
-          className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden mb-10"
+          className="bg-surface border border-border rounded-lg shadow-sm overflow-hidden mb-10"
         >
-          <div className="h-1.5 bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-400" />
+          <div className="h-1.5 bg-primary" />
           <div className="p-6 space-y-5">
           <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+            <p className="font-label text-[10px] tracking-[0.15em] uppercase text-primary mb-3">
               Basics
             </p>
 
             <div className="mb-4">
-              <label className="block text-sm font-semibold text-gray-800 mb-1">
+              <label className="block text-sm font-medium text-ink mb-1">
                 Cover image
               </label>
               <div className="flex items-center gap-4">
@@ -432,23 +437,23 @@ useEffect(() => {
                   <img
                     src={imagePreview}
                     alt="Preview"
-                    className="w-20 h-24 object-cover rounded-lg border border-gray-200"
+                    className="w-20 h-24 object-cover rounded-lg border border-border"
                   />
                 )}
                 <input
                   type="file"
                   accept="image/*"
                   onChange={handleImageSelect}
-                  className="text-sm text-gray-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-green-600 file:text-white file:font-semibold file:text-sm hover:file:bg-green-700 file:cursor-pointer cursor-pointer"
+                  className="text-sm text-muted file:mr-3 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-ink file:text-white file:font-semibold file:text-sm hover:file:opacity-90 file:cursor-pointer cursor-pointer"
                 />
               </div>
               {uploadingImage && (
-                <p className="text-xs text-gray-500 mt-1.5">Uploading image...</p>
+                <p className="text-xs text-muted mt-1.5">Uploading image...</p>
               )}
             </div>
             <div className="grid grid-cols-2 gap-3 mb-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-1">
+                <label className="block text-sm font-medium text-ink mb-1">
                   Subject
                 </label>
                 <input
@@ -456,18 +461,18 @@ useEffect(() => {
                   value={form.subject}
                   onChange={(e) => updateField("subject", e.target.value)}
                   placeholder="e.g. Psychology"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600"
+                  className="w-full border border-border rounded-md px-4 py-2.5 text-ink placeholder-muted/60 bg-background focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-1">
+                <label className="block text-sm font-medium text-ink mb-1">
                   Country
                 </label>
                 <select
                   required
                   value={form.country}
                   onChange={(e) => updateField("country", e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-600"
+                  className="w-full border border-border rounded-md px-4 py-2.5 text-ink bg-background focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   <option value="">Select country</option>
                   {countries.map((c) => (
@@ -480,7 +485,7 @@ useEffect(() => {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-800 mb-1">
+              <label className="block text-sm font-medium text-ink mb-1">
                 Description
               </label>
               <textarea
@@ -489,30 +494,30 @@ useEffect(() => {
                 value={form.description}
                 onChange={(e) => updateField("description", e.target.value)}
                 placeholder="A short overview of what this course/programme is like..."
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600"
+                className="w-full border border-border rounded-md px-4 py-2.5 text-ink placeholder-muted/60 bg-background focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
           </div>
 
-          <div className="pt-5 border-t border-gray-100">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+          <div className="pt-5 border-t border-border">
+            <p className="font-label text-[10px] tracking-[0.15em] uppercase text-primary mb-3">
               Admission
             </p>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-1">
-                  Popular universities <span className="text-gray-400 font-normal">(comma-separated)</span>
+                <label className="block text-sm font-medium text-ink mb-1">
+                  Popular universities <span className="text-muted font-normal">(comma-separated)</span>
                 </label>
                 <input
                   value={form.popularUniversities}
                   onChange={(e) => updateField("popularUniversities", e.target.value)}
                   placeholder="e.g. TU Delft, University of Amsterdam"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600"
+                  className="w-full border border-border rounded-md px-4 py-2.5 text-ink placeholder-muted/60 bg-background focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-1">
+                <label className="block text-sm font-medium text-ink mb-1">
                   Admission requirements
                 </label>
                 <textarea
@@ -521,19 +526,19 @@ useEffect(() => {
                   value={form.admission}
                   onChange={(e) => updateField("admission", e.target.value)}
                   placeholder="How admissions work for this course..."
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600"
+                  className="w-full border border-border rounded-md px-4 py-2.5 text-ink placeholder-muted/60 bg-background focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-1">
-                  Language requirement <span className="text-gray-400 font-normal">(optional)</span>
+                <label className="block text-sm font-medium text-ink mb-1">
+                  Language requirement <span className="text-muted font-normal">(optional)</span>
                 </label>
                 <input
                   value={form.languageRequirement}
                   onChange={(e) => updateField("languageRequirement", e.target.value)}
                   placeholder="e.g. Dutch C1 proficiency required"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600"
+                  className="w-full border border-border rounded-md px-4 py-2.5 text-ink placeholder-muted/60 bg-background focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
             </div>
@@ -645,11 +650,11 @@ useEffect(() => {
             addLabel="Add Link"
           />
 
-          <div className="pt-5 border-t border-gray-100">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+          <div className="pt-5 border-t border-border">
+            <p className="font-label text-[10px] tracking-[0.15em] uppercase text-primary mb-3">
               Publishing
             </p>
-            <label className="block text-sm font-semibold text-gray-800 mb-1">
+            <label className="block text-sm font-medium text-ink mb-1">
               Date Published
             </label>
             <input
@@ -657,16 +662,16 @@ useEffect(() => {
               required
               value={form.datePublished}
               onChange={(e) => updateField("datePublished", e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-600"
+              className="w-full border border-border rounded-md px-4 py-2.5 text-ink bg-background focus:outline-none focus:ring-2 focus:ring-primary"
             />
-            <p className="text-xs text-gray-400 mt-1">Defaults to today — change it only if you're backdating an older guide.</p>
+            <p className="text-xs text-muted mt-1">Defaults to today — change it only if you're backdating an older guide.</p>
           </div>
 
           {submitError && (
             <p className="text-red-600 text-sm font-medium">⚠️ {submitError}</p>
           )}
           {success && (
-            <p className="text-green-700 text-sm font-medium">
+            <p className="text-primary text-sm font-medium">
               {wasEditing ? "✓ Course guide updated." : "✓ Course guide added."}
             </p>
           )}
@@ -674,7 +679,7 @@ useEffect(() => {
           <button
             type="submit"
             disabled={submitting}
-            className="bg-green-600 text-white px-5 py-2.5 rounded-lg font-semibold shadow-sm hover:bg-green-700 hover:shadow transition disabled:opacity-50"
+            className="bg-ink text-white px-5 py-2.5 rounded-md text-sm font-semibold hover:opacity-90 transition disabled:opacity-50"
           >
             {submitting ? "Saving..." : editingId ? "Update Course Guide" : "Add Course Guide"}
           </button>
@@ -684,9 +689,9 @@ useEffect(() => {
 {(form.subject || form.description) && (
                  <div className="mb-10 -mx-6" style={{ width: "100vw", marginLeft: "calc(-50vw + 50%)" }}>
             <div className="flex items-center gap-2 mb-4">
-              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-              <h2 className="text-xl font-bold text-gray-900">Live Preview</h2>
-              <span className="text-xs text-gray-400">(matches the full course guide page)</span>
+              <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+              <h2 className="font-display text-xl text-ink">Live Preview</h2>
+              <span className="text-xs text-muted">(matches the full course guide page)</span>
             </div>
 
             <div className="bg-[#F1E7CC] rounded-3xl p-6 sm:p-8">
@@ -936,14 +941,14 @@ useEffect(() => {
           </div>
         )}
 
-        <h2 className="text-xl font-bold text-gray-900 mb-4">
+        <h2 className="font-display text-xl text-ink mb-4">
           Existing Course Guides ({guides.length})
         </h2>
         <div className="space-y-2">
           {guides.map((g) => (
             <div
               key={g.id}
-              className="bg-white border border-gray-200 rounded-xl px-4 py-3 flex items-center justify-between gap-3 hover:border-gray-300 hover:shadow-sm transition"
+              className="bg-surface border border-border rounded-lg px-4 py-3 flex items-center justify-between gap-3 hover:border-primary/40 hover:shadow-sm transition"
             >
               <div className="flex items-center gap-3">
                 <span
@@ -951,7 +956,7 @@ useEffect(() => {
                 >
                   {getSubjectStyle(g.subject).icon} {g.subject}
                 </span>
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-muted">
                   {g.flag} {g.country_label}
                 </span>
               </div>
@@ -959,14 +964,14 @@ useEffect(() => {
                 <button
                   onClick={() => handleEditClick(g)}
                   title="Edit this course guide"
-                  className="text-gray-400 hover:text-green-700 hover:bg-green-50 p-1.5 rounded-md transition"
+                  className="text-muted hover:text-primary hover:bg-primary/10 p-1.5 rounded-md transition"
                 >
                   ✏️
                 </button>
                 <button
                   onClick={() => handleDelete(g.id, `${g.subject} in ${g.country_label}`)}
                   title="Delete this course guide"
-                  className="text-gray-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-md transition"
+                  className="text-muted hover:text-red-600 hover:bg-red-50 p-1.5 rounded-md transition"
                 >
                   🗑️
                 </button>

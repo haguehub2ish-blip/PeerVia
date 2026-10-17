@@ -6,6 +6,7 @@ import { ALL_UNIVERSITIES, ALL_LANGUAGES, ALL_FIELDS, ALL_COUNTRIES, mergeOption
 import { supabase } from "@/lib/supabase";
 import { courseGuides, allUniversityNames } from "@/data/courseGuides";
 import DateOfBirthPicker from "@/Components/DateOfBirthPicker";
+import OAuthButtons from "@/Components/OAuthButtons";
 
 const emailProviders = {
   "gmail.com": { name: "Gmail", url: "https://mail.google.com" },
@@ -227,6 +228,7 @@ export default function Signup() {
           </div>
         ) : (
           <form onSubmit={handleSignup} className="bg-surface border border-border rounded-lg p-6 shadow-sm space-y-4">
+            <OAuthButtons />
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium text-ink mb-1.5">

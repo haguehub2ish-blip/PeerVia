@@ -10,8 +10,11 @@ export default function MentorSetPassword() {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
+  const [expired, setExpired] = useState(false);
 
   useEffect(() => {
+    if (window.location.hash.includes("otp_expired")) setExpired(true);
+
     supabase.auth.getSession().then(({ data }) => {
       if (data?.session) setReady(true);
     });
@@ -68,7 +71,9 @@ export default function MentorSetPassword() {
           </div>
         ) : !ready ? (
           <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg p-4 text-sm">
-            Waiting For A Valid Invite Link. Please Use The Link From Your Invite Email.
+            {expired
+              ? "This invite link has expired or was already used. Email info.peervia@gmail.com and we'll send you a new one."
+              : "Waiting For A Valid Invite Link. Please Use The Link From Your Invite Email."}
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-2xl p-6 space-y-4">

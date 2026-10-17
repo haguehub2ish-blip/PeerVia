@@ -3,6 +3,7 @@ import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Navbar from "@/Components/Navbar";
 import { supabase } from "@/lib/supabase";
+import OAuthButtons from "@/Components/OAuthButtons";
 
 export default function Login() {
   return (
@@ -60,6 +61,7 @@ function LoginContent() {
         )}
 
         <form onSubmit={handleLogin} className="bg-surface border border-border rounded-lg p-6 shadow-sm space-y-4">
+                   <OAuthButtons />
           <div>
             <label className="block text-sm font-medium text-ink mb-1.5">
               Email

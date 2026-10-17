@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/Components/Navbar";
 import { questions } from "@/data/questions";
@@ -138,6 +138,15 @@ function DecorShapes() {
       <path d="M22 8v6" />
     </svg>
   );
+}
+
+function shuffle(list) {
+  const copy = [...list];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
 }
 
 export default function Home() {
@@ -306,7 +315,7 @@ export default function Home() {
   };
 
   const topMentors = [...mentors].sort((a, b) => b.rating - a.rating).slice(0, 3);
-   const heroMentors = [...mentors].sort((a, b) => b.rating - a.rating);
+   const heroMentors = useMemo(() => shuffle(mentors).slice(0, 10), [mentors]);
   const heroMentor = heroMentors[heroIndex] || heroMentors[0];
   const topQuestions = [...questions].sort((a, b) => b.helpful - a.helpful).slice(0, 3);
   const previewGuide = courseGuides.find((g) => g.id === "medicine-nl") || courseGuides[0];
