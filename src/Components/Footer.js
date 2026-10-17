@@ -13,7 +13,7 @@ export default function Footer() {
               rel="noopener noreferrer"
               className="hover:text-white transition"
             >
-              Terms
+              Terms of Service
             </a>
             <a
               href="/documents/PeerVia-Privacy-Policy.pdf"
@@ -21,7 +21,7 @@ export default function Footer() {
               rel="noopener noreferrer"
               className="hover:text-white transition"
             >
-              Privacy
+              Privacy Policy
             </a>
           </div>
         </div>

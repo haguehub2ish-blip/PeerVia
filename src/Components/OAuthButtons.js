@@ -55,7 +55,7 @@ export default function OAuthButtons() {
 
       {error && <p className="text-red-600 text-sm font-medium">{error}</p>}
 
-            <p className="text-xs text-muted text-center">
+      <p className="text-xs text-muted text-center">
         By continuing, you agree to our{" "}
         <a
           href="/documents/PeerVia-Terms-of-Service.pdf"
@@ -63,7 +63,7 @@ export default function OAuthButtons() {
           rel="noopener noreferrer"
           className="underline"
         >
-          Terms
+          Terms of Service
         </a>{" "}
         and{" "}
         <a
