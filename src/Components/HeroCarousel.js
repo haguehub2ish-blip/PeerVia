@@ -3,8 +3,52 @@ import { memo, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 const INTERVAL_MS = 5200; // how long each mentor stays on top
-const SLIDE_MS = 650; // how long the shuffle movement takes
+const SHUFFLE_MS = 1200; // the whole shuffle, as one continuous motion
+const STEP_DELAY_MS = 260; // the other cards start stepping forward once the top card is clear
+const STEP_MS = 700; // how long the other cards take to step forward
 const MAX_VISIBLE = 4; // cards you can see in the stack (one more waits out of sight)
+
+// Where the card sits in the stack: 0 = top, higher = further back
+function stackTransform(depth) {
+  return `translate(${depth * 12}px, ${depth * 12}px) rotate(${depth * 2.5}deg) scale(${1 - depth * 0.04})`;
+}
+
+// ---- The path the top card follows (one smooth curve, no stops) ----
+// It swings out to the left, curves around, and comes back in behind the deck.
+// Numbers are the 4 control points of a curve: x and y in % of the card's size, rotation in degrees.
+const PATH_X = [0, -115, -115, 0]; // how far left it swings (about -86% at the farthest point)
+const PATH_Y = [0, -8, 24, 0]; // a small lift on the way out, a small dip on the way back
+const PATH_ROT = [0, -14, -8, 0]; // tilts left, then straightens as it tucks in
+const PATH_FRAMES = 36; // more frames = smoother curve
+const FLIP_AT = 50; // % of the shuffle where the card drops behind the deck (its farthest point)
+
+function bezier([p0, p1, p2, p3], t) {
+  const m = 1 - t;
+  return m * m * m * p0 + 3 * m * m * t * p1 + 3 * m * t * t * p2 + t * t * t * p3;
+}
+
+// Builds the animation once. Each card sets --end-x, --end-y, --end-rot and --shrink
+// (where it should finish), so the same animation works for any deck size.
+function buildShuffleCss() {
+  const frames = [];
+  for (let k = 0; k <= PATH_FRAMES; k++) {
+    const time = k / PATH_FRAMES;
+    const t = 0.5 - 0.5 * Math.cos(Math.PI * time); // starts and ends gently, fastest in the middle
+    const settle = (t * t * (3 - 2 * t)).toFixed(4); // blends the card into its final spot
+    const x = bezier(PATH_X, t).toFixed(2);
+    const y = bezier(PATH_Y, t).toFixed(2);
+    const r = bezier(PATH_ROT, t).toFixed(2);
+    frames.push(
+      `${(time * 100).toFixed(2)}%{transform:translate(calc(${x}% + var(--end-x) * ${settle}),calc(${y}% + var(--end-y) * ${settle})) rotate(calc(${r}deg + var(--end-rot) * ${settle})) scale(calc(1 - var(--shrink) * ${settle}))}`
+    );
+  }
+  return (
+    `@keyframes heroShuffleMove{${frames.join("")}}` +
+    `@keyframes heroShuffleLayer{0%{z-index:45}${FLIP_AT}%{z-index:5}100%{z-index:5}}`
+  );
+}
+
+const SHUFFLE_CSS = buildShuffleCss();
 
 function Photo({ mentor }) {
   if (mentor.photo_url) {
@@ -28,8 +72,8 @@ function Photo({ mentor }) {
 function HeroCarousel({ mentors }) {
   const n = mentors.length;
   const [top, setTop] = useState(0);
-  const [leaving, setLeaving] = useState(false);
-  const [movedIndex, setMovedIndex] = useState(null);
+  // "idle" (resting) or "shuffle" (the top card is travelling back into the deck)
+  const [phase, setPhase] = useState("idle");
   const [hovered, setHovered] = useState(false);
   const [inView, setInView] = useState(true);
   const [tabVisible, setTabVisible] = useState(true);
@@ -66,75 +110,94 @@ function HeroCarousel({ mentors }) {
   const current = n ? top % n : 0;
   const running = n > 1 && !hovered && inView && tabVisible;
 
-  // Every few seconds, send the top card away
+  // Every few seconds, start a shuffle
   useEffect(() => {
-    if (!running) return;
+    if (!running || phase !== "idle") return;
     const timer = setTimeout(() => {
       if (reduceMotion) setTop((x) => (x + 1) % n);
-      else setLeaving(true);
+      else setPhase("shuffle");
     }, INTERVAL_MS);
     return () => clearTimeout(timer);
-  }, [running, current, n, reduceMotion]);
+  }, [running, phase, current, n, reduceMotion]);
 
-  // When the slide-away finishes, move that card to the back of the stack
+  // When the shuffle finishes, the next mentor becomes the top card
   useEffect(() => {
-    if (!leaving) return;
+    if (phase !== "shuffle") return;
     const timer = setTimeout(() => {
-      setMovedIndex(current);
       setTop((x) => (x + 1) % n);
-      setLeaving(false);
-    }, SLIDE_MS);
+      setPhase("idle");
+    }, SHUFFLE_MS);
     return () => clearTimeout(timer);
-  }, [leaving, current, n]);
-
-  // The card that just went to the back should jump there, not fly across the stack
-  useEffect(() => {
-    if (movedIndex === null) return;
-    const timer = setTimeout(() => setMovedIndex(null), 80);
-    return () => clearTimeout(timer);
-  }, [movedIndex]);
+  }, [phase, n]);
 
   return (
     <div
       ref={wrapRef}
-      className="relative w-full aspect-[4/5]"
+      // "isolate" keeps the cards' z-index values inside this box, so they can't climb above the navbar
+      className="relative isolate w-full aspect-[4/5]"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onTouchStart={() => setHovered(true)}
       onTouchEnd={() => setHovered(false)}
     >
+      <style>{SHUFFLE_CSS}</style>
+
       {mentors.map((m, i) => {
-        const slot = (i - current + n) % n; // 0 = top card
-        if (slot > MAX_VISIBLE) return null; // the rest are not drawn at all
+        const place = (i - current + n) % n; // real place in the deck, 0 = top card
+        const shuffling = phase === "shuffle";
+        const isLeaving = shuffling && place === 0; // the card travelling back into the deck
 
-        const isTop = slot === 0;
-        const isLeaving = isTop && leaving;
+        // While the shuffle runs, every other card steps forward one place
+        const slot = shuffling && place > 0 ? place - 1 : place;
+        if (slot > MAX_VISIBLE && !isLeaving) return null; // the rest are not drawn at all
+
+        const isTop = slot === 0 && !isLeaving;
         const waiting = slot >= MAX_VISIBLE; // waits behind the stack, fades in when it moves up
-        const depth = Math.min(slot, MAX_VISIBLE - 1);
-        const stack = `translate(${depth * 12}px, ${depth * 12}px) rotate(${depth * 2.5}deg) scale(${1 - depth * 0.04})`;
+        const interactive = isTop && !shuffling;
 
-        let transition;
-        if (reduceMotion) transition = "none";
-        else if (movedIndex === i) transition = "opacity 400ms ease";
-        else if (isLeaving) transition = `transform ${SLIDE_MS}ms cubic-bezier(0.45, 0, 0.9, 0.5), opacity ${SLIDE_MS}ms ease-in`;
-        else transition = `transform ${SLIDE_MS}ms cubic-bezier(0.22, 1, 0.36, 1), opacity ${SLIDE_MS}ms ease`;
+        // Where the leaving card ends up: the back of the visible deck
+        const backDepth = Math.min(n - 1, MAX_VISIBLE - 1);
+
+        let style;
+        if (isLeaving) {
+          style = {
+            // Where it finishes. The animation carries it there along the curve.
+            transform: stackTransform(backDepth),
+            zIndex: 5,
+            opacity: 1,
+            animation: reduceMotion
+              ? "none"
+              : `heroShuffleMove ${SHUFFLE_MS}ms linear both, heroShuffleLayer ${SHUFFLE_MS}ms step-end both`,
+            "--end-x": `${backDepth * 12}px`,
+            "--end-y": `${backDepth * 12}px`,
+            "--end-rot": `${backDepth * 2.5}deg`,
+            "--shrink": backDepth * 0.04,
+          };
+        } else {
+          style = {
+            transform: stackTransform(Math.min(slot, MAX_VISIBLE - 1)),
+            zIndex: 40 - slot * 10,
+            opacity: waiting ? 0 : 1,
+            transition:
+              shuffling && !reduceMotion
+                ? `transform ${STEP_MS}ms cubic-bezier(0.22, 1, 0.36, 1) ${STEP_DELAY_MS}ms, opacity ${STEP_MS}ms ease ${STEP_DELAY_MS}ms`
+                : "none",
+          };
+        }
 
         return (
           <Link
             key={m.id}
             href={`/mentors/${m.id}`}
             prefetch={false}
-            tabIndex={isTop ? 0 : -1}
-            aria-hidden={!isTop}
+            tabIndex={interactive ? 0 : -1}
+            aria-hidden={!interactive}
             className="absolute inset-0 block rounded-2xl overflow-hidden border border-border bg-surface shadow-lg"
             style={{
-              transform: isLeaving ? "translate(-125%, 6%) rotate(-14deg)" : stack,
-              opacity: isLeaving || waiting ? 0 : 1,
-              zIndex: 40 - slot * 10,
+              ...style,
               transformOrigin: "left center",
-              transition,
-              willChange: slot <= 1 ? "transform, opacity" : undefined,
-              pointerEvents: isTop && !leaving ? "auto" : "none",
+              willChange: slot <= 1 || isLeaving ? "transform, opacity" : undefined,
+              pointerEvents: interactive ? "auto" : "none",
             }}
           >
             <Photo mentor={m} />

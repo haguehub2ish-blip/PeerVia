@@ -1,12 +1,13 @@
 "use client";
 import { useState, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import Navbar from "@/Components/Navbar";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 
 const countryFlags = { NL: "🇳🇱", UK: "🇬🇧" };
 const countries = ["All", "NL", "UK"];
+const MAX_COMPARE = 3; // most guides you can compare at once
 
 export default function CourseGuides() {
   return (
@@ -18,6 +19,9 @@ export default function CourseGuides() {
 
 function CourseGuidesContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const [compareMode, setCompareMode] = useState(false);
+  const [selected, setSelected] = useState([]); // ids of the guides picked for comparing
   const [activeCountries, setActiveCountries] = useState([]);
   const [activeSubjects, setActiveSubjects] = useState([]);
   const [courseGuides, setCourseGuides] = useState([]);
@@ -77,6 +81,23 @@ function CourseGuidesContent() {
     );
   };
 
+  const toggleCompareMode = () => {
+    setCompareMode((on) => !on);
+    setSelected([]);
+  };
+
+  const toggleSelected = (id) => {
+    setSelected((prev) => {
+      if (prev.includes(id)) return prev.filter((x) => x !== id);
+      if (prev.length >= MAX_COMPARE) return prev; // already full
+      return [...prev, id];
+    });
+  };
+
+  const goCompare = () => {
+    router.push(`/course-guides/compare?ids=${selected.join(",")}`);
+  };
+
   const filteredGuides = courseGuides.filter((guide) => {
     const matchesCountry = activeCountries.length === 0 || activeCountries.includes(guide.country);
     const matchesSubject = activeSubjects.length === 0 || activeSubjects.includes(guide.subject);
@@ -115,7 +136,7 @@ function CourseGuidesContent() {
           })}
         </div>
 
-        <div className="flex flex-wrap gap-2 mb-10">
+        <div className="flex flex-wrap gap-2 mb-6">
           {subjects.map((s) => {
             const isActive = s === "All" ? activeSubjects.length === 0 : activeSubjects.includes(s);
             return (
@@ -134,6 +155,25 @@ function CourseGuidesContent() {
           })}
         </div>
 
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+          <p className="text-sm text-muted">
+            {compareMode
+              ? `Pick 2 or 3 guides to compare (${selected.length}/${MAX_COMPARE} chosen)`
+              : "Not sure which path fits? Put two or three guides side by side."}
+          </p>
+          <button
+            type="button"
+            onClick={toggleCompareMode}
+            className={`font-label text-xs uppercase tracking-wide px-4 py-2 rounded-lg border transition ${
+              compareMode
+                ? "border-border bg-surface text-ink hover:border-primary"
+                : "border-primary bg-primary text-background hover:bg-primary-dark"
+            }`}
+          >
+            {compareMode ? "Cancel" : "Compare guides"}
+          </button>
+        </div>
+
         {loading ? (
           <p className="font-label text-sm uppercase tracking-wide text-muted">Loading course guides...</p>
         ) : (
@@ -143,7 +183,18 @@ function CourseGuidesContent() {
                 key={guide.id}
                 data-tour={guideIndex === 0 ? "guides-first" : undefined}
                 href={`/course-guides/${guide.id}`}
-                className="group bg-border/40 hover:bg-primary/20 rounded-2xl p-2 transition-colors duration-200"
+                onClick={(e) => {
+                  if (!compareMode) return;
+                  e.preventDefault();
+                  toggleSelected(guide.id);
+                }}
+                className={`group rounded-2xl p-2 transition-colors duration-200 ${
+                  selected.includes(guide.id)
+                    ? "bg-primary/20 ring-2 ring-primary"
+                    : compareMode && selected.length >= MAX_COMPARE
+                      ? "bg-border/40 opacity-60"
+                      : "bg-border/40 hover:bg-primary/20"
+                }`}
               >
                 <div className="aspect-square rounded-xl overflow-hidden bg-surface relative">
                   {guide.imageUrl ? (
@@ -162,6 +213,18 @@ function CourseGuidesContent() {
                   <span className="absolute top-2 right-2 font-label text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-background/90 text-ink backdrop-blur-sm">
                     {guide.flag} {guide.country}
                   </span>
+                  {compareMode && (
+                    <span
+                      aria-hidden="true"
+                      className={`absolute top-2 left-2 w-6 h-6 rounded-md border-2 flex items-center justify-center text-sm font-bold ${
+                        selected.includes(guide.id)
+                          ? "bg-primary border-primary text-background"
+                          : "bg-background/90 border-ink/40 text-transparent"
+                      }`}
+                    >
+                      ✓
+                    </span>
+                  )}
                 </div>
 
                 <div className="bg-surface rounded-xl -mt-4 relative px-4 pt-4 pb-4">
@@ -176,7 +239,11 @@ function CourseGuidesContent() {
 
                   <div className="border-t border-border pt-2.5">
                     <span className="font-label text-[10px] uppercase tracking-[0.2em] text-ink/60 group-hover:text-primary transition-colors">
-                      Read the full guide →
+                      {compareMode
+                        ? selected.includes(guide.id)
+                          ? "Selected ✓"
+                          : "Tap to select"
+                        : "Read the full guide →"}
                     </span>
                   </div>
                 </div>
@@ -184,7 +251,36 @@ function CourseGuidesContent() {
             ))}
           </div>
         )}
+
+        {compareMode && <div className="h-24" />}
       </div>
+
+      {compareMode && (
+        <div className="fixed bottom-4 left-4 right-20 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 z-30 flex items-center justify-between gap-4 rounded-2xl border border-border bg-background/95 backdrop-blur px-4 py-3 shadow-xl">
+          <p className="text-sm text-ink whitespace-nowrap">
+            {selected.length === 0 ? "Select guides" : `${selected.length} selected`}
+            {selected.length === MAX_COMPARE && <span className="text-muted"> (max)</span>}
+          </p>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setSelected([])}
+              disabled={selected.length === 0}
+              className="text-sm text-muted hover:text-primary transition disabled:opacity-40"
+            >
+              Clear
+            </button>
+            <button
+              type="button"
+              onClick={goCompare}
+              disabled={selected.length < 2}
+              className="bg-primary text-background font-label text-xs uppercase tracking-wide px-4 py-2.5 rounded-lg hover:bg-primary-dark transition disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Compare
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
