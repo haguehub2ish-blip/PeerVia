@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { subjectStyles, countryFlags, languageFlags, getLanguageStyle } from "@/data/mentors";
 import MentorCalendarEditor from "@/Components/MentorCalendarEditor";
 import MultiSelect from "@/Components/MultiSelect";
+import GradeInput from "@/Components/GradeInput";
 import MentorGuruMessage from "@/Components/MentorGuruMessage";
 import MentorWelcomeTour from "@/Components/MentorWelcomeTour";
 
@@ -706,12 +707,7 @@ export default function MentorDashboard() {
 
             <div>
               <label className="block text-sm text-muted mb-1">Final high school grade</label>
-              <input
-                value={finalGrade}
-                onChange={(e) => setFinalGrade(e.target.value)}
-                placeholder="e.g. A-Level: AAB, IB: 38, VWO: 7.8 Average"
-                className="w-full border border-border rounded-md px-4 py-2.5 text-ink bg-background focus:outline-none focus:ring-2 focus:ring-primary mb-2"
-              />
+                            <GradeInput value={finalGrade} onChange={setFinalGrade} className="mb-2" />
               <Toggle checked={showFinalGrade} onChange={setShowFinalGrade} label="Show final grade on my public profile" />
             </div>
           </div>

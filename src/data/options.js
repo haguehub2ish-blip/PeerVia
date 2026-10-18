@@ -15,6 +15,7 @@ const dutchUniversities = [
   "Wageningen University & Research",
   "Open University of the Netherlands",
   "Nyenrode Business University",
+  "Hult International Business School",
   "University of Humanistic Studies",
   "Protestant Theological University",
   "Amsterdam University of Applied Sciences",

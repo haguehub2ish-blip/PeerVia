@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { courseGuides } from "@/data/courseGuides";
 import { getLanguageStyle, languageFlags, getSubjectStyle, getFlag } from "@/data/mentors";
 import Link from "next/link";
+import GradeInput from "@/Components/GradeInput";
 
 const fields = ["Medicine", "Mechanical Engineering", "Business", "Computer Science", "Law", "Psychology", "Other"];
 const years = ["Year 1", "Year 2", "Year 3", "Year 4", "Year 5", "Year 6", "Graduate"];
@@ -21,6 +22,7 @@ const dutchUniversities = [
   "Wageningen University & Research",
   "Open University of the Netherlands",
   "Nyenrode Business University",
+  "Hult International Business School",
   "University of Humanistic Studies",
   "Protestant Theological University",
   "Amsterdam University of Applied Sciences",
@@ -85,6 +87,7 @@ const knownUniversityDomains = [
   "nhlstenden.com",          // NHL Stenden
   "buas.nl",                 // Breda UAS
   "hz.nl",                   // HZ
+  "student.hult.edu",        // Hult (students use student.hult.edu)
   "ox.ac.uk",                // Oxford
 ];
 
@@ -432,6 +435,11 @@ export default function Apply() {
     e.preventDefault();
     if (!form.university.trim()) {
       setError("Please select your university.");
+      return;
+    }
+
+    if (!form.final_grade.trim()) {
+      setError("Please choose your grading system and enter a valid final grade.");
       return;
     }
 
@@ -997,16 +1005,13 @@ export default function Apply() {
               />
             </div>
 
-            <div>
+          <div>
               <label className="block text-sm font-semibold text-ink mb-1">
                 Final High School Grade
               </label>
-              <input
-                required
+              <GradeInput
                 value={form.final_grade}
-                onChange={(e) => updateField("final_grade", e.target.value)}
-                placeholder="e.g. A-Level: AAB, IB: 38, VWO: 7.8 Average"
-                className="w-full border border-border rounded-lg px-4 py-2.5 text-ink placeholder-muted/60 focus:outline-none focus:ring-2 focus:ring-primary"
+                onChange={(v) => updateField("final_grade", v)}
               />
             </div>
 

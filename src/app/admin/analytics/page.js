@@ -3,39 +3,69 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Navbar from "@/Components/Navbar";
 import { supabase } from "@/lib/supabase";
-import { getLanguageStyle } from "@/data/mentors";
 
-const statusDots = {
-  pending: "bg-primary",
-  approved: "bg-green-600",
-  rejected: "bg-red-600",
-};
+function dayLabel(day) {
+  return new Date(day + "T00:00:00").toLocaleDateString("en-GB", {
+    weekday: "short",
+    day: "numeric",
+  });
+}
 
-function Detail({ label, children }) {
+function StatCard({ label, value }) {
   return (
-    <div>
-      <p className="font-label text-[10px] tracking-[0.1em] uppercase text-muted mb-0.5">{label}</p>
-      <p className="text-sm text-ink font-medium">{children}</p>
+    <div className="bg-surface border border-border rounded-lg p-5">
+      <p className="font-label text-[10px] tracking-[0.1em] uppercase text-muted mb-2">{label}</p>
+      <p className="font-display text-3xl text-ink">{value ?? 0}</p>
     </div>
   );
 }
 
-function TextBlock({ label, children }) {
+function Section({ title, children }) {
   return (
-    <div className="mb-4">
-      <p className="font-label text-[10px] tracking-[0.1em] uppercase text-muted mb-1">{label}</p>
-      <p className="text-sm text-ink/80 leading-relaxed whitespace-pre-line">{children}</p>
+    <section className="mb-10">
+      <h2 className="font-label text-[11px] tracking-[0.15em] uppercase text-primary mb-4">{title}</h2>
+      {children}
+    </section>
+  );
+}
+
+function DayBars({ title, data }) {
+  const entries = Object.entries(data || {});
+  const max = Math.max(1, ...entries.map(([, n]) => n));
+  return (
+    <div className="bg-surface border border-border rounded-lg p-6">
+      <h3 className="font-display text-xl text-ink mb-5">{title}</h3>
+      <div className="flex items-end gap-3 h-40">
+        {entries.map(([day, n]) => (
+          <div key={day} className="flex-1 flex flex-col items-center justify-end">
+            <span className="text-xs font-semibold text-ink mb-1">{n}</span>
+            <div
+              className="w-full bg-primary rounded-t"
+              style={{ height: n > 0 ? Math.max(6, Math.round((n / max) * 112)) : 2 }}
+            />
+          </div>
+        ))}
+      </div>
+      <div className="flex gap-3 mt-2">
+        {entries.map(([day]) => (
+          <span
+            key={day}
+            className="flex-1 text-center font-label text-[10px] tracking-[0.05em] uppercase text-muted"
+          >
+            {dayLabel(day)}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
 
-export default function AdminApplications() {
-  const [applications, setApplications] = useState([]);
+export default function AdminAnalytics() {
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [processingId, setProcessingId] = useState(null);
 
-  async function loadApplications() {
+  async function loadStats() {
     setLoading(true);
     setError(null);
 
@@ -48,7 +78,7 @@ export default function AdminApplications() {
       return;
     }
 
-    const res = await fetch("/api/admin/applications", {
+    const res = await fetch("/api/admin/analytics", {
       headers: { Authorization: `Bearer ${token}` },
     });
     const result = await res.json();
@@ -56,68 +86,21 @@ export default function AdminApplications() {
     if (result.error) {
       setError(result.error);
     } else {
-      setApplications(result.data);
+      setStats(result);
     }
     setLoading(false);
   }
 
   useEffect(() => {
-    loadApplications();
+    loadStats();
   }, []);
 
-  async function handleResendInvite(app) {
-    if (!confirm(`Send a new invite email to ${app.email}?`)) return;
-    setProcessingId(app.id);
-
-    const { data: sessionData } = await supabase.auth.getSession();
-    const token = sessionData?.session?.access_token;
-
-    const res = await fetch("/api/admin/resend-invite", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ id: app.id }),
-    });
-
-    const result = await res.json();
-    setProcessingId(null);
-    alert(result.error ? "Error: " + result.error : "Invite sent to " + app.email);
-  }
-
-  async function handleDecision(app, status) {
-    setProcessingId(app.id);
-
-    const { data: sessionData } = await supabase.auth.getSession();
-    const token = sessionData?.session?.access_token;
-
-    const res = await fetch("/api/admin/applications-update", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ id: app.id, status, application: app }),
-    });
-
-    const result = await res.json();
-    setProcessingId(null);
-
-    if (result.error) {
-      alert("Error: " + result.error);
-    } else {
-      loadApplications();
-    }
-  }
-
-  const pendingCount = applications.filter((a) => a.status === "pending").length;
+  const topMax = Math.max(1, ...(stats?.topPages || []).map((p) => p.count));
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      {/* Header */}
       <section className="bg-surface border-b border-border px-6 py-8">
         <div className="max-w-5xl mx-auto">
           <Link
@@ -130,154 +113,85 @@ export default function AdminApplications() {
             Admin
           </p>
           <div className="flex items-end justify-between flex-wrap gap-3">
-            <h1 className="font-display text-3xl md:text-4xl text-ink leading-tight">
-              Mentor Applications
-            </h1>
-            {!loading && !error && applications.length > 0 && (
-              <span className="font-label text-[10px] tracking-[0.1em] uppercase px-3 py-1.5 rounded-full border border-border text-ink bg-background">
-                {pendingCount} Pending · {applications.length} Total
-              </span>
-            )}
+            <h1 className="font-display text-3xl md:text-4xl text-ink leading-tight">Analytics</h1>
+            <button
+              type="button"
+              onClick={loadStats}
+              className="font-label text-[10px] tracking-[0.1em] uppercase px-3 py-1.5 rounded-full border border-border text-ink hover:border-primary hover:text-primary transition"
+            >
+              Refresh
+            </button>
           </div>
         </div>
       </section>
 
       <div className="max-w-5xl mx-auto px-6 py-10">
         {loading ? (
-          <p className="text-muted text-sm">Loading applications...</p>
+          <p className="text-muted text-sm">Loading...</p>
         ) : error ? (
-          <p className="text-red-600 font-semibold">{error}</p>
-        ) : applications.length === 0 ? (
-          <div className="text-center py-10 border border-dashed border-border rounded-lg">
-            <p className="text-muted text-sm">No applications yet.</p>
-          </div>
+          <p className="text-red-600 font-semibold">Error: {error}</p>
         ) : (
-          <div className="space-y-4">
-            {applications.map((app) => (
-              <div
-                key={app.id}
-                className="bg-surface border border-border rounded-lg p-6 shadow-sm"
-              >
-                {/* Applicant */}
-                <div className="flex justify-between items-start gap-3 mb-5">
-                  <div className="flex items-center gap-3">
-                    {app.photo_url ? (
-                      <img
-                        src={app.photo_url}
-                        alt={app.first_name}
-                        className="w-14 h-14 rounded-full object-cover border border-border"
-                      />
-                    ) : (
-                      <div className="w-14 h-14 rounded-full bg-ink text-white flex items-center justify-center font-display text-xl">
-                        {app.first_name?.charAt(0)}
+          <>
+            <Section title="People">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <StatCard label="Total users" value={stats.totalUsers} />
+                <StatCard label="Mentor accounts" value={stats.totalMentorUsers} />
+                <StatCard label="Live mentor profiles" value={stats.mentorCount} />
+              </div>
+            </Section>
+
+            <Section title="Mentor applications">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <StatCard label="Total" value={stats.applicationStats?.total} />
+                <StatCard label="Pending" value={stats.applicationStats?.pending} />
+                <StatCard label="Approved" value={stats.applicationStats?.approved} />
+                <StatCard label="Rejected" value={stats.applicationStats?.rejected} />
+              </div>
+            </Section>
+
+            <Section title="Community">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <StatCard label="Questions" value={stats.questionCount} />
+                <StatCard label="Answers" value={stats.answerCount} />
+                <StatCard label="Likes" value={stats.likeCount} />
+                <StatCard label="Comments" value={stats.commentCount} />
+              </div>
+            </Section>
+
+            <Section title="Traffic">
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <StatCard label="Page views" value={stats.totalPageViews} />
+                <StatCard label="Unique visitors" value={stats.uniqueVisitorCount} />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <DayBars title="Page views, last 7 days" data={stats.viewsByDay} />
+                <DayBars title="Signups, last 7 days" data={stats.signupsByDay} />
+              </div>
+            </Section>
+
+            <Section title="Top pages">
+              <div className="bg-surface border border-border rounded-lg p-6 space-y-4">
+                {(stats.topPages || []).length === 0 ? (
+                  <p className="text-muted text-sm">No page views yet.</p>
+                ) : (
+                  stats.topPages.map((p) => (
+                    <div key={p.path}>
+                      <div className="flex items-center justify-between text-sm mb-1">
+                        <span className="text-ink font-medium truncate pr-4">{p.path}</span>
+                        <span className="text-muted shrink-0">{p.count}</span>
                       </div>
-                    )}
-                    <div>
-                      <h3 className="font-display text-lg text-ink leading-tight">
-                        {app.first_name} {app.last_name}
-                      </h3>
-                      <p className="text-muted text-sm">{app.email}</p>
-                      {app.backup_email && (
-                        <p className="text-muted text-sm">Backup: {app.backup_email}</p>
-                      )}
+                      <div className="h-1.5 bg-border rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-primary rounded-full"
+                          style={{ width: `${(p.count / topMax) * 100}%` }}
+                        />
+                      </div>
                     </div>
-                  </div>
-                  <span className="shrink-0 font-label text-[10px] tracking-[0.1em] uppercase px-3 py-1.5 rounded-full border border-border bg-background text-ink flex items-center gap-2">
-                    <span className={`w-1.5 h-1.5 rounded-full ${statusDots[app.status] || "bg-muted"}`} />
-                    {app.status}
-                  </span>
-                </div>
-
-                {/* Details */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-5">
-                  <Detail label="University">{app.university}</Detail>
-                  <Detail label="Year">{app.year}</Detail>
-                  <Detail label="Field">{app.field}</Detail>
-                  <Detail label="Course">
-                    {app.course || <span className="text-muted italic font-normal">Not specified</span>}
-                  </Detail>
-                  <Detail label="Country">{app.country}</Detail>
-                  {app.final_grade && <Detail label="Final grade">{app.final_grade}</Detail>}
-                </div>
-
-                {/* Languages */}
-                <div className="mb-5">
-                  <p className="font-label text-[10px] tracking-[0.1em] uppercase text-muted mb-1.5">
-                    Languages
-                  </p>
-                  {app.languages ? (
-                    <div className="flex flex-wrap gap-1.5">
-                      {app.languages.split(",").map((lang) => {
-                        const style = getLanguageStyle(lang);
-                        return (
-                          <span
-                            key={lang}
-                            className={`inline-block text-xs font-semibold px-2.5 py-0.5 rounded-full ${style.color}`}
-                          >
-                            {style.icon} {lang}
-                          </span>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <span className="text-muted text-sm italic">Not specified</span>
-                  )}
-                </div>
-
-                {/* Written answers */}
-                <TextBlock label="Why they want to mentor">{app.why}</TextBlock>
-                {app.support_guidance && (
-                  <TextBlock label="How they'll support students">{app.support_guidance}</TextBlock>
-                )}
-                {app.extracurriculars && (
-                  <TextBlock label="Extracurriculars">{app.extracurriculars}</TextBlock>
-                )}
-
-                {app.linkedin && (
-                  <a
-                    href={app.linkedin.startsWith("http") ? app.linkedin : `https://${app.linkedin}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-block text-primary text-sm font-medium underline underline-offset-4 hover:opacity-80"
-                  >
-                    View LinkedIn →
-                  </a>
-                )}
-
-                {/* Actions */}
-                {app.status === "approved" && (
-                  <div className="flex gap-2 mt-5 pt-5 border-t border-border">
-                    <button
-                      onClick={() => handleResendInvite(app)}
-                      disabled={processingId === app.id}
-                      className="border border-border text-ink px-5 py-2 rounded-md text-sm font-semibold hover:border-primary hover:text-primary transition disabled:opacity-50"
-                    >
-                      {processingId === app.id ? "Sending..." : "Resend invite"}
-                    </button>
-                  </div>
-                )}
-
-                {app.status === "pending" && (
-                  <div className="flex gap-2 mt-5 pt-5 border-t border-border">
-                    <button
-                      onClick={() => handleDecision(app, "approved")}
-                      disabled={processingId === app.id}
-                      className="bg-ink text-white px-5 py-2 rounded-md text-sm font-semibold hover:opacity-90 transition disabled:opacity-50"
-                    >
-                      {processingId === app.id ? "Processing..." : "Approve"}
-                    </button>
-                    <button
-                      onClick={() => handleDecision(app, "rejected")}
-                      disabled={processingId === app.id}
-                      className="border border-red-300 text-red-700 px-5 py-2 rounded-md text-sm font-semibold hover:bg-red-50 transition disabled:opacity-50"
-                    >
-                      Reject
-                    </button>
-                  </div>
+                  ))
                 )}
               </div>
-            ))}
-          </div>
+            </Section>
+          </>
         )}
       </div>
     </div>

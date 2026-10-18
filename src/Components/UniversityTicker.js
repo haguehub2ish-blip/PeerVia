@@ -14,6 +14,7 @@ const UNIVERSITY_LOGOS = {
   "HAN University of Applied Sciences": "/universities/han.png",
   "HU University of Applied Sciences Utrecht": "/universities/hu.png",
   "HZ University of Applied Sciences": "/universities/hz.png",
+  "Hult International Business School": "/universities/hult.png",
   "Hanze University of Applied Sciences": "/universities/hanze.png",
   "Inholland University of Applied Sciences": "/universities/inholland.png",
   "Leiden University": "/universities/leiden.png",
