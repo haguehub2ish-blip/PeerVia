@@ -6,7 +6,23 @@ import { getSubjectStyle, getFlag } from "@/data/mentors";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 
-const filters = ["All", "Medicine", "Engineering", "Law", "Computer Science", "Business", "Psychology"];
+// Each group matches any subject text containing one of its keywords,
+// so "Mechanical Engineering" and "Law, Psychology" are handled correctly.
+const FIELD_GROUPS = {
+  Medicine: /medic|nursing|dentist|pharmac|biomedic|surgery|clinical/,
+  Engineering: /engineer|aerospace|mechatronic|robotic/,
+  Law: /\blaw\b|legal|jurisprudence/,
+  "Computer Science": /computer|software|informatics|artificial intelligence|\bai\b|data science|cyber|information technology/,
+  Business: /business|management|finance|accounting|marketing|entrepreneur/,
+  Economics: /economic|econometric/,
+  Psychology: /psycholog|neuroscien|behaviou?r/,
+};
+
+function getFieldGroups(subject) {
+  const text = (subject || "").toLowerCase();
+  const groups = Object.keys(FIELD_GROUPS).filter((g) => FIELD_GROUPS[g].test(text));
+  return groups.length > 0 ? groups : ["Other"];
+}
 const countries = ["All", "NL", "UK"];
 const filterTabs = ["Field", "Country", "University", "Language", "Sort"];
 const filterTabStyles = {
@@ -42,9 +58,9 @@ function MentorsContent() {
   useEffect(() => {
     const subjectParam = searchParams.get("subject");
     if (subjectParam) {
-      const validSubjects = subjectParam
-        .split(",")
-        .filter((s) => filters.includes(s));
+      const validSubjects = [
+        ...new Set(subjectParam.split(",").flatMap((s) => getFieldGroups(s.trim()))),
+      ].filter((g) => g !== "Other");
       if (validSubjects.length > 0) {
         setActiveFilters(validSubjects);
       }
@@ -109,7 +125,8 @@ function MentorsContent() {
 
   const filteredMentors = mentors.filter((mentor) => {
     const matchesFilter =
-      activeFilters.length === 0 || activeFilters.includes(mentor.subject);
+      activeFilters.length === 0 ||
+      getFieldGroups(mentor.subject).some((g) => activeFilters.includes(g));
     const matchesCountry =
       activeCountries.length === 0 || activeCountries.includes(mentor.country);
     const mentorLanguages =
@@ -139,9 +156,11 @@ const sortedMentors = [...filteredMentors].sort((a, b) => {
   const norm = (s) => (s || "").trim().replace(/\s+/g, " ").toLowerCase();
   const uniq = (list) => [...new Set(list.filter(Boolean))].sort((a, b) => a.localeCompare(b));
 
+  const hasOtherMentors = mentors.some((m) => getFieldGroups(m.subject).includes("Other"));
   const fieldOptions = [
-    ...filters,
-    ...uniq(mentors.map((m) => m.subject)).filter((f) => !filters.includes(f)),
+    "All",
+    ...Object.keys(FIELD_GROUPS),
+    ...(hasOtherMentors ? ["Other"] : []),
   ];
   const countryOptions = [
     ...countries,

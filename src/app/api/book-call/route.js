@@ -236,5 +236,13 @@ export async function POST(request) {
     return Response.json({ error: "Failed to send email: " + err.message }, { status: 500 });
   }
 
+  // Record the request so analytics and the mentor's session count stay accurate
+  await supabaseAdmin.from("call_requests").insert({
+    mentor_id: String(mentorId),
+    student_id: userData.user.id,
+    student_email: email,
+    source: "direct",
+  });
+
   return Response.json({ success: true });
 }

@@ -274,6 +274,7 @@ export default function Apply() {
 
   const [allMentors, setAllMentors] = useState([]);
   const [statsLoading, setStatsLoading] = useState(true);
+    const [allRatings, setAllRatings] = useState(null);
 
   useEffect(() => {
     async function fetchTeam() {
@@ -293,22 +294,29 @@ export default function Apply() {
       setStatsLoading(false);
     }
     fetchAllMentors();
+        async function fetchRatings() {
+      const { data, error } = await supabase.from("mentor_reviews").select("rating");
+      if (!error) {
+        setAllRatings((data || []).map((r) => Number(r.rating)).filter((r) => r > 0));
+      }
+    }
+    fetchRatings();
   }, []);
 
   const verifiedMentorsCount = allMentors.filter((m) => m.verified).length;
-  const schoolsCount = new Set(allMentors.map((m) => m.school)).size;
-  const countriesCount = new Set(allMentors.map((m) => m.country)).size;
-  const ratedMentors = allMentors.filter((m) => m.rating > 0);
+  const normText = (s) => (s || "").trim().replace(/\s+/g, " ").toLowerCase();
+  const schoolsCount = new Set(allMentors.map((m) => normText(m.school)).filter(Boolean)).size;
+  const countriesCount = new Set(allMentors.map((m) => normText(m.country)).filter(Boolean)).size;
   const avgRating =
-    ratedMentors.length > 0
-      ? (ratedMentors.reduce((sum, m) => sum + m.rating, 0) / ratedMentors.length).toFixed(1)
+    allRatings && allRatings.length > 0
+      ? (allRatings.reduce((sum, r) => sum + r, 0) / allRatings.length).toFixed(1)
       : "—";
 
   const applyStats = [
     { value: verifiedMentorsCount, label: "Current Mentors" },
     { value: schoolsCount, label: "Universities" },
     { value: countriesCount, label: "Countries" },
-    { value: `${avgRating}★`, label: "Avg. Mentor Rating" },
+    { value: avgRating === "—" ? "—" : `${avgRating}★`, label: "Avg. Mentor Rating" },
   ];
 
   useEffect(() => {

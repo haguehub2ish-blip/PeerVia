@@ -80,6 +80,12 @@ export async function POST(request) {
   if (req.kind === "call" && newStatus === "approved") {
     try {
       await sendBookingToMentor({ request: req, siteUrl });
+            await supabaseAdmin.from("call_requests").insert({
+        mentor_id: req.mentor_id ? String(req.mentor_id) : null,
+        student_id: req.student_id,
+        student_email: req.student_email,
+        source: "parent_approved",
+      });
     } catch (err) {
       console.error("Could not send booking to mentor:", err);
       // put it back so the parent can try again

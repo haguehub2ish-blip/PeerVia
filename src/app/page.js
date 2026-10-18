@@ -7,7 +7,6 @@ import { courseGuides } from "@/data/courseGuides";
 import { getFlag } from "@/data/mentors";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
-import ContactWidget from "@/Components/ContactWidget";
 import UniversityTicker from "@/Components/UniversityTicker";
 
 const howItWorksSteps = [
@@ -160,6 +159,7 @@ export default function Home() {
   const [mentorsError, setMentorsError] = useState(null);
   const [guides, setGuides] = useState([]);
   const [answeredUserQuestionsCount, setAnsweredUserQuestionsCount] = useState(0);
+    const [allRatings, setAllRatings] = useState(null);
   const [communityQuestions, setCommunityQuestions] = useState([]);
   const [heroIndex, setHeroIndex] = useState(0);
   const [leavingIndex, setLeavingIndex] = useState(null);
@@ -220,6 +220,14 @@ export default function Home() {
       }
     }
     fetchAnsweredCount();
+
+        async function fetchRatings() {
+      const { data, error } = await supabase.from("mentor_reviews").select("rating");
+      if (!error) {
+        setAllRatings((data || []).map((r) => Number(r.rating)).filter((r) => r > 0));
+      }
+    }
+    fetchRatings();
 
     async function fetchGuides() {
       const { data } = await supabase
@@ -321,27 +329,43 @@ export default function Home() {
   const topQuestions = [...questions].sort((a, b) => b.helpful - a.helpful).slice(0, 3);
   const previewGuide = courseGuides.find((g) => g.id === "medicine-nl") || courseGuides[0];
   const previewGuideUrl = "/course-guides/f6a57bf0-3656-42fc-9343-61e5a32c0499";
-  const verifiedMentorsCount = mentors.filter((m) => m.verified).length;
+   const verifiedMentorsCount = mentors.filter((m) => m.verified).length;
   const questionsAnsweredCount = questions.length + answeredUserQuestionsCount;
-  const careerPathsCount = new Set(mentors.map((m) => m.subject)).size;
-  const ratedMentors = mentors.filter((m) => m.rating > 0);
-  const avgRating = ratedMentors.length > 0
-    ? (ratedMentors.reduce((sum, m) => sum + m.rating, 0) / ratedMentors.length).toFixed(1)
-    : "—";
+
+  const normText = (s) => (s || "").trim().replace(/\s+/g, " ").toLowerCase();
+
+  // "Law, Psychology" counts as two paths; case/spacing ignored; commas inside brackets are kept.
+  const splitSubjects = (s) =>
+    (s || "")
+      .replace(/\([^)]*\)/g, (m) => m.replace(/,/g, "§"))
+      .split(/\s*[,;/]\s*/)
+      .map((x) => x.replace(/§/g, ",").trim().toLowerCase())
+      .filter(Boolean);
+  const careerPathsCount = new Set(mentors.flatMap((m) => splitSubjects(m.subject))).size;
+
+  // Average of every individual review, not an average of averages.
+  const avgRating =
+    allRatings && allRatings.length > 0
+      ? (allRatings.reduce((sum, r) => sum + r, 0) / allRatings.length).toFixed(1)
+      : "—";
+
   const languagesCount = new Set(
-    mentors.flatMap((m) =>
-      typeof m.languages === "string"
-        ? m.languages.split(",").map((l) => l.trim())
-        : m.languages || []
-    )
+    mentors
+      .flatMap((m) =>
+        typeof m.languages === "string"
+          ? m.languages.split(",").map((l) => l.trim())
+          : m.languages || []
+      )
+      .map(normText)
+      .filter(Boolean)
   ).size;
-  const schoolsCount = new Set(mentors.map((m) => m.school)).size;
+  const schoolsCount = new Set(mentors.map((m) => normText(m.school)).filter(Boolean)).size;
 
   const statsList = [
     { value: verifiedMentorsCount, label: "Verified Mentors" },
     { value: questionsAnsweredCount, label: "Questions Answered" },
     { value: careerPathsCount, label: "Career Paths" },
-    { value: `${avgRating}★`, label: "Avg. Rating" },
+    { value: avgRating === "—" ? "—" : `${avgRating}★`, label: "Avg. Rating" },
     { value: languagesCount, label: "Languages" },
     { value: schoolsCount, label: "Universities" },
   ];
@@ -582,24 +606,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ============ STATS STRIP ============ */}
-      <section className="px-6 py-8 border-y border-border bg-surface">
-        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-6 gap-8 text-center">
-          {mentorsLoading
-            ? [...Array(6)].map((_, i) => (
-                <div key={i} className="animate-pulse">
-                  <div className="h-7 w-12 bg-background rounded mx-auto mb-2"></div>
-                  <div className="h-3 w-20 bg-background rounded mx-auto"></div>
-                </div>
-              ))
-            : statsList.map((stat) => (
-                <div key={stat.label}>
-                  <p className="font-display text-3xl text-primary">{stat.value}</p>
-                  <p className="font-label text-[10px] tracking-[0.1em] uppercase text-muted mt-1">{stat.label}</p>
-                </div>
-              ))}
-        </div>
-      </section>
+     <UniversityTicker mentors={mentors} />
 
       {/* ============ FEATURED MENTORS (Quadzio "results" pattern) ============ */}
       <section className="relative overflow-hidden px-6 py-20 md:py-24">
@@ -759,7 +766,25 @@ export default function Home() {
         </div>
       </section>
 
-<UniversityTicker mentors={mentors} />
+ {/* ============ STATS STRIP ============ */}
+      <section className="px-6 py-8 border-y border-border bg-surface">
+        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-6 gap-8 text-center">
+          {mentorsLoading
+            ? [...Array(6)].map((_, i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="h-7 w-12 bg-background rounded mx-auto mb-2"></div>
+                  <div className="h-3 w-20 bg-background rounded mx-auto"></div>
+                </div>
+              ))
+            : statsList.map((stat) => (
+                <div key={stat.label}>
+                  <p className="font-display text-3xl text-primary">{stat.value}</p>
+                  <p className="font-label text-[10px] tracking-[0.1em] uppercase text-muted mt-1">{stat.label}</p>
+                </div>
+              ))}
+        </div>
+      </section>
+
       {/* ============ COURSE GUIDES PREVIEW ============ */}
       {previewGuide && (
         <section className="relative overflow-hidden px-6 py-20 md:py-24 bg-ink">
@@ -937,7 +962,6 @@ export default function Home() {
           </p>
         </div>
       </section>
-      <ContactWidget />
     </main>
   );
 }

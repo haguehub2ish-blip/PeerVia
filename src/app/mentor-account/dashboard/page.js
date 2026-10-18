@@ -333,15 +333,9 @@ export default function MentorDashboard() {
     }
 
     if (!error) {
+      // The database keeps the answers count in sync; this only updates the display
       const newAnswerCount = (mentorProfile?.answers || 0) + 1;
-      const { error: countError } = await supabase
-        .from("mentorss")
-        .update({ answers: newAnswerCount })
-        .eq("user_id", user.id);
-
-      if (!countError) {
-        setMentorProfile((prev) => (prev ? { ...prev, answers: newAnswerCount } : prev));
-      }
+      setMentorProfile((prev) => (prev ? { ...prev, answers: newAnswerCount } : prev));
 
       const answeredQuestion = unansweredQuestions.find((q) => q.id === userQuestionId);
 

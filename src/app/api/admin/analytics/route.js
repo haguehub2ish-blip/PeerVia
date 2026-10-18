@@ -5,6 +5,175 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+export const dynamic = "force-dynamic";
+
+const TZ = "Europe/Amsterdam";
+const DAY_MS = 86400000;
+
+// ---------- Date helpers (all day buckets use Amsterdam time) ----------
+
+const dayFmt = new Intl.DateTimeFormat("en-CA", {
+  timeZone: TZ,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+const hourFmt = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, hour: "2-digit", hourCycle: "h23" });
+const weekdayFmt = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, weekday: "short" });
+
+function dayKey(ts) {
+  const d = new Date(ts);
+  return Number.isNaN(d.getTime()) ? "" : dayFmt.format(d);
+}
+
+function shiftDay(key, n) {
+  const d = new Date(`${key}T12:00:00Z`);
+  return new Date(d.getTime() + n * DAY_MS).toISOString().slice(0, 10);
+}
+
+function lastDays(n) {
+  const today = dayKey(new Date());
+  const keys = [];
+  for (let i = n - 1; i >= 0; i--) keys.push(shiftDay(today, -i));
+  return keys;
+}
+
+// ---------- Data helpers ----------
+
+async function fetchAll(makeQuery) {
+  const pageSize = 1000;
+  let all = [];
+  for (let from = 0; from < 200000; from += pageSize) {
+    const { data, error } = await makeQuery().range(from, from + pageSize - 1);
+    if (error) throw error;
+    all = all.concat(data || []);
+    if (!data || data.length < pageSize) break;
+  }
+  return all;
+}
+
+async function countRows(table) {
+  const { count, error } = await supabaseAdmin.from(table).select("*", { count: "exact", head: true });
+  if (error) throw error;
+  return count || 0;
+}
+
+async function listAllUsers() {
+  let users = [];
+  for (let page = 1; page <= 100; page++) {
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 1000 });
+    if (error) throw error;
+    users = users.concat(data.users || []);
+    if (!data.users || data.users.length < 1000) break;
+  }
+  return users;
+}
+
+// Counts labels case-insensitively; getLabels may return one label or an array.
+function tally(items, getLabels, limit) {
+  const map = new Map();
+  for (const item of items) {
+    const raw = getLabels(item);
+    const labels = Array.isArray(raw) ? raw : [raw];
+    for (const l of labels) {
+      const label = String(l ?? "").trim().replace(/\s+/g, " ");
+      if (!label) continue;
+      const key = label.toLowerCase();
+      const entry = map.get(key) || { label, count: 0 };
+      entry.count++;
+      map.set(key, entry);
+    }
+  }
+  const out = [...map.values()].sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+  return limit ? out.slice(0, limit) : out;
+}
+
+function median(list) {
+  if (list.length === 0) return null;
+  const sorted = [...list].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
+const round1 = (n) => Math.round(n * 10) / 10;
+const round2 = (n) => Math.round(n * 100) / 100;
+
+// Same field groups as the mentors page filter
+const FIELD_GROUPS = {
+  Medicine: /medic|nursing|dentist|pharmac|biomedic|surgery|clinical/,
+  Engineering: /engineer|aerospace|mechatronic|robotic/,
+  Law: /\blaw\b|legal|jurisprudence/,
+  "Computer Science": /computer|software|informatics|artificial intelligence|\bai\b|data science|cyber|information technology/,
+  Business: /business|management|finance|accounting|marketing|entrepreneur/,
+  Economics: /economic|econometric/,
+  Psychology: /psycholog|neuroscien|behaviou?r/,
+};
+
+function fieldGroups(subject) {
+  const text = (subject || "").toLowerCase();
+  const groups = Object.keys(FIELD_GROUPS).filter((g) => FIELD_GROUPS[g].test(text));
+  return groups.length > 0 ? groups : ["Other"];
+}
+
+function normalizePath(p) {
+  let path = String(p).split("?")[0].split("#")[0];
+  if (path.length > 1) path = path.replace(/\/+$/, "");
+  if (/^\/mentors\/[^/]+$/.test(path)) return "/mentors/[profile]";
+  if (/^\/course-guides\/[^/]+$/.test(path)) return "/course-guides/[guide]";
+  return path || "/";
+}
+
+const VIEW_COLS_BASIC = "path, user_id, visitor_id, created_at";
+const VIEW_COLS_RICH =
+  "path, user_id, visitor_id, created_at, session_id, referrer, utm_source, device, browser, os, country";
+const SESSION_GAP_MS = 30 * 60 * 1000;
+
+const SOURCE_RULES = [
+  [/(^|\.)google\./, "Google"],
+  [/(^|\.)bing\.com$/, "Bing"],
+  [/duckduckgo\./, "DuckDuckGo"],
+  [/ecosia\./, "Ecosia"],
+  [/instagram\./, "Instagram"],
+  [/facebook\.|(^|\.)fb\.com$|(^|\.)fb\.me$/, "Facebook"],
+  [/linkedin\.|(^|\.)lnkd\.in$/, "LinkedIn"],
+  [/tiktok\./, "TikTok"],
+  [/(^|\.)t\.co$|twitter\.|(^|\.)x\.com$/, "X / Twitter"],
+  [/reddit\./, "Reddit"],
+  [/youtube\.|youtu\.be/, "YouTube"],
+  [/whatsapp\./, "WhatsApp"],
+  [/snapchat\./, "Snapchat"],
+  [/discord\./, "Discord"],
+  [/chatgpt\.com|openai\.com/, "ChatGPT"],
+  [/perplexity\./, "Perplexity"],
+  [/claude\.ai/, "Claude"],
+];
+
+function sourceLabel(referrer, utm) {
+  if (utm) return `${String(utm).toLowerCase()} (tagged link)`;
+  if (!referrer) return "Direct / unknown";
+  const host = String(referrer).toLowerCase().replace(/^www\./, "");
+  for (const [pattern, label] of SOURCE_RULES) {
+    if (pattern.test(host)) return label;
+  }
+  return host;
+}
+
+let regionNames = null;
+try {
+  regionNames = new Intl.DisplayNames(["en"], { type: "region" });
+} catch {
+  regionNames = null;
+}
+function countryName(code) {
+  try {
+    return regionNames?.of(String(code).toUpperCase()) || code;
+  } catch {
+    return code;
+  }
+}
+
+// ---------- Route ----------
+
 export async function GET(request) {
   const authHeader = request.headers.get("authorization");
   const token = authHeader?.replace("Bearer ", "");
@@ -19,136 +188,532 @@ export async function GET(request) {
     return Response.json({ error: "Invalid session" }, { status: 401 });
   }
 
-  const adminEmails = (process.env.ADMIN_EMAILS || "").split(",").map((e) => e.trim());
-  if (!adminEmails.includes(userData.user.email)) {
+  const adminEmails = (process.env.ADMIN_EMAILS || "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  if (!adminEmails.includes((userData.user.email || "").toLowerCase())) {
     return Response.json({ error: "Not authorized" }, { status: 403 });
   }
 
-  try {
-    // Total users (from Auth)
-    const { data: usersList, error: usersError } = await supabaseAdmin.auth.admin.listUsers({
-      perPage: 1000,
-    });
-    if (usersError) throw usersError;
+  const requested = Number(new URL(request.url).searchParams.get("days"));
+  const days = [7, 30, 90].includes(requested) ? requested : 30;
 
-    const totalUsers = usersList.users.length;
-    const totalMentorUsers = usersList.users.filter(
-      (u) => u.user_metadata?.role === "mentor"
-    ).length;
-
-    // Signups over the last 7 days
-    const now = new Date();
-    const sevenDaysAgo = new Date(now);
-    sevenDaysAgo.setDate(now.getDate() - 6);
-    const signupsByDay = {};
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(sevenDaysAgo);
-      d.setDate(sevenDaysAgo.getDate() + i);
-      const key = d.toISOString().split("T")[0];
-      signupsByDay[key] = 0;
+  // One broken table should never take the whole page down.
+  const warnings = [];
+  const safe = async (label, fn, fallback) => {
+    try {
+      return await fn();
+    } catch (e) {
+      warnings.push(`${label}: ${e?.message || String(e)}`);
+      return fallback;
     }
-    usersList.users.forEach((u) => {
-      const created = u.created_at?.split("T")[0];
-      if (created && signupsByDay[created] !== undefined) {
-        signupsByDay[created]++;
-      }
+  };
+
+  try {
+    const now = Date.now();
+    const keys = lastDays(days);
+    const todayKey = keys[keys.length - 1];
+    const startKey = keys[0];
+    const prevStartKey = shiftDay(startKey, -days);
+    const inPeriodKey = (k) => k >= startKey && k <= todayKey;
+    const inPrevKey = (k) => k >= prevStartKey && k < startKey;
+    const viewsSince = new Date(now - (days * 2 + 2) * DAY_MS).toISOString();
+
+    const [
+      users,
+      mentors,
+      applications,
+      questions,
+      answers,
+      comments,
+      reviews,
+      profiles,
+      parental,
+      guides,
+      rawViews,
+      likeCount,
+      questionViewTotal,
+      allTimeViews,
+      calendarTotal,
+      calendarUpcoming,
+      callRequests,
+    ] = await Promise.all([
+      safe("Users", listAllUsers, []),
+      safe("mentorss", () => fetchAll(() => supabaseAdmin.from("mentorss").select("*")), []),
+      safe("mentor_applications", () => fetchAll(() => supabaseAdmin.from("mentor_applications").select("*")), []),
+      safe("user_questions", () => fetchAll(() => supabaseAdmin.from("user_questions").select("*")), []),
+      safe("question_answers", () => fetchAll(() => supabaseAdmin.from("question_answers").select("*")), []),
+      safe("question_comments", () => fetchAll(() => supabaseAdmin.from("question_comments").select("*")), []),
+      safe("mentor_reviews", () => fetchAll(() => supabaseAdmin.from("mentor_reviews").select("*")), []),
+      safe("student_profiles", () => fetchAll(() => supabaseAdmin.from("student_profiles").select("*")), []),
+      safe("parental_requests", () => fetchAll(() => supabaseAdmin.from("parental_requests").select("*")), []),
+      safe("course_guides", () => fetchAll(() => supabaseAdmin.from("course_guides").select("*")), []),
+      safe(
+        "page_views",
+        async () => {
+          const load = (cols) =>
+            fetchAll(() =>
+              supabaseAdmin
+                .from("page_views")
+                .select(cols)
+                .gte("created_at", viewsSince)
+                .order("created_at", { ascending: true })
+            );
+          try {
+            return await load(VIEW_COLS_RICH);
+          } catch {
+            // New tracking columns not added yet: fall back to the basic ones
+            return await load(VIEW_COLS_BASIC);
+          }
+        },
+        []
+      ),
+      safe("question_likes", () => countRows("question_likes"), null),
+      safe(
+        "question_views",
+        async () => {
+          const rows = await fetchAll(() => supabaseAdmin.from("question_views").select("view_count"));
+          return rows.reduce((sum, r) => sum + (Number(r.view_count) || 0), 0);
+        },
+        null
+      ),
+      safe(
+        "page_views (total)",
+        async () => {
+          const { count, error } = await supabaseAdmin
+            .from("page_views")
+            .select("*", { count: "exact", head: true })
+            .not("path", "like", "/admin%");
+          if (error) throw error;
+          return count || 0;
+        },
+        null
+      ),
+      safe("mentor_calendar_events", () => countRows("mentor_calendar_events"), null),
+      safe(
+        "mentor_calendar_events (upcoming)",
+        async () => {
+          const { count, error } = await supabaseAdmin
+            .from("mentor_calendar_events")
+            .select("*", { count: "exact", head: true })
+            .gte("event_date", todayKey);
+          if (error) throw error;
+          return count || 0;
+        },
+        null
+      ),
+      safe("call_requests", () => fetchAll(() => supabaseAdmin.from("call_requests").select("*")), []),
+    ]);
+
+    // ---------- Daily series ----------
+    const daily = Object.fromEntries(
+      keys.map((k) => [
+        k,
+        {
+          views: 0,
+          visitors: 0,
+          sessions: 0,
+          signups: 0,
+          applications: 0,
+          questions: 0,
+          answers: 0,
+          comments: 0,
+          reviews: 0,
+          callRequests: 0,
+        },
+      ])
+    );
+    const bump = (field, ts) => {
+      const k = dayKey(ts);
+      if (daily[k]) daily[k][field]++;
+    };
+    const countIn = (list, field = "created_at") => ({
+      current: list.filter((x) => inPeriodKey(dayKey(x[field]))).length,
+      previous: list.filter((x) => inPrevKey(dayKey(x[field]))).length,
     });
 
-    // Mentors table
-    const { count: mentorCount, error: mentorError } = await supabaseAdmin
-      .from("mentorss")
-      .select("*", { count: "exact", head: true });
-    if (mentorError) throw mentorError;
-
-    // Applications, broken down by status
-    const { data: applications, error: appError } = await supabaseAdmin
-      .from("mentor_applications")
-      .select("status");
-    if (appError) throw appError;
-
-    const applicationStats = {
-      total: applications.length,
-      pending: applications.filter((a) => a.status === "pending").length,
-      approved: applications.filter((a) => a.status === "approved").length,
-      rejected: applications.filter((a) => a.status === "rejected").length,
+    // ---------- Users ----------
+    users.forEach((u) => bump("signups", u.created_at));
+    const mentorAccounts = users.filter((u) => u.user_metadata?.role === "mentor").length;
+    const newUsers = countIn(users);
+    const usersStats = {
+      total: users.length,
+      students: users.length - mentorAccounts,
+      mentorAccounts,
+      confirmed: users.filter((u) => u.email_confirmed_at || u.confirmed_at).length,
+      active7d: users.filter((u) => u.last_sign_in_at && now - new Date(u.last_sign_in_at).getTime() <= 7 * DAY_MS).length,
+      active30d: users.filter((u) => u.last_sign_in_at && now - new Date(u.last_sign_in_at).getTime() <= 30 * DAY_MS).length,
+      newInPeriod: newUsers.current,
+      newPrev: newUsers.previous,
+      providers: tally(users, (u) => u.app_metadata?.provider || "email"),
     };
 
-    // Community questions
-    const { count: questionCount, error: qError } = await supabaseAdmin
-      .from("user_questions")
-      .select("*", { count: "exact", head: true });
-    if (qError) throw qError;
+    // ---------- Students & parental consent ----------
+    const studentsStats = {
+      profiles: profiles.length,
+      minors: profiles.filter((p) => p.is_minor === true).length,
+      consent: tally(profiles, (p) => p.consent_status),
+      requestsTotal: parental.length,
+      requestsByStatus: tally(parental, (p) => p.status),
+      requestsByKind: tally(parental, (p) => p.kind),
+    };
 
-    // Answers given
-    const { count: answerCount, error: aError } = await supabaseAdmin
-      .from("question_answers")
-      .select("*", { count: "exact", head: true });
-    if (aError) throw aError;
+    // ---------- Reviews ----------
+    reviews.forEach((r) => bump("reviews", r.created_at));
+    const ratingValues = reviews.map((r) => Number(r.rating)).filter((r) => r > 0);
+    const reviewAgg = new Map();
+    reviews.forEach((r) => {
+      const k = String(r.mentor_id);
+      const a = reviewAgg.get(k) || { sum: 0, count: 0 };
+      a.sum += Number(r.rating) || 0;
+      a.count++;
+      reviewAgg.set(k, a);
+    });
+    const reviewsStats = {
+      total: reviews.length,
+      avg: ratingValues.length ? round2(ratingValues.reduce((s, r) => s + r, 0) / ratingValues.length) : null,
+      distribution: [1, 2, 3, 4, 5].map((star) => ratingValues.filter((r) => Math.round(r) === star).length),
+    };
 
-    // Likes and comments
-    const { count: likeCount, error: lError } = await supabaseAdmin
-      .from("question_likes")
-      .select("*", { count: "exact", head: true });
-    if (lError) throw lError;
+    // ---------- Mentors ----------
+    const mentorNames = new Map(mentors.map((m) => [String(m.id), m.name]));
+    const languagesOf = (m) =>
+      typeof m.languages === "string" ? m.languages.split(",") : Array.isArray(m.languages) ? m.languages : [];
+    const mentorsStats = {
+      total: mentors.length,
+      available: mentors.filter((m) => m.available === true).length,
+      verified: mentors.filter((m) => m.verified === true).length,
+      totalSessions: mentors.reduce((s, m) => s + (Number(m.sessions) || 0), 0),
+      totalAnswersColumn: mentors.reduce((s, m) => s + (Number(m.answers) || 0), 0),
+      withoutReviews: mentors.filter((m) => !reviewAgg.has(String(m.id))).length,
+      byField: tally(mentors, (m) => fieldGroups(m.subject)),
+      byCountry: tally(mentors, (m) => m.country),
+      bySchool: tally(mentors, (m) => m.school, 8),
+      languages: tally(mentors, languagesOf, 8),
+      topRated: mentors
+        .map((m) => {
+          const a = reviewAgg.get(String(m.id));
+          return a ? { name: m.name, school: m.school, avg: round1(a.sum / a.count), count: a.count } : null;
+        })
+        .filter(Boolean)
+        .sort((x, y) => y.avg - x.avg || y.count - x.count)
+        .slice(0, 5),
+      topAnswerers: tally(answers, (a) => a.mentor_name, 5),
+    };
 
-    const { count: commentCount, error: cError } = await supabaseAdmin
-      .from("question_comments")
-      .select("*", { count: "exact", head: true });
-    if (cError) throw cError;
+    // ---------- Applications ----------
+    applications.forEach((a) => bump("applications", a.created_at));
+    const appCount = (s) => applications.filter((a) => a.status === s).length;
+    const pendingTimes = applications
+      .filter((a) => a.status === "pending")
+      .map((a) => new Date(a.created_at).getTime())
+      .filter(Number.isFinite);
+    const approved = appCount("approved");
+    const rejected = appCount("rejected");
+    const newApps = countIn(applications);
+    const applicationsStats = {
+      total: applications.length,
+      pending: appCount("pending"),
+      approved,
+      rejected,
+      other: applications.length - appCount("pending") - approved - rejected,
+      approvalRate: approved + rejected > 0 ? Math.round((approved / (approved + rejected)) * 100) : null,
+      newInPeriod: newApps.current,
+      newPrev: newApps.previous,
+      oldestPendingDays: pendingTimes.length ? Math.floor((now - Math.min(...pendingTimes)) / DAY_MS) : null,
+      topFields: tally(applications, (a) => a.field, 6),
+      topUniversities: tally(applications, (a) => a.university, 6),
+      topCountries: tally(applications, (a) => a.country, 6),
+    };
 
-    // Website traffic
-    const { count: totalPageViews, error: pvError } = await supabaseAdmin
-      .from("page_views")
-      .select("*", { count: "exact", head: true });
-    if (pvError) throw pvError;
+    // ---------- Community ----------
+    questions.forEach((q) => bump("questions", q.created_at));
+    answers.forEach((a) => bump("answers", a.created_at));
+    comments.forEach((c) => bump("comments", c.created_at));
 
-    const { data: allViews, error: allViewsError } = await supabaseAdmin
-      .from("page_views")
-      .select("path, user_id, visitor_id, created_at");
-    if (allViewsError) throw allViewsError;
-
-    const uniqueVisitorIds = new Set(
-  allViews.map((v) => v.user_id).filter(Boolean)
-);
-
-    const viewsByDay = {};
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(sevenDaysAgo);
-      d.setDate(sevenDaysAgo.getDate() + i);
-      const key = d.toISOString().split("T")[0];
-      viewsByDay[key] = 0;
-    }
-    allViews.forEach((v) => {
-      const created = v.created_at?.split("T")[0];
-      if (created && viewsByDay[created] !== undefined) {
-        viewsByDay[created]++;
+    const firstAnswer = new Map();
+    answers.forEach((a) => {
+      const t = new Date(a.created_at).getTime();
+      if (!Number.isFinite(t)) return;
+      const k = String(a.user_question_id);
+      if (!firstAnswer.has(k) || t < firstAnswer.get(k)) firstAnswer.set(k, t);
+    });
+    const waits = [];
+    const unansweredAges = [];
+    let answeredCount = 0;
+    questions.forEach((q) => {
+      const asked = new Date(q.created_at).getTime();
+      const answeredAt = firstAnswer.get(String(q.id));
+      if (answeredAt !== undefined) {
+        answeredCount++;
+        if (Number.isFinite(asked) && answeredAt >= asked) waits.push((answeredAt - asked) / 3600000);
+      } else if (Number.isFinite(asked)) {
+        unansweredAges.push(now - asked);
       }
     });
+    const communityStats = {
+      questions: questions.length,
+      answered: answeredCount,
+      unanswered: questions.length - answeredCount,
+      answerRate: questions.length ? Math.round((answeredCount / questions.length) * 100) : null,
+      medianFirstAnswerHours: median(waits) === null ? null : round1(median(waits)),
+      oldestUnansweredDays: unansweredAges.length ? Math.floor(Math.max(...unansweredAges) / DAY_MS) : null,
+      answers: answers.length,
+      comments: comments.length,
+      commenters: new Set(comments.map((c) => c.user_id).filter(Boolean)).size,
+      likes: likeCount,
+      views: questionViewTotal,
+      topSubjects: tally(questions, (q) => String(q.subject || "").split(","), 6),
+      topCountries: tally(questions, (q) => String(q.country || "").split(","), 6),
+    };
 
-    const pageCounts = {};
-    allViews.forEach((v) => {
-      pageCounts[v.path] = (pageCounts[v.path] || 0) + 1;
+    // ---------- Content ----------
+    const guideNames = new Map(
+      guides.map((g) => [String(g.id), [g.subject, g.country_label || g.country].filter(Boolean).join(" · ")])
+    );
+    const contentStats = {
+      guides: guides.length,
+      guidesByCountry: tally(guides, (g) => g.country_label || g.country, 6),
+      guidesBySubject: tally(guides, (g) => g.subject, 6),
+      calendarEvents: calendarTotal,
+      calendarUpcoming,
+    };
+
+    // ---------- Traffic ----------
+    // A person who logged in on any device counts once; anonymous visitors are per browser.
+    const visitorToUser = new Map();
+    rawViews.forEach((v) => {
+      if (v.visitor_id && v.user_id) visitorToUser.set(v.visitor_id, v.user_id);
     });
-    const topPages = Object.entries(pageCounts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
-      .map(([path, count]) => ({ path, count }));
+    const identityOf = (v) => v.user_id || (v.visitor_id && visitorToUser.get(v.visitor_id)) || v.visitor_id || "unknown";
 
-    return Response.json({
-      totalUsers,
-      totalMentorUsers,
-      mentorCount,
-      applicationStats,
-      questionCount,
-      answerCount,
-      likeCount,
-      commentCount,
-      signupsByDay,
-      totalPageViews,
-      uniqueVisitorCount: uniqueVisitorIds.size,
-      viewsByDay,
+    const views = rawViews
+      .filter((v) => v.path && !/^\/(admin|api)(\/|$)/.test(v.path))
+      .map((v) => ({
+        path: v.path,
+        day: dayKey(v.created_at),
+        ts: new Date(v.created_at),
+        vid: identityOf(v),
+        known: Boolean(v.user_id || (v.visitor_id && visitorToUser.get(v.visitor_id))),
+        loggedIn: Boolean(v.user_id),
+        sessionId: v.session_id || null,
+        referrer: v.referrer || null,
+        utm: v.utm_source || null,
+        device: v.device || null,
+        browser: v.browser || null,
+        os: v.os || null,
+        country: v.country || null,
+      }));
+
+    // Sessions: use the stored session id; for older rows, split a person's views at 30-minute gaps.
+    const lastSeen = new Map();
+    views.forEach((v) => {
+      if (v.sessionId) {
+        v.sid = v.sessionId;
+        return;
+      }
+      const prev = lastSeen.get(v.vid);
+      const t = v.ts.getTime();
+      const n = prev ? (t - prev.t <= SESSION_GAP_MS ? prev.n : prev.n + 1) : 0;
+      lastSeen.set(v.vid, { t, n });
+      v.sid = `${v.vid}#${n}`;
+    });
+    const richTracking = views.some((v) => v.sessionId);
+
+    const periodViews = views.filter((v) => inPeriodKey(v.day));
+    const prevViews = views.filter((v) => inPrevKey(v.day));
+
+    const visitorsByDay = new Map();
+    const daysSeenByVisitor = new Map();
+    periodViews.forEach((v) => {
+      if (daily[v.day]) daily[v.day].views++;
+      if (!visitorsByDay.has(v.day)) visitorsByDay.set(v.day, new Set());
+      visitorsByDay.get(v.day).add(v.vid);
+      if (!daysSeenByVisitor.has(v.vid)) daysSeenByVisitor.set(v.vid, new Set());
+      daysSeenByVisitor.get(v.vid).add(v.day);
+    });
+    keys.forEach((k) => {
+      daily[k].visitors = visitorsByDay.get(k)?.size || 0;
+    });
+
+    const visitorsPeriod = new Set(periodViews.map((v) => v.vid));
+    const visitorsPrev = new Set(prevViews.map((v) => v.vid));
+    const returning = [...daysSeenByVisitor.values()].filter((d) => d.size >= 2).length;
+    const loggedInVisitors = new Set(periodViews.filter((v) => v.known).map((v) => v.vid)).size;
+
+    // Session aggregation (first view of each session = entry page, source and device)
+    const sessionMap = new Map();
+    periodViews.forEach((v) => {
+      const existing = sessionMap.get(v.sid);
+      if (!existing) sessionMap.set(v.sid, { first: v, count: 1 });
+      else existing.count++;
+    });
+    const sessionList = [...sessionMap.values()];
+    sessionList.forEach((sess) => {
+      if (daily[sess.first.day]) daily[sess.first.day].sessions++;
+    });
+    const bounced = sessionList.filter((sess) => sess.count === 1).length;
+
+    const byHour = Array(24).fill(0);
+    const weekdayCounts = {};
+    periodViews.forEach((v) => {
+      byHour[Number(hourFmt.format(v.ts)) % 24]++;
+      const wd = weekdayFmt.format(v.ts);
+      weekdayCounts[wd] = (weekdayCounts[wd] || 0) + 1;
+    });
+    const byWeekday = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((label) => ({
+      label,
+      count: weekdayCounts[label] || 0,
+    }));
+
+    const pageAgg = new Map();
+    periodViews.forEach((v) => {
+      const p = normalizePath(v.path);
+      const entry = pageAgg.get(p) || { path: p, count: 0, visitors: new Set() };
+      entry.count++;
+      entry.visitors.add(v.vid);
+      pageAgg.set(p, entry);
+    });
+    const topPages = [...pageAgg.values()]
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10)
+      .map((p) => ({ path: p.path, count: p.count, visitors: p.visitors.size }));
+
+    const profileViewRows = periodViews.filter((v) =>
+      /^\/mentors\/[^/]+$/.test(v.path.split("?")[0].replace(/\/+$/, ""))
+    );
+    const profileViews = tally(
+      profileViewRows,
+      (v) => {
+        const id = decodeURIComponent(v.path.split("?")[0].replace(/\/+$/, "").split("/")[2] || "");
+        return mentorNames.get(id) || "Removed mentor";
+      },
+      5
+    );
+    const guideViews = tally(
+      periodViews.filter((v) => /^\/course-guides\/[^/]+$/.test(v.path.split("?")[0].replace(/\/+$/, ""))),
+      (v) => {
+        const id = decodeURIComponent(v.path.split("?")[0].replace(/\/+$/, "").split("/")[2] || "");
+        return guideNames.get(id) || "Removed guide";
+      },
+      5
+    );
+
+    const reachSets = {
+      mentors: new Set(),
+      profile: new Set(),
+      guides: new Set(),
+      community: new Set(),
+      signup: new Set(),
+      apply: new Set(),
+    };
+    periodViews.forEach((v) => {
+      const p = normalizePath(v.path);
+      if (p === "/mentors") reachSets.mentors.add(v.vid);
+      if (p === "/mentors/[profile]") reachSets.profile.add(v.vid);
+      if (p === "/course-guides" || p === "/course-guides/[guide]") reachSets.guides.add(v.vid);
+      if (p === "/community") reachSets.community.add(v.vid);
+      if (p === "/signup") reachSets.signup.add(v.vid);
+      if (p === "/apply") reachSets.apply.add(v.vid);
+    });
+    const totalVisitors = visitorsPeriod.size;
+    const reachRow = (label, set) => ({
+      label,
+      visitors: set.size,
+      pct: totalVisitors ? Math.round((set.size / totalVisitors) * 100) : 0,
+    });
+
+    // Sources, devices, browsers, systems and countries (only sessions that carry the data)
+    const richSessions = sessionList.filter((sess) => sess.first.sessionId);
+    const trafficStats = {
+      richTracking,
+      viewsPeriod: periodViews.length,
+      viewsPrev: prevViews.length,
+      visitorsPeriod: totalVisitors,
+      visitorsPrev: visitorsPrev.size,
+      viewsToday: daily[todayKey].views,
+      visitorsToday: daily[todayKey].visitors,
+      sessionsPeriod: sessionList.length,
+      pagesPerVisitor: totalVisitors ? round1(periodViews.length / totalVisitors) : null,
+      pagesPerSession: sessionList.length ? round1(periodViews.length / sessionList.length) : null,
+      bounceRate: sessionList.length ? Math.round((bounced / sessionList.length) * 100) : null,
+      returningVisitors: returning,
+      returningPct: totalVisitors ? Math.round((returning / totalVisitors) * 100) : null,
+      loggedInVisitors,
+      loggedInVisitorsPct: totalVisitors ? Math.round((loggedInVisitors / totalVisitors) * 100) : null,
+      loggedInPct: periodViews.length
+        ? Math.round((periodViews.filter((v) => v.loggedIn).length / periodViews.length) * 100)
+        : null,
+      allTimeViews,
+      byHour,
+      byWeekday,
       topPages,
-    });
+      topMentorProfiles: profileViews,
+      topGuides: guideViews,
+      entryPages: tally(sessionList, (sess) => normalizePath(sess.first.path), 6),
+      sources: tally(richSessions, (sess) => sourceLabel(sess.first.referrer, sess.first.utm), 8),
+      devices: tally(richSessions, (sess) => sess.first.device),
+      browsers: tally(richSessions, (sess) => sess.first.browser, 6),
+      systems: tally(richSessions, (sess) => sess.first.os, 6),
+      countries: tally(richSessions, (sess) => (sess.first.country ? countryName(sess.first.country) : ""), 8),
+      reach: [
+        reachRow("Browsed the mentor list", reachSets.mentors),
+        reachRow("Opened a mentor profile", reachSets.profile),
+        reachRow("Read a course guide", reachSets.guides),
+        reachRow("Visited the community", reachSets.community),
+        reachRow("Opened sign-up", reachSets.signup),
+        reachRow("Opened the mentor application", reachSets.apply),
+      ],
+    };
+
+    // ---------- Call requests ----------
+    callRequests.forEach((cr) => bump("callRequests", cr.created_at));
+    const callsPeriod = countIn(callRequests);
+    const requesters = tally(callRequests, (cr) => cr.student_id || cr.student_email);
+    const parentCalls = parental.filter((p) => p.kind === "call");
+    const parentApproved = parentCalls.filter((p) => p.status === "approved").length;
+    const parentDeclined = parentCalls.filter((p) => p.status === "declined").length;
+    const callsStats = {
+      total: callRequests.length,
+      inPeriod: callsPeriod.current,
+      prev: callsPeriod.previous,
+      uniqueStudents: requesters.length,
+      repeatStudents: requesters.filter((r) => r.count >= 2).length,
+      perHundredProfileViews: profileViewRows.length
+        ? round1((callsPeriod.current / profileViewRows.length) * 100)
+        : null,
+      topMentors: tally(callRequests, (cr) => mentorNames.get(String(cr.mentor_id)) || "Removed mentor", 5),
+      bySource: tally(callRequests, (cr) => cr.source),
+      parentTotal: parentCalls.length,
+      parentPending: parentCalls.filter((p) => p.status === "pending").length,
+      parentApproved,
+      parentDeclined,
+      parentApprovalRate:
+        parentApproved + parentDeclined > 0
+          ? Math.round((parentApproved / (parentApproved + parentDeclined)) * 100)
+          : null,
+    };
+
+    return Response.json(
+      {
+        days,
+        timezone: TZ,
+        generatedAt: new Date().toISOString(),
+        warnings,
+        daily: keys.map((k) => ({ day: k, ...daily[k] })),
+        traffic: trafficStats,
+        users: usersStats,
+        students: studentsStats,
+        mentors: mentorsStats,
+        applications: applicationsStats,
+        community: communityStats,
+        reviews: reviewsStats,
+        calls: callsStats,
+        content: contentStats,
+      },
+      { headers: { "Cache-Control": "no-store" } }
+    );
   } catch (err) {
     return Response.json({ error: err.message }, { status: 500 });
   }

@@ -2,6 +2,7 @@ import { Geist, Geist_Mono, Fraunces, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import Footer from "@/Components/Footer";
 import PageViewTracker from "@/Components/PageViewTracker";
+import GlobalContactWidget from "@/Components/GlobalContactWidget";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -41,6 +42,7 @@ export default function RootLayout({ children }) {
         <PageViewTracker />
         <div className="flex-1 flex flex-col">{children}</div>
         <Footer />
+        <GlobalContactWidget />
       </body>
     </html>
   );
