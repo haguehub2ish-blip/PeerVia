@@ -64,13 +64,37 @@ function StatCard({ label, value, sub, delta, days }) {
 }
 
 function Section({ title, hint, children }) {
+  const [open, setOpen] = useState(false);
+
   return (
-    <section className="mb-12">
-      <div className="mb-4">
-        <h2 className="font-label text-[11px] tracking-[0.15em] uppercase text-primary">{title}</h2>
-        {hint && <p className="text-xs text-muted mt-1">{hint}</p>}
-      </div>
-      {children}
+    <section className="mb-4 border border-border rounded-lg bg-background">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="w-full flex items-center justify-between gap-4 text-left px-5 py-4"
+      >
+        <div>
+          <h2 className="font-label text-[11px] tracking-[0.15em] uppercase text-primary">{title}</h2>
+          {hint && <p className="text-xs text-muted mt-1">{hint}</p>}
+        </div>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={`shrink-0 text-muted transition-transform ${open ? "rotate-180" : ""}`}
+          aria-hidden="true"
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+      {open && <div className="px-5 pb-6 pt-2">{children}</div>}
     </section>
   );
 }
@@ -177,13 +201,26 @@ const grid = (cols) =>
 
 export default function AdminAnalytics() {
   const [stats, setStats] = useState(null);
-  const [days, setDays] = useState(30);
+  const [days, setDays] = useState(30); // 7, 30, 90 or "all" (lifetime)
+  const [audience, setAudience] = useState("all"); // "all", "in" (signed in) or "out" (signed out)
+  const clientCache = useRef(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const requestId = useRef(0);
 
-  const loadStats = useCallback(async (range) => {
+  const loadStats = useCallback(async (range, who, force = false) => {
     const myRequest = ++requestId.current;
+
+    // Reuse results from the last minute so switching views is instant
+    const cacheKey = `${range}|${who}`;
+    const hit = clientCache.current.get(cacheKey);
+    if (!force && hit && Date.now() - hit.at < 60000) {
+      setStats(hit.data);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -199,7 +236,7 @@ export default function AdminAnalytics() {
         return;
       }
 
-      const res = await fetch(`/api/admin/analytics?days=${range}`, {
+      const res = await fetch(`/api/admin/analytics?range=${range}&audience=${who}${force ? "&fresh=1" : ""}`, {
         headers: { Authorization: `Bearer ${token}` },
         cache: "no-store",
       });
@@ -211,6 +248,7 @@ export default function AdminAnalytics() {
       if (!res.ok || result.error) {
         setError(result.error || "Something went wrong loading analytics.");
       } else {
+        clientCache.current.set(cacheKey, { at: Date.now(), data: result });
         setStats(result);
       }
     } catch (e) {
@@ -220,8 +258,8 @@ export default function AdminAnalytics() {
   }, []);
 
   useEffect(() => {
-    loadStats(days);
-  }, [days, loadStats]);
+    loadStats(days, audience);
+  }, [days, audience, loadStats]);
 
   const t = stats?.traffic;
   const u = stats?.users;
@@ -233,6 +271,13 @@ export default function AdminAnalytics() {
   const content = stats?.content;
   const calls = stats?.calls;
   const period = stats?.days || days;
+  const lifetime = Boolean(stats?.lifetime);
+  const audienceNote =
+    audience === "in"
+      ? " Visitor numbers show signed-in visitors only."
+      : audience === "out"
+        ? " Visitor numbers show signed-out visitors only."
+        : "";
 
   const series = (field, tipFn) =>
     (stats?.daily || []).map((d) => ({
@@ -263,7 +308,7 @@ export default function AdminAnalytics() {
     tip: `${d.questions} questions, ${d.answers} answers, ${d.comments} comments`,
   }));
 
-  const rangeLabel = `last ${period} days`;
+  const rangeLabel = lifetime ? "whole lifetime" : `last ${period} days`;
 
   return (
     <div className="min-h-screen bg-background">
@@ -290,14 +335,24 @@ export default function AdminAnalytics() {
               )}
             </div>
             <div className="flex items-center gap-2 flex-wrap">
-              {[7, 30, 90].map((n) => (
+              {[7, 30, 90, "all"].map((n) => (
                 <RangeButton key={n} active={days === n} onClick={() => setDays(n)}>
-                  {n} days
+                  {n === "all" ? "Lifetime" : `${n} days`}
+                </RangeButton>
+              ))}
+              <span className="hidden sm:block w-px h-5 bg-border mx-1" />
+              {[
+                ["all", "Everyone"],
+                ["in", "Signed in"],
+                ["out", "Signed out"],
+              ].map(([value, label]) => (
+                <RangeButton key={value} active={audience === value} onClick={() => setAudience(value)}>
+                  {label}
                 </RangeButton>
               ))}
               <button
                 type="button"
-                onClick={() => loadStats(days)}
+                onClick={() => loadStats(days, audience, true)}
                 className="font-label text-[10px] tracking-[0.1em] uppercase px-3 py-1.5 rounded-full border border-border text-ink hover:border-primary hover:text-primary transition"
               >
                 {loading ? "Loading…" : "Refresh"}
@@ -326,7 +381,10 @@ export default function AdminAnalytics() {
             )}
 
             {/* ---------------- At a glance ---------------- */}
-            <Section title="At a glance" hint={`Compared with the previous ${period} days.`}>
+            <Section
+              title="At a glance"
+              hint={(lifetime ? "Totals since the first recorded activity." : `Compared with the previous ${period} days.`) + audienceNote}
+            >
               <div className={grid(4)}>
                 <StatCard
                   label="Unique visitors"
@@ -368,7 +426,7 @@ export default function AdminAnalytics() {
             </Section>
 
             {/* ---------------- Traffic ---------------- */}
-            <Section title="Traffic" hint={`Page views and visitors for the ${rangeLabel}.`}>
+            <Section title="Traffic" hint={`Page views and visitors for the ${rangeLabel}.${audienceNote}`}>
               {!t.richTracking && (
                 <div className="mb-4 rounded-lg border border-border bg-surface px-4 py-3 text-xs text-muted">
                   Traffic sources, devices and countries start filling in once the new tracker is live (see the setup

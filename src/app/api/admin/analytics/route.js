@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
 
 const TZ = "Europe/Amsterdam";
 const DAY_MS = 86400000;
+const MAX_CHART_DAYS = 365; // daily charts show at most the last 365 days
 
 // ---------- Date helpers (all day buckets use Amsterdam time) ----------
 
@@ -40,16 +41,57 @@ function lastDays(n) {
 
 // ---------- Data helpers ----------
 
+// Reads a whole table. The first page is fetched alone; if the table is bigger, the rest
+// is fetched six pages at a time instead of one after another.
 async function fetchAll(makeQuery) {
   const pageSize = 1000;
-  let all = [];
-  for (let from = 0; from < 200000; from += pageSize) {
-    const { data, error } = await makeQuery().range(from, from + pageSize - 1);
-    if (error) throw error;
-    all = all.concat(data || []);
-    if (!data || data.length < pageSize) break;
+  const batch = 6;
+
+  const first = await makeQuery().range(0, pageSize - 1);
+  if (first.error) throw first.error;
+  const all = [...(first.data || [])];
+  if (all.length < pageSize) return all;
+
+  for (let start = pageSize; start < 1000000; start += pageSize * batch) {
+    const results = await Promise.all(
+      Array.from({ length: batch }, (_, i) => {
+        const from = start + i * pageSize;
+        return makeQuery().range(from, from + pageSize - 1);
+      })
+    );
+    let done = false;
+    for (const { data, error } of results) {
+      if (error) throw error;
+      if (data?.length) all.push(...data);
+      if (!data || data.length < pageSize) done = true;
+    }
+    if (done) break;
   }
   return all;
+}
+
+// Only downloads the columns we actually use. If a column name does not exist,
+// it falls back to reading everything so nothing breaks.
+async function fetchTable(table, columns) {
+  try {
+    return await fetchAll(() => supabaseAdmin.from(table).select(columns));
+  } catch {
+    return await fetchAll(() => supabaseAdmin.from(table).select("*"));
+  }
+}
+
+// Results are kept for 60 seconds, so switching between views is instant.
+const CACHE_MS = 60 * 1000;
+const cache = new Map();
+function cached(key, fresh, load) {
+  const hit = cache.get(key);
+  if (!fresh && hit && Date.now() - hit.at < CACHE_MS) return hit.promise;
+  const promise = load().catch((e) => {
+    cache.delete(key);
+    throw e;
+  });
+  cache.set(key, { at: Date.now(), promise });
+  return promise;
 }
 
 async function countRows(table) {
@@ -59,12 +101,32 @@ async function countRows(table) {
 }
 
 async function listAllUsers() {
-  let users = [];
-  for (let page = 1; page <= 100; page++) {
-    const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 1000 });
+  const perPage = 1000;
+  const first = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage });
+  if (first.error) throw first.error;
+  let users = first.data.users || [];
+  if (users.length < perPage) return users;
+
+  const lastPage = Number(first.data.lastPage) || 0;
+  if (lastPage > 1) {
+    // Fetch all remaining pages at the same time
+    const pages = await Promise.all(
+      Array.from({ length: Math.min(lastPage, 100) - 1 }, (_, i) =>
+        supabaseAdmin.auth.admin.listUsers({ page: i + 2, perPage })
+      )
+    );
+    for (const { data, error } of pages) {
+      if (error) throw error;
+      users = users.concat(data.users || []);
+    }
+    return users;
+  }
+
+  for (let page = 2; page <= 100; page++) {
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage });
     if (error) throw error;
     users = users.concat(data.users || []);
-    if (!data.users || data.users.length < 1000) break;
+    if (!data.users || data.users.length < perPage) break;
   }
   return users;
 }
@@ -196,29 +258,128 @@ export async function GET(request) {
     return Response.json({ error: "Not authorized" }, { status: 403 });
   }
 
-  const requested = Number(new URL(request.url).searchParams.get("days"));
-  const days = [7, 30, 90].includes(requested) ? requested : 30;
-
-  // One broken table should never take the whole page down.
-  const warnings = [];
-  const safe = async (label, fn, fallback) => {
-    try {
-      return await fn();
-    } catch (e) {
-      warnings.push(`${label}: ${e?.message || String(e)}`);
-      return fallback;
-    }
-  };
+  const params = new URL(request.url).searchParams;
+  const rangeParam = params.get("range") || params.get("days") || "30";
+  const lifetime = rangeParam === "all";
+  const requested = Number(rangeParam);
+  const days = lifetime ? 0 : [7, 30, 90].includes(requested) ? requested : 30;
+  const audience = ["in", "out"].includes(params.get("audience")) ? params.get("audience") : "all";
+  const fresh = params.get("fresh") === "1";
+  const todayKey = dayKey(new Date());
 
   try {
     const now = Date.now();
-    const keys = lastDays(days);
-    const todayKey = keys[keys.length - 1];
-    const startKey = keys[0];
-    const prevStartKey = shiftDay(startKey, -days);
-    const inPeriodKey = (k) => k >= startKey && k <= todayKey;
-    const inPrevKey = (k) => k >= prevStartKey && k < startKey;
-    const viewsSince = new Date(now - (days * 2 + 2) * DAY_MS).toISOString();
+
+    // Everything is loaded once and reused for 60 seconds. Changing the audience (or going
+    // back to a range you already opened) does not download anything again.
+    const { warnings, results } = await cached(`range:${lifetime ? "all" : days}`, fresh, async () => {
+      // One broken table should never take the whole page down.
+      const warnings = [];
+      const safe = async (label, fn, fallback) => {
+        try {
+          return await fn();
+        } catch (e) {
+          warnings.push(`${label}: ${e?.message || String(e)}`);
+          return fallback;
+        }
+      };
+
+      const viewsSince = lifetime ? null : new Date(now - (days * 2 + 2) * DAY_MS).toISOString();
+
+      const results = await Promise.all([
+        safe("Users", listAllUsers, []),
+        safe(
+          "mentorss",
+          () => fetchTable("mentorss", "id, name, school, subject, country, languages, available, verified, sessions, answers"),
+          []
+        ),
+        safe(
+          "mentor_applications",
+          () => fetchTable("mentor_applications", "status, created_at, field, university, country"),
+          []
+        ),
+        safe("user_questions", () => fetchTable("user_questions", "id, created_at, subject, country"), []),
+        safe(
+          "question_answers",
+          () => fetchTable("question_answers", "created_at, user_question_id, mentor_name"),
+          []
+        ),
+        safe("question_comments", () => fetchTable("question_comments", "created_at, user_id"), []),
+        safe("mentor_reviews", () => fetchTable("mentor_reviews", "created_at, rating, mentor_id"), []),
+        safe("student_profiles", () => fetchTable("student_profiles", "is_minor, consent_status"), []),
+        safe("parental_requests", () => fetchTable("parental_requests", "status, kind"), []),
+        safe("course_guides", () => fetchTable("course_guides", "id, subject, country_label, country"), []),
+        safe(
+          "page_views",
+          async () => {
+            const load = (cols) =>
+              fetchAll(() => {
+                let q = supabaseAdmin
+                  .from("page_views")
+                  .select(cols)
+                  .not("path", "like", "/admin%")
+                  .order("created_at", { ascending: true });
+                if (viewsSince) q = q.gte("created_at", viewsSince);
+                return q;
+              });
+            try {
+              return await load(VIEW_COLS_RICH);
+            } catch {
+              // New tracking columns not added yet: fall back to the basic ones
+              return await load(VIEW_COLS_BASIC);
+            }
+          },
+          []
+        ),
+        safe("question_likes", () => countRows("question_likes"), null),
+        safe(
+          "question_views",
+          async () => {
+            const rows = await fetchAll(() => supabaseAdmin.from("question_views").select("view_count"));
+            return rows.reduce((sum, r) => sum + (Number(r.view_count) || 0), 0);
+          },
+          null
+        ),
+        safe(
+          "page_views (total)",
+          async () => {
+            const countViews = async (onlySignedIn) => {
+              let q = supabaseAdmin
+                .from("page_views")
+                .select("*", { count: "exact", head: true })
+                .not("path", "like", "/admin%");
+              if (onlySignedIn) q = q.not("user_id", "is", null);
+              const { count, error } = await q;
+              if (error) throw error;
+              return count || 0;
+            };
+            const [all, signedIn] = await Promise.all([countViews(false), countViews(true)]);
+            return { all, in: signedIn };
+          },
+          null
+        ),
+        safe("mentor_calendar_events", () => countRows("mentor_calendar_events"), null),
+        safe(
+          "mentor_calendar_events (upcoming)",
+          async () => {
+            const { count, error } = await supabaseAdmin
+              .from("mentor_calendar_events")
+              .select("*", { count: "exact", head: true })
+              .gte("event_date", todayKey);
+            if (error) throw error;
+            return count || 0;
+          },
+          null
+        ),
+        safe(
+          "call_requests",
+          () => fetchTable("call_requests", "created_at, student_id, student_email, mentor_id, source"),
+          []
+        ),
+      ]);
+
+      return { warnings, results };
+    });
 
     const [
       users,
@@ -234,77 +395,49 @@ export async function GET(request) {
       rawViews,
       likeCount,
       questionViewTotal,
-      allTimeViews,
+      allTimeViewsRaw,
       calendarTotal,
       calendarUpcoming,
       callRequests,
-    ] = await Promise.all([
-      safe("Users", listAllUsers, []),
-      safe("mentorss", () => fetchAll(() => supabaseAdmin.from("mentorss").select("*")), []),
-      safe("mentor_applications", () => fetchAll(() => supabaseAdmin.from("mentor_applications").select("*")), []),
-      safe("user_questions", () => fetchAll(() => supabaseAdmin.from("user_questions").select("*")), []),
-      safe("question_answers", () => fetchAll(() => supabaseAdmin.from("question_answers").select("*")), []),
-      safe("question_comments", () => fetchAll(() => supabaseAdmin.from("question_comments").select("*")), []),
-      safe("mentor_reviews", () => fetchAll(() => supabaseAdmin.from("mentor_reviews").select("*")), []),
-      safe("student_profiles", () => fetchAll(() => supabaseAdmin.from("student_profiles").select("*")), []),
-      safe("parental_requests", () => fetchAll(() => supabaseAdmin.from("parental_requests").select("*")), []),
-      safe("course_guides", () => fetchAll(() => supabaseAdmin.from("course_guides").select("*")), []),
-      safe(
-        "page_views",
-        async () => {
-          const load = (cols) =>
-            fetchAll(() =>
-              supabaseAdmin
-                .from("page_views")
-                .select(cols)
-                .gte("created_at", viewsSince)
-                .order("created_at", { ascending: true })
-            );
-          try {
-            return await load(VIEW_COLS_RICH);
-          } catch {
-            // New tracking columns not added yet: fall back to the basic ones
-            return await load(VIEW_COLS_BASIC);
-          }
-        },
-        []
-      ),
-      safe("question_likes", () => countRows("question_likes"), null),
-      safe(
-        "question_views",
-        async () => {
-          const rows = await fetchAll(() => supabaseAdmin.from("question_views").select("view_count"));
-          return rows.reduce((sum, r) => sum + (Number(r.view_count) || 0), 0);
-        },
-        null
-      ),
-      safe(
-        "page_views (total)",
-        async () => {
-          const { count, error } = await supabaseAdmin
-            .from("page_views")
-            .select("*", { count: "exact", head: true })
-            .not("path", "like", "/admin%");
-          if (error) throw error;
-          return count || 0;
-        },
-        null
-      ),
-      safe("mentor_calendar_events", () => countRows("mentor_calendar_events"), null),
-      safe(
-        "mentor_calendar_events (upcoming)",
-        async () => {
-          const { count, error } = await supabaseAdmin
-            .from("mentor_calendar_events")
-            .select("*", { count: "exact", head: true })
-            .gte("event_date", todayKey);
-          if (error) throw error;
-          return count || 0;
-        },
-        null
-      ),
-      safe("call_requests", () => fetchAll(() => supabaseAdmin.from("call_requests").select("*")), []),
-    ]);
+    ] = results;
+
+    // ---------- Period ----------
+    // "Lifetime" starts at the first recorded activity and has no previous period to compare with.
+    const earliestOf = (list) =>
+      list.reduce((min, x) => (x.created_at && (min === null || x.created_at < min) ? x.created_at : min), null);
+
+    let periodDays = days;
+    let keys;
+    let startKey;
+    if (lifetime) {
+      const stamps = [
+        rawViews[0]?.created_at,
+        earliestOf(users),
+        earliestOf(applications),
+        earliestOf(questions),
+        earliestOf(callRequests),
+        earliestOf(reviews),
+      ].filter(Boolean);
+      const firstKey = dayKey(stamps.length ? stamps.sort()[0] : new Date());
+      periodDays = Math.max(1, Math.round((Date.parse(todayKey) - Date.parse(firstKey)) / DAY_MS) + 1);
+      keys = lastDays(Math.min(periodDays, MAX_CHART_DAYS));
+      startKey = firstKey;
+    } else {
+      keys = lastDays(days);
+      startKey = keys[0];
+    }
+    const prevStartKey = lifetime ? null : shiftDay(startKey, -days);
+    const inPeriodKey = (k) => k >= startKey && k <= todayKey;
+    const inPrevKey = (k) => !lifetime && k >= prevStartKey && k < startKey;
+
+    const allTimeViews =
+      allTimeViewsRaw === null
+        ? null
+        : audience === "in"
+          ? allTimeViewsRaw.in
+          : audience === "out"
+            ? Math.max(0, allTimeViewsRaw.all - allTimeViewsRaw.in)
+            : allTimeViewsRaw.all;
 
     // ---------- Daily series ----------
     const daily = Object.fromEntries(
@@ -330,7 +463,7 @@ export async function GET(request) {
     };
     const countIn = (list, field = "created_at") => ({
       current: list.filter((x) => inPeriodKey(dayKey(x[field]))).length,
-      previous: list.filter((x) => inPrevKey(dayKey(x[field]))).length,
+      previous: lifetime ? null : list.filter((x) => inPrevKey(dayKey(x[field]))).length,
     });
 
     // ---------- Users ----------
@@ -504,7 +637,9 @@ export async function GET(request) {
         browser: v.browser || null,
         os: v.os || null,
         country: v.country || null,
-      }));
+      }))
+      // Audience filter: signed in = views made while logged in, signed out = views made while logged out
+      .filter((v) => audience === "all" || (audience === "in" ? v.loggedIn : !v.loggedIn));
 
     // Sessions: use the stored session id; for older rows, split a person's views at 30-minute gaps.
     const lastSeen = new Map();
@@ -629,9 +764,9 @@ export async function GET(request) {
     const trafficStats = {
       richTracking,
       viewsPeriod: periodViews.length,
-      viewsPrev: prevViews.length,
+      viewsPrev: lifetime ? null : prevViews.length,
       visitorsPeriod: totalVisitors,
-      visitorsPrev: visitorsPrev.size,
+      visitorsPrev: lifetime ? null : visitorsPrev.size,
       viewsToday: daily[todayKey].views,
       visitorsToday: daily[todayKey].visitors,
       sessionsPeriod: sessionList.length,
@@ -697,7 +832,11 @@ export async function GET(request) {
 
     return Response.json(
       {
-        days,
+        days: periodDays,
+        range: lifetime ? "all" : String(days),
+        lifetime,
+        audience,
+        chartDays: keys.length,
         timezone: TZ,
         generatedAt: new Date().toISOString(),
         warnings,

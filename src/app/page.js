@@ -8,6 +8,7 @@ import { getFlag } from "@/data/mentors";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import UniversityTicker from "@/Components/UniversityTicker";
+import HeroCarousel from "@/Components/HeroCarousel";
 
 const howItWorksSteps = [
   {
@@ -161,8 +162,7 @@ export default function Home() {
   const [answeredUserQuestionsCount, setAnsweredUserQuestionsCount] = useState(0);
     const [allRatings, setAllRatings] = useState(null);
   const [communityQuestions, setCommunityQuestions] = useState([]);
-  const [heroIndex, setHeroIndex] = useState(0);
-  const [leavingIndex, setLeavingIndex] = useState(null);
+
 
   // Close the suggestions dropdown on any click/tap outside the search box,
   // instead of relying on the input's onBlur (which races with clicking a
@@ -180,24 +180,6 @@ export default function Home() {
       document.removeEventListener("touchstart", handleOutsideClick);
     };
   }, []);
-
-  // Automatically rotate the hero mentor through the top 4 rated mentors.
-  useEffect(() => {
-        const count = mentors.length;
-    if (count < 2) return;
-    const t = setTimeout(() => {
-      setLeavingIndex(heroIndex);
-      setHeroIndex((heroIndex + 1) % count);
-    }, 5200);
-    return () => clearTimeout(t);
-  }, [mentors.length, heroIndex]);
-
-  // Clear the "leaving" flag once the page-turn animation has finished (1600ms).
-  useEffect(() => {
-    if (leavingIndex === null) return;
-    const t = setTimeout(() => setLeavingIndex(null), 1650);
-    return () => clearTimeout(t);
-  }, [leavingIndex]);
 
   useEffect(() => {
     async function fetchMentors() {
@@ -325,7 +307,6 @@ export default function Home() {
 
   const topMentors = [...mentors].sort((a, b) => b.rating - a.rating).slice(0, 3);
    const heroMentors = useMemo(() => shuffle(mentors).slice(0, 10), [mentors]);
-  const heroMentor = heroMentors[heroIndex] || heroMentors[0];
   const topQuestions = [...questions].sort((a, b) => b.helpful - a.helpful).slice(0, 3);
   const previewGuide = courseGuides.find((g) => g.id === "medicine-nl") || courseGuides[0];
   const previewGuideUrl = "/course-guides/f6a57bf0-3656-42fc-9343-61e5a32c0499";
@@ -374,31 +355,6 @@ export default function Home() {
     <main className="min-h-screen bg-background bg-grain">
       <Navbar />
 
-      <style>{`
-        @keyframes pageTurn {
-          0%   { transform: translate(0, 0) rotate(0deg) scale(1) rotateY(0deg); z-index: 50; }
-          35%  { transform: translate(-22%, 2%) rotate(-5deg) scale(0.98) rotateY(-90deg); z-index: 50; }
-          36%  { z-index: 5; }
-          65%  { transform: var(--back-transform) rotateY(-270deg); z-index: 5; }
-          100% { transform: var(--back-transform) rotateY(-360deg); z-index: 5; }
-        }
-        .shuffle-card {
-                    transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 900ms ease, opacity 900ms ease;
-          backface-visibility: hidden;
-          transform-style: preserve-3d;
-                    will-change: transform;
-        }
-               .shuffle-leaving {
-          animation: pageTurn 1600ms cubic-bezier(0.65, 0, 0.35, 1) forwards;
-          transition: none;
-          pointer-events: none;
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .shuffle-card { transition: none; }
-          .shuffle-leaving { animation: none; }
-        }
-      `}</style>
-
       {/* ============ HERO ============ */}
       <section className="relative overflow-hidden px-6 pt-4 pb-8 md:pt-6">
         {HERO_PHOTO_URL && (
@@ -418,49 +374,7 @@ export default function Home() {
           {/* Left: spotlight mentor photo — auto-rotates through the top 4 mentors, click to open their page */}
           <div className="relative w-full pr-9 pb-9">
             {!mentorsLoading && heroMentors.length > 0 ? (
-              <div className="relative w-full aspect-[4/5]" style={{ perspective: "1800px" }}>
-                {heroMentors.map((m, i) => {
-                  const n = heroMentors.length;
-                  const offset = (i - heroIndex + n) % n; // 0 = top card
-                  const isTop = offset === 0;
-                                   const isLeaving = i === leavingIndex;
-                  // only the first few cards are drawn; the rest wait their turn
-                  if (offset > 4 && !isLeaving) return null;
-                  const visual = Math.min(offset, isLeaving ? 3 : 4);
-                  const hidden = offset > 3 && !isLeaving;
-                  const stackTransform = `translate(${visual * 12}px, ${visual * 12}px) rotate(${visual * 2.5}deg) scale(${1 - visual * 0.04})`;
-                  return (
-                    <Link
-                      key={m.id}
-                      href={`/mentors/${m.id}`}
-                      tabIndex={isTop ? 0 : -1}
-                      aria-hidden={!isTop}
-                      className={`shuffle-card absolute inset-0 block rounded-2xl overflow-hidden border border-border bg-surface ${
-                        isTop && leavingIndex === null ? "shadow-xl" : isTop ? "shadow-xl pointer-events-none" : "shadow-md pointer-events-none"
-                      } ${i === leavingIndex ? "shuffle-leaving" : ""}`}
-                      style={{
-                        transform: stackTransform,
-                                                zIndex: 40 - visual * 10,
-                        opacity: hidden ? 0 : 1,
-                        "--back-transform": stackTransform,
-                        transformOrigin: "left center",
-                      }}
-                    >
-                      <MentorPhoto mentor={m} className="w-full h-full text-6xl" />
-                      <div className="absolute left-4 right-4 bottom-4 bg-badge/90 backdrop-blur-sm rounded-xl px-5 py-4">
-                        <p className="font-label text-[11px] tracking-[0.15em] uppercase text-primary flex items-center gap-2 mb-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                          Verified Mentor
-                        </p>
-                        <p className="font-display text-white text-lg leading-tight">{m.name}</p>
-                        <p className="text-white/70 text-sm italic">
-                          {m.subject} · {m.school}
-                        </p>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
+           <HeroCarousel mentors={heroMentors} />
             ) : (
               <div className="w-full aspect-[4/5] rounded-2xl border border-border bg-surface animate-pulse" />
             )}
