@@ -6,10 +6,10 @@ import { courseGuides } from "@/data/courseGuides";
 import { getLanguageStyle, languageFlags, getSubjectStyle, getFlag } from "@/data/mentors";
 import Link from "next/link";
 import GradeInput from "@/Components/GradeInput";
+import { useFilterOptions } from "@/lib/useFilterOptions";
+import { YEARS } from "@/lib/filterDefaults";
 
-const fields = ["Medicine", "Mechanical Engineering", "Business", "Computer Science", "Law", "Psychology", "Other"];
-const years = ["Year 1", "Year 2", "Year 3", "Year 4", "Year 5", "Year 6", "Graduate"];
-const countries = ["Netherlands", "United Kingdom", "Other"];
+
 const dutchUniversities = [
   "University of Amsterdam",
   "Vrije Universiteit Amsterdam",
@@ -207,6 +207,10 @@ const honestQuestions = [
 ];
 
 export default function Apply() {
+    const { careerFields, countries: countryDefs } = useFilterOptions();
+  const fields = [...careerFields, "Other"];
+  const years = YEARS;
+  const countries = [...countryDefs.map((c) => c.label), "Other"];
   const [showForm, setShowForm] = useState(false);
   const [openQuestions, setOpenQuestions] = useState(new Set());
 

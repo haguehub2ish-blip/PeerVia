@@ -5,25 +5,13 @@ import Navbar from "@/Components/Navbar";
 import { getSubjectStyle, getFlag } from "@/data/mentors";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
+import { useFilterOptions } from "@/lib/useFilterOptions";
+import { getFieldGroups } from "@/lib/filterDefaults";
 
 // Each group matches any subject text containing one of its keywords,
 // so "Mechanical Engineering" and "Law, Psychology" are handled correctly.
-const FIELD_GROUPS = {
-  Medicine: /medic|nursing|dentist|pharmac|biomedic|surgery|clinical/,
-  Engineering: /engineer|aerospace|mechatronic|robotic/,
-  Law: /\blaw\b|legal|jurisprudence/,
-  "Computer Science": /computer|software|informatics|artificial intelligence|\bai\b|data science|cyber|information technology/,
-  Business: /business|management|finance|accounting|marketing|entrepreneur/,
-  Economics: /economic|econometric/,
-  Psychology: /psycholog|neuroscien|behaviou?r/,
-};
 
-function getFieldGroups(subject) {
-  const text = (subject || "").toLowerCase();
-  const groups = Object.keys(FIELD_GROUPS).filter((g) => FIELD_GROUPS[g].test(text));
-  return groups.length > 0 ? groups : ["Other"];
-}
-const countries = ["All", "NL", "UK"];
+
 const filterTabs = ["Field", "Country", "University", "Language", "Sort"];
 const filterTabStyles = {
   Field: "bg-primary text-white border-primary",
@@ -43,6 +31,7 @@ export default function Mentors() {
 
 function MentorsContent() {
   const searchParams = useSearchParams();
+    const { fields: fieldDefs, countries: countryDefs, hasCustomCountries } = useFilterOptions();
   const [mentors, setMentors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeFilters, setActiveFilters] = useState([]);
@@ -59,7 +48,7 @@ function MentorsContent() {
     const subjectParam = searchParams.get("subject");
     if (subjectParam) {
       const validSubjects = [
-        ...new Set(subjectParam.split(",").flatMap((s) => getFieldGroups(s.trim()))),
+        ...new Set(subjectParam.split(",").flatMap((s) => getFieldGroups(s.trim(), fieldDefs))),
       ].filter((g) => g !== "Other");
       if (validSubjects.length > 0) {
         setActiveFilters(validSubjects);
@@ -80,7 +69,7 @@ function MentorsContent() {
     if (schoolParam) {
       setActiveFilterTabs((prev) => (prev.includes("University") ? prev : [...prev, "University"]));
     }
-  }, [searchParams]);
+    }, [searchParams, fieldDefs]);
 
 
 
@@ -126,7 +115,7 @@ function MentorsContent() {
   const filteredMentors = mentors.filter((mentor) => {
     const matchesFilter =
       activeFilters.length === 0 ||
-      getFieldGroups(mentor.subject).some((g) => activeFilters.includes(g));
+            getFieldGroups(mentor.subject, fieldDefs).some((g) => activeFilters.includes(g));
     const matchesCountry =
       activeCountries.length === 0 || activeCountries.includes(mentor.country);
     const mentorLanguages =
@@ -156,17 +145,21 @@ const sortedMentors = [...filteredMentors].sort((a, b) => {
   const norm = (s) => (s || "").trim().replace(/\s+/g, " ").toLowerCase();
   const uniq = (list) => [...new Set(list.filter(Boolean))].sort((a, b) => a.localeCompare(b));
 
-  const hasOtherMentors = mentors.some((m) => getFieldGroups(m.subject).includes("Other"));
+  const hasOtherMentors = mentors.some((m) => getFieldGroups(m.subject, fieldDefs).includes("Other"));
   const fieldOptions = [
     "All",
-    ...Object.keys(FIELD_GROUPS),
+        ...fieldDefs.map((f) => f.label),
     ...(hasOtherMentors ? ["Other"] : []),
   ];
+      const listedCountries = countryDefs.map((c) => c.value);
   const countryOptions = [
-    ...countries,
-    ...uniq(mentors.map((m) => m.country)).filter((c) => !countries.includes(c)),
+    "All",
+    ...listedCountries,
+    ...(hasCustomCountries
+      ? []
+      : uniq(mentors.map((m) => m.country)).filter((c) => !listedCountries.includes(c))),
   ];
-
+  
   const schoolMap = new Map();
   mentors.forEach((m) => {
     const name = (m.school || "").trim().replace(/\s+/g, " ");

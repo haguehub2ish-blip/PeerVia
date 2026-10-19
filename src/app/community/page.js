@@ -1,20 +1,19 @@
 "use client";
-import { useState, useEffect, useRef, Suspense } from "react";
+import { useState, useEffect, useRef, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Navbar from "@/Components/Navbar";
 import { getSubjectStyle, getFlag } from "@/data/mentors";
 import { questions } from "@/data/questions";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
+import { useFilterOptions } from "@/lib/useFilterOptions";
+import { getFieldGroups } from "@/lib/filterDefaults";
 
 function formatDate(dateString) {
   if (!dateString) return "";
   const date = new Date(dateString);
   return date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 }
-
-const fields = ["All fields", "Medicine", "Engineering", "Law", "Business", "Computer Science", "Psychology", "Biology", "Architecture"];
-const countries = ["NL & UK", "Netherlands", "United Kingdom"];
 
 export default function QAFeed() {
   return (
@@ -27,6 +26,15 @@ export default function QAFeed() {
 function QAFeedContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+    const { communityFields, countries: countryDefs } = useFilterOptions();
+  const fields = useMemo(
+    () => ["All fields", ...communityFields.map((f) => f.label)],
+    [communityFields]
+  );
+  const allCountriesLabel =
+    countryDefs.length <= 2 ? countryDefs.map((c) => c.value).join(" & ") : "All countries";
+  const countries = [allCountriesLabel, ...countryDefs.map((c) => c.label)];
+  const countryCodeMap = Object.fromEntries(countryDefs.map((c) => [c.label, c.value]));
   const [openIndex, setOpenIndex] = useState(0);
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
@@ -75,7 +83,7 @@ function QAFeedContent() {
   }, []);
 
   const [selectedFields, setSelectedFields] = useState([]);
-  const [selectedCountry, setSelectedCountry] = useState("NL & UK");
+  const [selectedCountry, setSelectedCountry] = useState("");
 
   useEffect(() => {
     const fieldParam = searchParams.get("field");
@@ -87,14 +95,14 @@ function QAFeedContent() {
     }
 
     const countryParam = searchParams.get("country");
-    const countryDisplayMap = { NL: "Netherlands", UK: "United Kingdom" };
+    const countryDisplayMap = Object.fromEntries(countryDefs.map((c) => [c.value, c.label]));
     if (countryParam) {
       const firstCode = countryParam.split(",")[0];
       if (countryDisplayMap[firstCode]) {
         setSelectedCountry(countryDisplayMap[firstCode]);
       }
     }
-  }, [searchParams]);
+    }, [searchParams, fields, countryDefs]);
 
   const [search, setSearch] = useState("");
 
@@ -351,12 +359,12 @@ function QAFeedContent() {
     );
   };
 
-  const countryCodeMap = { "Netherlands": "NL", "United Kingdom": "UK" };
-
   const filteredQuestions = questions.filter((q) => {
-    const matchesField = selectedFields.length === 0 || selectedFields.includes(q.subject);
+    const matchesField =
+      selectedFields.length === 0 ||
+      getFieldGroups(q.subject, communityFields).some((g) => selectedFields.includes(g));
     const matchesCountry =
-      selectedCountry === "NL & UK" || q.country === countryCodeMap[selectedCountry];
+      !selectedCountry || q.country === countryCodeMap[selectedCountry];
     const matchesSearch = q.question.toLowerCase().includes(search.toLowerCase());
 
     const qData = interactions[q.id];
@@ -495,7 +503,7 @@ function QAFeedContent() {
                 <div>
                   <p className="text-xs font-semibold text-white/50 mb-1.5">COUNTRY</p>
                   <div className="flex flex-wrap gap-2">
-                    {["NL", "UK"].map((c) => {
+                    {countryDefs.map((cd) => cd.value).map((c) => {
                       const isSelected = askCountries.includes(c);
                       return (
                         <button
@@ -569,9 +577,9 @@ function QAFeedContent() {
             {countries.map((country) => (
               <button
                 key={country}
-                onClick={() => setSelectedCountry(country)}
+                onClick={() => setSelectedCountry(country === allCountriesLabel ? "" : country)}
                 className={`w-full text-left px-3 py-2 rounded-md text-sm transition border-l-2 ${
-                  selectedCountry === country
+                                    (selectedCountry || allCountriesLabel) === country
                     ? "border-l-primary text-ink bg-primary/5 font-medium"
                     : "border-l-transparent text-muted hover:text-ink hover:bg-background/60"
                 }`}

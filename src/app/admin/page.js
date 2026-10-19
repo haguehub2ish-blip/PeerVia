@@ -23,6 +23,24 @@ const adminLinks = [
     title: "Course Guides",
     text: "View, edit, and manage the current university and course guide listings.",
   },
+     {
+    href: "/admin/mentors",
+    icon: "🧑‍🏫",
+    title: "Mentors",
+    text: "Add, edit, or remove mentors and everything on their profiles.",
+  },
+  {
+    href: "/admin/filters",
+    icon: "🎚️",
+    title: "Filters",
+    text: "Add, rename, reorder, or delete the filter options and dropdown choices used across the site.",
+  },
+    {
+    href: "/admin/community",
+    icon: "💬",
+    title: "Community",
+    text: "Review, edit, or remove questions, mentor answers, and comments.",
+  },
 ];
 
 export default function AdminHub() {

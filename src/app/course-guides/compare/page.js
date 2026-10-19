@@ -6,7 +6,7 @@ import Navbar from "@/Components/Navbar";
 import { supabase } from "@/lib/supabase";
 
 const MAX_COMPARE = 3;
-const LABEL_WIDTH = "7rem"; // width of the left-hand row labels
+
 const COLUMN_MIN = "16rem"; // narrowest a guide's column can get before the table scrolls sideways
 
 export default function ComparePage() {
@@ -212,7 +212,8 @@ function CompareContent() {
     router.replace(`/course-guides/compare?ids=${rest.join(",")}`);
   }
 
-  const columns = `${LABEL_WIDTH} repeat(${guides.length}, minmax(${COLUMN_MIN}, 1fr))`;
+   const columns = `repeat(${guides.length}, minmax(${COLUMN_MIN}, 1fr))`;
+  const tableMinWidth = `calc(${guides.length} * ${COLUMN_MIN})`;
   const visibleRows = ROWS.filter((row) => guides.some((g) => row.has(g)));
   const canRemove = guides.length > 2;
 
@@ -228,13 +229,15 @@ function CompareContent() {
           ← Back to Course Guides
         </Link>
 
-        <p className="font-label text-xs uppercase tracking-[0.2em] text-primary mb-3">
-          Side by side
-        </p>
-        <h1 className="font-display text-4xl text-ink mb-3">Compare Course Guides</h1>
-        <p className="text-muted max-w-xl mb-8 leading-relaxed">
-          The same questions answered for each path, so you can see where they differ.
-        </p>
+        <div className="mb-8">
+          <p className="font-label text-xs uppercase tracking-[0.2em] text-primary mb-3">
+            Side by side
+          </p>
+          <h1 className="font-display text-4xl text-ink mb-3">Compare Course Guides</h1>
+          <p className="text-muted max-w-xl leading-relaxed">
+            The same questions answered for each path, so you can see where they differ.
+          </p>
+        </div>
 
         {loading ? (
           <p className="font-label text-sm uppercase tracking-wide text-muted">
@@ -256,14 +259,13 @@ function CompareContent() {
             </Link>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-2xl border border-border bg-surface">
-            <div style={{ minWidth: `calc(${LABEL_WIDTH} + ${guides.length} * ${COLUMN_MIN})` }}>
+          <div className="overflow-x-auto rounded-2xl border border-border bg-surface shadow-sm">
+            <div style={{ minWidth: tableMinWidth }}>
               {/* Header: one card per guide */}
-              <div className="grid" style={{ gridTemplateColumns: columns }}>
-                <div className="sticky left-0 z-10 bg-surface" />
+              <div className="grid divide-x divide-border" style={{ gridTemplateColumns: columns }}>
                 {guides.map((g) => (
-                  <div key={g.id} className="p-4 border-l border-border">
-                    <div className="aspect-[16/9] rounded-xl overflow-hidden bg-background mb-3">
+                  <div key={g.id} className="p-4 flex flex-col">
+                    <div className="aspect-[16/9] rounded-xl overflow-hidden bg-background mb-3 relative">
                       {g.image_url ? (
                         <img
                           src={g.image_url}
@@ -277,15 +279,15 @@ function CompareContent() {
                           </span>
                         </div>
                       )}
+                      <span className="absolute top-2 right-2 font-label text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-background/90 text-ink backdrop-blur-sm">
+                        {g.flag} {g.country}
+                      </span>
                     </div>
-                    <p className="font-label text-[11px] uppercase tracking-[0.15em] text-primary mb-1">
-                      {g.flag} {g.country}
-                    </p>
                     <h2 className="font-display text-xl text-ink leading-tight">
                       <span className="font-semibold">{g.subject}</span>{" "}
                       <span className="text-muted font-normal">in {g.country_label}</span>
                     </h2>
-                    <div className="flex items-center gap-4 mt-3">
+                    <div className="flex items-center gap-4 mt-auto pt-3">
                       <Link
                         href={`/course-guides/${g.id}`}
                         className="font-label text-[10px] uppercase tracking-wide text-primary hover:underline"
@@ -306,29 +308,32 @@ function CompareContent() {
                 ))}
               </div>
 
-              {/* One row per topic */}
+              {/* One section per topic: a label bar, then the guides side by side */}
               {visibleRows.map((row) => (
-                <div
-                  key={row.label}
-                  className="grid border-t border-border"
-                  style={{ gridTemplateColumns: columns }}
-                >
-                  <div className="sticky left-0 z-10 bg-surface px-3 py-4 font-label text-[10px] uppercase tracking-[0.15em] text-muted">
-                    {row.label}
+                <section key={row.label} className="border-t border-border">
+                  <div className="bg-border/40 border-b border-border">
+                    <h3 className="sticky left-0 w-max px-4 py-2 font-label text-xs uppercase tracking-[0.15em] text-ink">
+                      {row.label}
+                    </h3>
                   </div>
-                  {guides.map((g) => (
-                    <div
-                      key={g.id}
-                      className="px-4 py-4 border-l border-border text-sm leading-relaxed text-ink/90"
-                    >
-                      {row.has(g) ? (
-                        row.render(g)
-                      ) : (
-                        <span className="italic text-muted/70">Not covered in this guide</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                  <div
+                    className="grid divide-x divide-border"
+                    style={{ gridTemplateColumns: columns }}
+                  >
+                    {guides.map((g) => (
+                      <div
+                        key={g.id}
+                        className="px-4 py-5 text-sm leading-relaxed text-ink/90"
+                      >
+                        {row.has(g) ? (
+                          row.render(g)
+                        ) : (
+                          <span className="italic text-muted/70">Not covered in this guide</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </section>
               ))}
             </div>
           </div>

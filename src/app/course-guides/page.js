@@ -1,12 +1,11 @@
 "use client";
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Navbar from "@/Components/Navbar";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
+import { useFilterOptions } from "@/lib/useFilterOptions";
 
-const countryFlags = { NL: "🇳🇱", UK: "🇬🇧" };
-const countries = ["All", "NL", "UK"];
 const MAX_COMPARE = 3; // most guides you can compare at once
 
 export default function CourseGuides() {
@@ -20,6 +19,12 @@ export default function CourseGuides() {
 function CourseGuidesContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+    const { countries: countryDefs } = useFilterOptions();
+  const countries = useMemo(() => ["All", ...countryDefs.map((c) => c.value)], [countryDefs]);
+  const countryFlags = useMemo(
+    () => Object.fromEntries(countryDefs.map((c) => [c.value, c.flag])),
+    [countryDefs]
+  );
   const [compareMode, setCompareMode] = useState(false);
   const [selected, setSelected] = useState([]); // ids of the guides picked for comparing
   const [activeCountries, setActiveCountries] = useState([]);
@@ -59,7 +64,7 @@ function CourseGuidesContent() {
 
     const fieldParam = searchParams.get("field");
     if (fieldParam) setActiveSubjects(fieldParam.split(","));
-  }, [searchParams]);
+    }, [searchParams, countries]);
 
   const toggleCountry = (country) => {
     if (country === "All") {
@@ -109,13 +114,36 @@ function CourseGuidesContent() {
       <Navbar />
 
       <div className="max-w-6xl mx-auto px-6 py-12">
-        <p className="font-label text-xs uppercase tracking-[0.2em] text-primary mb-3">
-          Field by field, country by country
-        </p>
-        <h1 className="font-display text-4xl text-ink mb-3">Course Guides</h1>
-        <p className="text-muted max-w-xl mb-8 leading-relaxed">
-          Real pathways into the fields students actually apply for, written by the people already on them.
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4 mb-8">
+          <div>
+            <p className="font-label text-xs uppercase tracking-[0.2em] text-primary mb-3">
+              Field by field, country by country
+            </p>
+            <h1 className="font-display text-4xl text-ink mb-3">Course Guides</h1>
+            <p className="text-muted max-w-xl leading-relaxed">
+              Real pathways into the fields students actually apply for, written by the people already on them.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={toggleCompareMode}
+            title="Put two or three guides side by side"
+            className={`font-label text-xs uppercase tracking-wide px-5 py-3 rounded-lg border transition ${
+              compareMode
+                ? "border-border bg-surface text-ink hover:border-primary"
+                : "border-primary bg-primary text-background hover:bg-primary-dark"
+            }`}
+          >
+            {compareMode ? "Cancel" : "⇄ Compare guides"}
+          </button>
+        </div>
+
+        {compareMode && (
+          <p className="text-sm text-ink bg-primary/10 border border-primary/30 rounded-lg px-4 py-2.5 mb-6">
+            Pick 2 or 3 guides to compare ({selected.length}/{MAX_COMPARE} chosen)
+          </p>
+        )}
 
         <div className="flex flex-wrap gap-2 mb-3">
           {countries.map((c) => {
@@ -153,25 +181,6 @@ function CourseGuidesContent() {
               </button>
             );
           })}
-        </div>
-
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-          <p className="text-sm text-muted">
-            {compareMode
-              ? `Pick 2 or 3 guides to compare (${selected.length}/${MAX_COMPARE} chosen)`
-              : "Not sure which path fits? Put two or three guides side by side."}
-          </p>
-          <button
-            type="button"
-            onClick={toggleCompareMode}
-            className={`font-label text-xs uppercase tracking-wide px-4 py-2 rounded-lg border transition ${
-              compareMode
-                ? "border-border bg-surface text-ink hover:border-primary"
-                : "border-primary bg-primary text-background hover:bg-primary-dark"
-            }`}
-          >
-            {compareMode ? "Cancel" : "Compare guides"}
-          </button>
         </div>
 
         {loading ? (

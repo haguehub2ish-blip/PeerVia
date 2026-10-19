@@ -168,6 +168,12 @@ export async function POST(request) {
   // If approved, create a real login account and add them as a mentor
   if (status === "approved" && application) {
     const countryMap = { Netherlands: "NL", "United Kingdom": "UK" };
+    // Also understand countries added by an admin on the Filters page.
+    const { data: countryRows } = await supabaseAdmin
+      .from("site_filters")
+      .select("value, label")
+      .eq("kind", "country");
+    for (const row of countryRows || []) countryMap[row.label] = row.value;
     const initials = `${application.first_name?.[0] || ""}${application.last_name?.[0] || ""}`.toUpperCase();
     const fullName = `${application.first_name} ${application.last_name}`;
 

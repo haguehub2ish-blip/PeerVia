@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { getFieldGroups, parseKeywords } from "@/lib/filterDefaults";
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -513,6 +514,15 @@ export async function GET(request) {
     const mentorNames = new Map(mentors.map((m) => [String(m.id), m.name]));
     const languagesOf = (m) =>
       typeof m.languages === "string" ? m.languages.split(",") : Array.isArray(m.languages) ? m.languages : [];
+   
+       const { data: fieldRows } = await supabaseAdmin
+      .from("site_filters")
+      .select("label, keywords, sort_order")
+      .eq("kind", "field")
+      .order("sort_order", { ascending: true });
+    const fieldDefs = fieldRows?.length
+      ? fieldRows.map((r) => ({ label: r.label, keywords: parseKeywords(r.keywords) }))
+      : undefined;
     const mentorsStats = {
       total: mentors.length,
       available: mentors.filter((m) => m.available === true).length,
@@ -520,7 +530,7 @@ export async function GET(request) {
       totalSessions: mentors.reduce((s, m) => s + (Number(m.sessions) || 0), 0),
       totalAnswersColumn: mentors.reduce((s, m) => s + (Number(m.answers) || 0), 0),
       withoutReviews: mentors.filter((m) => !reviewAgg.has(String(m.id))).length,
-      byField: tally(mentors, (m) => fieldGroups(m.subject)),
+            byField: tally(mentors, (m) => getFieldGroups(m.subject, fieldDefs)),
       byCountry: tally(mentors, (m) => m.country),
       bySchool: tally(mentors, (m) => m.school, 8),
       languages: tally(mentors, languagesOf, 8),
