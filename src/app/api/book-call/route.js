@@ -219,7 +219,7 @@ export async function POST(request) {
     mentorName: mentor.name,
     studentEmail: email,
     message,
-    ctaUrl: `${siteUrl}/mentor-account/dashboard`,
+    ctaUrl: `${siteUrl}/mentor-account/dashboard#call-requests`,
     ctaLabel: "View on your dashboard →",
   });
 
@@ -241,6 +241,8 @@ export async function POST(request) {
     mentor_id: String(mentorId),
     student_id: userData.user.id,
     student_email: email,
+    student_name: userData.user.user_metadata?.name || null,
+    message,
     source: "direct",
   });
 

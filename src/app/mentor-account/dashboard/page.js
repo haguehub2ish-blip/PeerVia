@@ -102,6 +102,51 @@ export default function MentorDashboard() {
   const [photoUploading, setPhotoUploading] = useState(false);
 
   const [unansweredQuestions, setUnansweredQuestions] = useState([]);
+
+  const [callRequests, setCallRequests] = useState([]);
+  const [callRequestsLoaded, setCallRequestsLoaded] = useState(false);
+  const [callRequestsError, setCallRequestsError] = useState("");
+
+  async function callRequestsFetch(method, body) {
+    const { data } = await supabase.auth.getSession();
+    const token = data?.session?.access_token;
+    const res = await fetch("/api/mentor/call-requests", {
+      method,
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: body ? JSON.stringify(body) : undefined,
+      cache: "no-store",
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(json.error || "Something went wrong");
+    return json;
+  }
+
+  async function loadCallRequests() {
+    try {
+      const json = await callRequestsFetch("GET");
+      setCallRequests(json.requests || []);
+      setCallRequestsError("");
+    } catch (err) {
+      setCallRequestsError(err.message);
+    }
+    setCallRequestsLoaded(true);
+  }
+
+  async function toggleCallRequest(request) {
+    const nextStatus = request.status === "done" ? "new" : "done";
+    // Update the screen straight away, then save
+    setCallRequests((list) => list.map((r) => (r.id === request.id ? { ...r, status: nextStatus } : r)));
+    try {
+      await callRequestsFetch("PATCH", { id: request.id, status: nextStatus });
+    } catch {
+      setCallRequests((list) => list.map((r) => (r.id === request.id ? { ...r, status: request.status } : r)));
+    }
+  }
+
+  useEffect(() => {
+    if (user) loadCallRequests();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
   const [answerDrafts, setAnswerDrafts] = useState({});
   const [submittingId, setSubmittingId] = useState(null);
     const [showTour, setShowTour] = useState(false);
@@ -747,6 +792,87 @@ export default function MentorDashboard() {
               </p>
               {mentorProfile?.id && <MentorCalendarEditor mentorId={mentorProfile.id} />}
             </>
+          )}
+        </div>
+
+{/* Call requests */}
+        <div id="call-requests" className="bg-surface border border-border rounded-lg p-6 mb-6 shadow-sm">
+          <SectionEyebrow>Bookings</SectionEyebrow>
+          <div className="flex items-center justify-between gap-3 flex-wrap mb-1">
+            <h2 className="font-display text-xl text-ink">Call Requests</h2>
+            {callRequests.filter((r) => r.status !== "done").length > 0 && (
+              <span className="font-label text-[10px] tracking-[0.08em] uppercase px-3 py-1 rounded-full bg-primary/10 text-primary">
+                {callRequests.filter((r) => r.status !== "done").length} new
+              </span>
+            )}
+          </div>
+          <p className="text-sm text-muted mb-6">
+            Students who want a call with you. You also get each request by email, so you can reply there or from here.
+          </p>
+
+          {callRequestsError ? (
+            <p className="text-sm text-red-600">Couldn&apos;t load call requests: {callRequestsError}</p>
+          ) : !callRequestsLoaded ? (
+            <p className="text-sm text-muted">Loading...</p>
+          ) : callRequests.length === 0 ? (
+            <p className="text-sm text-muted">No call requests yet. When a student asks for a call, it will show up here.</p>
+          ) : (
+            <div className="space-y-4">
+              {callRequests.map((r) => (
+                <div
+                  key={r.id}
+                  className={`border border-border rounded-lg p-4 ${r.status === "done" ? "opacity-60" : "bg-background"}`}
+                >
+                  <div className="flex items-start justify-between gap-3 flex-wrap mb-2">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-ink truncate">
+                        {r.student_name || r.student_email || "A student"}
+                      </p>
+                      {r.student_name && r.student_email && (
+                        <p className="text-xs text-muted break-all">{r.student_email}</p>
+                      )}
+                    </div>
+                    <p className="font-label text-[10px] tracking-[0.05em] uppercase text-muted shrink-0">
+                      {new Date(r.created_at).toLocaleString("en-GB", {
+                        day: "numeric",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
+
+                  {r.message ? (
+                    <p className="text-sm text-ink bg-surface border border-border rounded-md px-3 py-2 whitespace-pre-line">
+                      {r.message}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-muted italic">The message wasn&apos;t saved for this request. Check your email for it.</p>
+                  )}
+
+                  <div className="flex items-center gap-2 flex-wrap mt-3">
+                    {r.student_email && (
+                      <a
+                        href={`mailto:${r.student_email}?subject=${encodeURIComponent("Your PeerVia call request")}`}
+                        className="font-label text-[10px] tracking-[0.08em] uppercase px-4 py-1.5 rounded-full bg-primary text-white hover:opacity-90 transition"
+                      >
+                        Reply by email
+                      </a>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => toggleCallRequest(r)}
+                      className="font-label text-[10px] tracking-[0.08em] uppercase px-4 py-1.5 rounded-full border border-border text-ink hover:border-primary hover:text-primary transition"
+                    >
+                      {r.status === "done" ? "Mark as new" : "Mark as handled"}
+                    </button>
+                    {r.status === "done" && (
+                      <span className="text-xs text-muted">Handled</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </div>
 

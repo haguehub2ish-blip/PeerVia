@@ -30,6 +30,12 @@ const adminLinks = [
     text: "Add, edit, or remove mentors and everything on their profiles.",
   },
   {
+    href: "/admin/test-mentor",
+    icon: "🧪",
+    title: "Test Mentor",
+    text: "Create a hidden mentor account only admins can see, to test mentor features.",
+  },
+  {
     href: "/admin/filters",
     icon: "🎚️",
     title: "Filters",

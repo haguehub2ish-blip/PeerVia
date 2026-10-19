@@ -384,7 +384,7 @@ export async function GET(request) {
 
     const [
       users,
-      mentors,
+      allMentors,
       applications,
       questions,
       answers,
@@ -439,6 +439,8 @@ export async function GET(request) {
           : audience === "out"
             ? Math.max(0, allTimeViewsRaw.all - allTimeViewsRaw.in)
             : allTimeViewsRaw.all;
+
+    const mentors = allMentors.filter((m) => !m.admin_only);
 
     // ---------- Daily series ----------
     const daily = Object.fromEntries(

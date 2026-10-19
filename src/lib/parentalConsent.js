@@ -191,7 +191,7 @@ export async function sendBookingToMentor({ request, siteUrl }) {
         paragraph("<strong>A parent or guardian must be present for the whole call.</strong> Please check that an adult is with them when the call starts, and don't go ahead if there isn't one.") +
         paragraph(`If you reply to this email, your reply goes to the student (${escapeHtml(request.student_email)}) and to their parent.`),
       ctaLabel: "View on your dashboard →",
-      ctaUrl: `${siteUrl}/mentor-account/dashboard`,
+      ctaUrl: `${siteUrl}/mentor-account/dashboard#call-requests`,
       footerNote: "You're receiving this because you're a mentor on PeerVia and this student found you through your profile.",
     }),
   });

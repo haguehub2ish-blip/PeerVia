@@ -84,6 +84,8 @@ export async function POST(request) {
         mentor_id: req.mentor_id ? String(req.mentor_id) : null,
         student_id: req.student_id,
         student_email: req.student_email,
+        student_name: req.student_name || null,
+        message: req.message || null,
         source: "parent_approved",
       });
     } catch (err) {
