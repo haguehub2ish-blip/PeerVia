@@ -26,6 +26,27 @@ export async function POST(request) {
     return Response.json({ switch: false });
   }
 
+  // Self-heal: has a mentor profile but the role is missing from the login account.
+  const { data: ownMentorRow } = await supabaseAdmin
+    .from("mentorss")
+    .select("user_id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (ownMentorRow) {
+    await supabaseAdmin.auth.admin.updateUserById(user.id, {
+      user_metadata: { ...user.user_metadata, role: "mentor" },
+    });
+    const { data: selfLink } = await supabaseAdmin.auth.admin.generateLink({
+      type: "magiclink",
+      email: user.email,
+    });
+    if (selfLink?.properties?.hashed_token) {
+      return Response.json({ switch: true, token_hash: selfLink.properties.hashed_token });
+    }
+    return Response.json({ switch: false });
+  }
+
   const { data: apps, error: appError } = await supabaseAdmin
     .from("mentor_applications")
     .select("email, backup_email, status")
@@ -36,16 +57,28 @@ export async function POST(request) {
     return Response.json({ error: appError.message }, { status: 500 });
   }
 
-  const match = (apps || []).find(
+  let mentorEmail = (apps || []).find(
     (a) => (a.backup_email || "").trim().toLowerCase() === email
-  );
-  if (!match?.email) {
+  )?.email;
+
+  // Fallback: the mentor changed their personal email in the dashboard.
+  if (!mentorEmail) {
+    const { data: usersList } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+    const mentorUser = (usersList?.users || []).find(
+      (u) =>
+        u.user_metadata?.role === "mentor" &&
+        (u.user_metadata?.personal_email || "").trim().toLowerCase() === email
+    );
+    mentorEmail = mentorUser?.email;
+  }
+
+  if (!mentorEmail) {
     return Response.json({ switch: false });
   }
 
   const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
     type: "magiclink",
-    email: match.email,
+    email: mentorEmail,
   });
 
   if (linkError || !linkData?.properties?.hashed_token) {
