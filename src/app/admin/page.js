@@ -30,12 +30,6 @@ const adminLinks = [
     text: "Add, edit, or remove mentors and everything on their profiles.",
   },
   {
-    href: "/admin/test-mentor",
-    icon: "🧪",
-    title: "Test Mentor",
-    text: "Create a hidden mentor account only admins can see, to test mentor features.",
-  },
-  {
     href: "/admin/filters",
     icon: "🎚️",
     title: "Filters",
@@ -46,6 +40,18 @@ const adminLinks = [
     icon: "💬",
     title: "Community",
     text: "Review, edit, or remove questions, mentor answers, and comments.",
+  },
+  {
+    href: "/admin/volunteers",
+    icon: "🙋",
+    title: "Volunteers",
+    text: "See who signed up to help, and track who you've contacted.",
+  },
+   {
+    href: "/admin/test-mentor",
+    icon: "🧪",
+    title: "Test Mentor",
+    text: "Create a hidden mentor account only admins can see, to test mentor features.",
   },
 ];
 

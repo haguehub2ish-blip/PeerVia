@@ -173,7 +173,7 @@ export default function Navbar() {
     <header className="border-b border-border bg-background sticky top-0 z-20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
         {/* Logo */}
-        <a href="/" className="flex items-center gap-2 shrink-0">
+        <a href="/about" className="flex items-center gap-2 shrink-0">
           <Image src="/logo.png" alt="PeerVia logo" width={36} height={36} priority />
           <span className="font-display text-xl text-ink">PeerVia</span>
         </a>
@@ -192,8 +192,8 @@ export default function Navbar() {
           <a href="/community" className={linkClass("/community")}>
             Community
           </a>
-          <a href="/about" className={linkClass("/about")}>
-            About Us
+          <a href="/volunteer" className={linkClass("/volunteer")}>
+            Volunteer
           </a>
           <div className="w-[150px] flex justify-center">
             {userLoaded && (
@@ -273,6 +273,7 @@ export default function Navbar() {
           <a href="/course-guides" className={mobileLinkClass("/course-guides")}>Course Guides</a>
           <a href="/community" className={mobileLinkClass("/community")}>Community</a>
           <a href="/about" className={mobileLinkClass("/about")}>About Us</a>
+          <a href="/volunteer" className={mobileLinkClass("/volunteer")}>Volunteer</a>
           {userLoaded && (
             user?.user_metadata?.role === "mentor" ? (
               <a href="/mentor-account/dashboard" className={mobileLinkClass("/mentor-account/dashboard")}>

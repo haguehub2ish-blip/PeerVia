@@ -28,6 +28,12 @@ export default function Footer() {
 
         <div className="flex items-center gap-4">
           <a
+            href="/about"
+            className="text-sm text-white/50 hover:text-white transition"
+          >
+            About Us
+          </a>
+          <a
             href="https://www.linkedin.com/company/peervia/"
             target="_blank"
             rel="noopener noreferrer"

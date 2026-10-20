@@ -128,6 +128,7 @@ function CourseGuidesContent() {
           <button
             type="button"
             onClick={toggleCompareMode}
+            data-tour="guides-compare"
             title="Put two or three guides side by side"
             className={`font-label text-xs uppercase tracking-wide px-5 py-3 rounded-lg border transition ${
               compareMode

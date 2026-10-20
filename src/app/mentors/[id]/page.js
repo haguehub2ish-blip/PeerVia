@@ -484,6 +484,7 @@ async function handleSubmitBooking(e) {
             <div className="mt-10 pt-10 border-t border-border">
               <div className="flex items-center justify-between mb-5">
                 <button
+                  data-tour="profile-reviews"
                   onClick={() => setReviewsCollapsed(!reviewsCollapsed)}
                   className="flex items-center gap-2 font-display text-xl text-ink hover:text-primary transition"
                 >
