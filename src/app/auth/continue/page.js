@@ -33,6 +33,25 @@ export default function AuthContinue() {
         return;
       }
 
+      // Signed in with a mentor's backup email? Switch to the real mentor account.
+      try {
+        const res = await fetch("/api/mentor-switch", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        const result = await res.json();
+        if (result.switch && result.token_hash) {
+          const { error: switchError } = await supabase.auth.verifyOtp({
+            token_hash: result.token_hash,
+            type: "magiclink",
+          });
+          if (!switchError) {
+            window.location.replace("/mentor-account/dashboard");
+            return;
+          }
+        }
+      } catch (e) {}
+
       const { data: profile } = await supabase
         .from("student_profiles")
         .select("user_id")

@@ -36,6 +36,33 @@ function LoginContent() {
     if (error) {
       setError("Incorrect email or password. Please try again.");
     } else {
+      // Mentors always go straight to their mentor dashboard
+      const loggedInUser = data?.user;
+
+      if (loggedInUser?.user_metadata?.role === "mentor") {
+        window.location.href = "/mentor-account/dashboard";
+        return;
+      }
+
+      // Logged in with a mentor's backup email? Switch to the real mentor account.
+      try {
+        const res = await fetch("/api/mentor-switch", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${data.session.access_token}` },
+        });
+        const result = await res.json();
+        if (result.switch && result.token_hash) {
+          const { error: switchError } = await supabase.auth.verifyOtp({
+            token_hash: result.token_hash,
+            type: "magiclink",
+          });
+          if (!switchError) {
+            window.location.href = "/mentor-account/dashboard";
+            return;
+          }
+        }
+      } catch (e) {}
+
       window.location.href = "/";
     }
   }
