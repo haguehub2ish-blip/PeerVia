@@ -39,10 +39,6 @@ function LoginContent() {
       // Mentors always go straight to their mentor dashboard
       const loggedInUser = data?.user;
 
-      if (loggedInUser?.user_metadata?.role === "mentor") {
-        window.location.href = "/mentor-account/dashboard";
-        return;
-      }
 
       // Logged in with a mentor's backup email? Switch to the real mentor account.
       try {
@@ -62,6 +58,11 @@ function LoginContent() {
           }
         }
       } catch (e) {}
+
+      if (loggedInUser?.user_metadata?.role === "mentor") {
+        window.location.href = "/mentor-account/dashboard";
+        return;
+      }
 
       window.location.href = "/";
     }

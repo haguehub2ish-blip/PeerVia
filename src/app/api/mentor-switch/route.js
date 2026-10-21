@@ -22,10 +22,9 @@ export async function POST(request) {
   const email = (user.email || "").trim().toLowerCase();
 
   // Already a mentor, or the email isn't verified: nothing to switch.
-  if (user.user_metadata?.role === "mentor" || !email || !user.email_confirmed_at) {
-    return Response.json({ switch: false });
-  }
-
+  if (!email || !user.email_confirmed_at) {
+  return Response.json({ switch: false });
+}
   // Self-heal: has a mentor profile but the role is missing from the login account.
   const { data: ownMentorRow } = await supabaseAdmin
     .from("mentorss")

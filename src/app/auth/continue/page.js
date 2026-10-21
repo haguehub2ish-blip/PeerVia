@@ -28,11 +28,6 @@ export default function AuthContinue() {
 
       const user = session.user;
 
-      if (user.user_metadata?.role === "mentor") {
-        window.location.replace("/mentor-account/dashboard");
-        return;
-      }
-
       // Signed in with a mentor's backup email? Switch to the real mentor account.
       try {
         const res = await fetch("/api/mentor-switch", {
@@ -51,6 +46,11 @@ export default function AuthContinue() {
           }
         }
       } catch (e) {}
+
+      if (user.user_metadata?.role === "mentor") {
+        window.location.replace("/mentor-account/dashboard");
+        return;
+      }
 
       const { data: profile } = await supabase
         .from("student_profiles")
