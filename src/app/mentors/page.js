@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { useFilterOptions } from "@/lib/useFilterOptions";
 import { getFieldGroups } from "@/lib/filterDefaults";
+import MentorMatch from "@/Components/MentorMatch";
 
 // Each group matches any subject text containing one of its keywords,
 // so "Mechanical Engineering" and "Law, Psychology" are handled correctly.
@@ -43,6 +44,7 @@ function MentorsContent() {
   const [sortBy, setSortBy] = useState("");
  const [activeFilterTabs, setActiveFilterTabs] = useState([]);
   const [fetchError, setFetchError] = useState(null);
+  const [showMatch, setShowMatch] = useState(false);
 
   useEffect(() => {
     const subjectParam = searchParams.get("subject");
@@ -207,6 +209,21 @@ const sortedMentors = [...filteredMentors].sort((a, b) => {
         <p className="text-muted mb-6">
           University students at top Dutch and UK institutions. Every mentor is reviewed before joining.
         </p>
+
+        <div className="mb-6">
+          <button
+            type="button"
+            onClick={() => setShowMatch((v) => !v)}
+            className="bg-primary text-white font-label text-[11px] tracking-[0.08em] uppercase px-5 py-2 rounded-full"
+          >
+            {showMatch ? "Close mentor match" : "Not sure? Find your match"}
+          </button>
+          {showMatch && !loading && !fetchError && (
+            <div className="mt-4">
+              <MentorMatch mentors={mentors} />
+            </div>
+          )}
+        </div>
 
             <div className="mb-5">
           <input

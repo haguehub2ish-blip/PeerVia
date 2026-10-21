@@ -177,10 +177,11 @@ export async function POST(request) {
     const prefs = u.user_metadata?.emailPreferences;
     if (!prefs) return false;
 
-    const matchesField = prefs.fields?.includes(subject);
-    const matchesCountry = prefs.countries?.includes(country);
+    const matchesField = String(subject || "").split(",").some((s) => prefs.fields?.includes(s.trim()));
+    const matchesCountry = String(country || "").split(",").some((c) => prefs.countries?.includes(c.trim()));
 
-        const matchesSchool = Boolean(mentorSchool) && prefs.schools?.includes(mentorSchool);
+        const normSchool = (s) => String(s || "").trim().replace(/\s+/g, " ").toLowerCase();
+    const matchesSchool = Boolean(mentorSchool) && (prefs.schools || []).some((s) => normSchool(s) === normSchool(mentorSchool));
     const matchesMentor = Boolean(mentorName) && prefs.mentors?.includes(mentorName);
 
     // languages: English is ignored, because almost every mentor speaks it
@@ -228,6 +229,9 @@ export async function POST(request) {
     }
   }
 
+  const fieldLabel = String(subject || "").split(",").map((s) => s.trim()).filter(Boolean).join(", ");
+  const withField = fieldLabel ? `${fieldLabel} ` : "";
+
   for (const u of matchedUsers) {
     if (notifiedEmails.has(u.email?.toLowerCase())) continue; // don't double-email the asker
     try {
@@ -235,18 +239,18 @@ export async function POST(request) {
         from: "PeerVia <info@peervia.org>",
         replyTo: "info.peervia@gmail.com",
         to: u.email,
-        subject: `A Mentor Just Answered A ${subject} Question On PeerVia`,
+        subject: `A Mentor Just Answered A ${withField}Question On PeerVia`,
         html: renderAnswerEmail({
           siteUrl,
           eyebrow: "New answer on PeerVia",
-          heading: `A new ${subject} question was answered`,
+          heading: `A new ${withField}question was answered`,
           intro: "A verified mentor just answered a question that matches your notification preferences.",
           question,
           answer,
           mentorName,
           ctaUrl,
           ctaLabel: "View on PeerVia →",
-          preheader: `A verified mentor just answered a ${subject} question on PeerVia.`,
+          preheader: `A verified mentor just answered a ${withField}question on PeerVia.`,
         }),
       });
       sendResults.push({ email: u.email, success: true, type: "preference" });

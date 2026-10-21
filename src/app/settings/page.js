@@ -4,17 +4,21 @@ import Navbar from "@/Components/Navbar";
 import MultiSelect from "@/Components/MultiSelect";
 import { ALL_UNIVERSITIES, ALL_LANGUAGES, ALL_FIELDS, ALL_COUNTRIES, mergeOptions } from "@/data/options";
 import { supabase } from "@/lib/supabase";
+import { useFilterOptions } from "@/lib/useFilterOptions";
 import { courseGuides, allUniversityNames } from "@/data/courseGuides"
 import { getSubjectStyle, getFlag, getLanguageStyle } from "@/data/mentors";
+import MentorMatch from "@/Components/MentorMatch";
 
 const sections = [
   { id: "account", label: "Account" },
   { id: "notifications", label: "Notifications" },
+  { id: "match", label: "Mentor Match" },
   { id: "danger", label: "Danger Zone" },
 ];
 
 export default function Settings() {
   const [activeSection, setActiveSection] = useState("account");
+  const { communityFields, countries: countryDefs } = useFilterOptions();
 
   const [user, setUser] = useState(null);
   const [allMentors, setAllMentors] = useState([]);
@@ -68,7 +72,8 @@ export default function Settings() {
     };
   }, []);
 
-  const fieldOptions = [...new Set(allMentors.map((m) => m.subject).filter(Boolean))];
+    const fieldOptions = communityFields.map((f) => f.label);
+  const countryOptions = countryDefs.map((c) => c.value);
   const languageOptions = [
     ...new Set(
       allMentors.flatMap((m) =>
@@ -77,20 +82,16 @@ export default function Settings() {
           : m.languages || []
       )
     ),
-  ];
-  const schoolOptions = [
-    ...new Set([
-      ...allMentors.map((m) => m.school).filter(Boolean),
-      ...allUniversityNames,
-    ]),
-  ];
+  ]
+    .filter((l) => l && l !== "English")
+    .sort((a, b) => a.localeCompare(b));
+  const schoolMap = new Map();
+  allMentors.forEach((m) => {
+    const name = (m.school || "").trim().replace(/\s+/g, " ");
+    if (name && !schoolMap.has(name.toLowerCase())) schoolMap.set(name.toLowerCase(), name);
+  });
+  const schoolOptions = [...schoolMap.values()].sort((a, b) => a.localeCompare(b));
   const mentorOptions = allMentors.map((m) => m.name).filter(Boolean);
-  const countryOptions = [
-    ...new Set([
-      ...allMentors.map((m) => m.country).filter(Boolean),
-      ...courseGuides.map((u) => u.country),
-    ]),
-  ];
 
     const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
@@ -406,7 +407,7 @@ export default function Settings() {
                     <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-2 sm:gap-0 px-5 py-4 items-center hover:bg-background/60 transition-colors">
                       <span className="text-sm text-muted">Field</span>
                       <MultiSelect
-                        options={mergeOptions(ALL_FIELDS, fieldOptions)}
+                        options={fieldOptions}
                         selected={selectedFields}
                         onChange={setSelectedFields}
                       />
@@ -414,7 +415,7 @@ export default function Settings() {
                     <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-2 sm:gap-0 px-5 py-4 items-center hover:bg-background/60 transition-colors">
                       <span className="text-sm text-muted">Language</span>
                       <MultiSelect
-                        options={mergeOptions(ALL_LANGUAGES, languageOptions)}
+                        options={languageOptions}
                         selected={selectedLanguages}
                         onChange={setSelectedLanguages}
                       />
@@ -422,7 +423,7 @@ export default function Settings() {
                     <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-2 sm:gap-0 px-5 py-4 items-center hover:bg-background/60 transition-colors">
                       <span className="text-sm text-muted">University</span>
                       <MultiSelect
-                        options={mergeOptions(ALL_UNIVERSITIES, schoolOptions)}
+                        options={schoolOptions}
                         selected={selectedSchools}
                         onChange={setSelectedSchools}
                       />
@@ -438,7 +439,7 @@ export default function Settings() {
                     <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-2 sm:gap-0 px-5 py-4 items-center hover:bg-background/60 transition-colors">
                       <span className="text-sm text-muted">Country</span>
                       <MultiSelect
-                        options={mergeOptions(ALL_COUNTRIES, countryOptions)}
+                        options={countryOptions}
                         selected={selectedCountries}
                         onChange={setSelectedCountries}
                       />
@@ -458,6 +459,17 @@ export default function Settings() {
                     <span className="text-sm text-primary font-medium">Saved</span>
                   )}
                 </div>
+              </div>
+            )}
+
+            {/* MENTOR MATCH */}
+            {activeSection === "match" && (
+              <div>
+                <h2 className="font-display text-xl text-ink mb-1">Mentor Match</h2>
+                <p className="text-muted text-sm mb-6">
+                  Answer a few questions and we'll suggest the mentors who fit you best.
+                </p>
+                <MentorMatch />
               </div>
             )}
 
