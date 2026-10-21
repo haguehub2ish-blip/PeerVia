@@ -197,8 +197,43 @@ export default function MentorDashboard() {
 
   useEffect(() => {
     async function load() {
-      const { data: userData } = await supabase.auth.getUser();
-      const currentUser = userData?.user || null;
+      let { data: userData } = await supabase.auth.getUser();
+      let currentUser = userData?.user || null;
+
+      // If a mentor opened the dashboard while signed into their verified
+      // backup/personal account, ask the server whether it maps to an approved
+      // mentor account. The server only returns a one-time sign-in token for a
+      // verified, matching mentor account.
+      if (currentUser && currentUser.user_metadata?.role !== "mentor") {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData?.session?.access_token;
+
+        if (accessToken) {
+          try {
+            const response = await fetch("/api/mentor-switch", {
+              method: "POST",
+              headers: { Authorization: `Bearer ${accessToken}` },
+              cache: "no-store",
+            });
+            const result = await response.json().catch(() => ({}));
+
+            if (response.ok && result.switch && result.token_hash) {
+              const { error: switchError } = await supabase.auth.verifyOtp({
+                token_hash: result.token_hash,
+                type: "magiclink",
+              });
+
+              if (!switchError) {
+                const { data: refreshedUserData } = await supabase.auth.getUser();
+                currentUser = refreshedUserData?.user || null;
+              }
+            }
+          } catch (error) {
+            // If switching is unavailable, show the normal access-denied state.
+            console.error("Could not resolve mentor account:", error);
+          }
+        }
+      }
 
       if (!currentUser || currentUser.user_metadata?.role !== "mentor") {
         setNotAuthorized(true);

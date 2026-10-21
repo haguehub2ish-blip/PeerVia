@@ -89,6 +89,7 @@ const knownUniversityDomains = [
   "hz.nl",                   // HZ
   "student.hult.edu",        // Hult (students use student.hult.edu)
   "ox.ac.uk",                // Oxford
+  "student.maastrichtuniversity.nl" // Maastricht (students use student.maastrichtuniversity.nl)
 ];
 
 const mentorSteps = [
