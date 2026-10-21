@@ -1,14 +1,14 @@
 // AI help chatbot for PeerVia. Uses Groq's free tier (no credit card needed).
 // Needs one environment variable: GROQ_API_KEY
-// Optional: GROQ_MODEL (defaults to llama-3.3-70b-versatile)
+// Optional: GROQ_MODEL (defaults to openai/gpt-oss-120b)
 
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
-const MODEL = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
+const MODEL = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
 
 // If the main model hits its free daily limit (or is retired), these are tried
 // in order. Groq counts limits per model, so each one adds more free capacity.
 // Optional: GROQ_FALLBACK_MODELS="model-a,model-b"
-const FALLBACK_MODELS = (process.env.GROQ_FALLBACK_MODELS || "llama-3.1-8b-instant")
+const FALLBACK_MODELS = (process.env.GROQ_FALLBACK_MODELS || "openai/gpt-oss-20b,qwen/qwen3.8-27b")
   .split(",")
   .map((m) => m.trim())
   .filter(Boolean);
@@ -122,14 +122,14 @@ export async function POST(request) {
           model,
           messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
           temperature: 0.5,
-          max_tokens: 400,
+          max_tokens: 1000,
         }),
       });
 
       // Limit reached, model gone, or Groq having a moment: try the next model
       if (res.status === 429 || res.status === 404 || res.status >= 500) {
         if (res.status === 429) sawRateLimit = true;
-        console.error(`Groq model ${model} unavailable:`, res.status);
+        console.error(`Groq model ${model} unavailable:`, res.status, await res.text());
         continue;
       }
 

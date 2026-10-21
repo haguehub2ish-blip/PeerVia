@@ -143,8 +143,8 @@ export default function ContactWidget() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: toSend }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Something went wrong.");
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "The assistant isn't available right now.");
       setMessages([...next, { role: "assistant", content: data.reply }]);
     } catch (err) {
       setChatError(err.message || "Something went wrong. Please try again.");
