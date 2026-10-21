@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { useFilterOptions } from "@/lib/useFilterOptions";
 import { getFieldGroups } from "@/lib/filterDefaults";
-import MentorMatch from "@/Components/MentorMatch";
+import MentorMatch, { scoreMentor } from "@/Components/MentorMatch";
 
 // Each group matches any subject text containing one of its keywords,
 // so "Mechanical Engineering" and "Law, Psychology" are handled correctly.
@@ -44,7 +44,14 @@ function MentorsContent() {
   const [sortBy, setSortBy] = useState("");
  const [activeFilterTabs, setActiveFilterTabs] = useState([]);
   const [fetchError, setFetchError] = useState(null);
-  const [showMatch, setShowMatch] = useState(false);
+  
+const [showMatch, setShowMatch] = useState(false);
+const [currentUser, setCurrentUser] = useState(null);
+const [savedMentorNames, setSavedMentorNames] = useState([]);
+const [savingMentorName, setSavingMentorName] = useState(null);
+const [matchAnswers, setMatchAnswers] = useState(null);
+const [recommendedOnly, setRecommendedOnly] = useState(false);
+
 
   useEffect(() => {
     const subjectParam = searchParams.get("subject");
@@ -88,6 +95,66 @@ function MentorsContent() {
     fetchMentors();
   }, []);
 
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadSavedMentors() {
+      const { data, error } = await supabase.auth.getUser();
+      if (cancelled) return;
+
+      const user = error ? null : data?.user;
+      setCurrentUser(user);
+
+      const saved = user?.user_metadata?.emailPreferences?.mentors;
+      setSavedMentorNames(Array.isArray(saved) ? saved : []);
+    }
+
+    loadSavedMentors();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(() => {
+      loadSavedMentors();
+    });
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadSavedMatchAnswers() {
+      const { data, error } = await supabase.auth.getUser();
+
+      if (cancelled) return;
+
+      const answers = error ? null : data?.user?.user_metadata?.matchAnswers;
+
+      setMatchAnswers(
+        answers && typeof answers === "object" ? answers : null
+      );
+    }
+
+    loadSavedMatchAnswers();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(() => {
+      loadSavedMatchAnswers();
+    });
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+
   const toggleFilter = (filter) => {
     if (filter === "All") {
       setActiveFilters([]);
@@ -97,6 +164,43 @@ function MentorsContent() {
       prev.includes(filter) ? prev.filter((f) => f !== filter) : [...prev, filter]
     );
   };
+
+
+  async function toggleSavedMentor(mentorName) {
+    if (!currentUser || savingMentorName) return;
+
+    const wasSaved = savedMentorNames.includes(mentorName);
+    const nextSaved = wasSaved
+      ? savedMentorNames.filter((name) => name !== mentorName)
+      : [...savedMentorNames, mentorName];
+
+    setSavingMentorName(mentorName);
+
+    const previousSaved = savedMentorNames;
+    setSavedMentorNames(nextSaved);
+
+    const existingPreferences =
+      currentUser.user_metadata?.emailPreferences || {};
+
+    const { data, error } = await supabase.auth.updateUser({
+      data: {
+        emailPreferences: {
+          ...existingPreferences,
+          mentors: nextSaved,
+        },
+      },
+    });
+
+    if (error) {
+      setSavedMentorNames(previousSaved);
+      alert("Couldn't update your recommended mentors. Please try again.");
+    } else if (data?.user) {
+      setCurrentUser(data.user);
+    }
+
+    setSavingMentorName(null);
+  }
+
 
   const toggleCountry = (country) => {
     if (country === "All") {
@@ -113,6 +217,29 @@ function MentorsContent() {
       prev.includes(tab) ? prev.filter((t) => t !== tab) : [...prev, tab]
     );
   };
+
+
+const recommendedMentorIds = new Set(
+  matchAnswers
+    ? (matchAnswers.availableOnly
+        ? mentors.filter((m) => m.available)
+        : mentors
+      )
+        .map((mentor) => ({
+          mentor,
+          ...scoreMentor(mentor, matchAnswers, fieldDefs),
+        }))
+        .sort(
+          (a, b) =>
+            b.percent - a.percent ||
+            (Number(b.mentor.rating) || 0) -
+              (Number(a.mentor.rating) || 0)
+        )
+        .slice(0, 3)
+        .map(({ mentor }) => String(mentor.id))
+    : []
+);
+
 
   const filteredMentors = mentors.filter((mentor) => {
     const matchesFilter =
@@ -136,7 +263,20 @@ function MentorsContent() {
       .join(" ")
       .toLowerCase();
     const matchesSearch = words.every((w) => haystack.includes(w));
-    return matchesFilter && matchesCountry && matchesLanguage && matchesAvailability && matchesSchool && matchesSearch;
+    
+const matchesRecommended =
+  !recommendedOnly || recommendedMentorIds.has(String(mentor.id));
+
+return (
+  matchesFilter &&
+  matchesCountry &&
+  matchesLanguage &&
+  matchesAvailability &&
+  matchesSchool &&
+  matchesSearch &&
+  matchesRecommended
+);
+
   });
 
 const sortedMentors = [...filteredMentors].sort((a, b) => {
@@ -183,17 +323,21 @@ const sortedMentors = [...filteredMentors].sort((a, b) => {
       activeLanguages.length ||
       availableOnly ||
       activeSchool ||
+      recommendedOnly ||
       searchText.trim()
   );
 
-  function clearAllFilters() {
+  
+function clearAllFilters() {
     setActiveFilters([]);
     setActiveCountries([]);
     setActiveLanguages([]);
     setAvailableOnly(false);
     setActiveSchool("");
     setSearchText("");
+    setRecommendedOnly(false);
   }
+
 
   return (
     <div className="min-h-screen bg-cream">
@@ -206,24 +350,25 @@ const sortedMentors = [...filteredMentors].sort((a, b) => {
         <h1 className="font-display text-3xl md:text-4xl text-ink mb-2">
           Verified mentors
         </h1>
-        <p className="text-muted mb-6">
-          University students at top Dutch and UK institutions. Every mentor is reviewed before joining.
-        </p>
+        <div className="flex flex-wrap items-center gap-3 mb-6 md:gap-52.5">
+          <p className="text-muted">
+            University students at top Dutch and UK institutions. Every mentor is reviewed before joining.
+          </p>
 
-        <div className="mb-6">
           <button
             type="button"
-            onClick={() => setShowMatch((v) => !v)}
-            className="bg-primary text-white font-label text-[11px] tracking-[0.08em] uppercase px-5 py-2 rounded-full"
+            onClick={() => setShowMatch((v) => !v)}  
+className="bg-primary text-white font-label text-[11px] tracking-[0.08em] uppercase px-5 py-2 rounded-full whitespace-nowrap ml-auto"
           >
-            {showMatch ? "Close mentor match" : "Not sure? Find your match"}
+            {showMatch ? "Close mentor match" : "Find recommended mentors"}
           </button>
-          {showMatch && !loading && !fetchError && (
-            <div className="mt-4">
-              <MentorMatch mentors={mentors} />
-            </div>
-          )}
         </div>
+
+        {showMatch && !loading && !fetchError && (
+          <div className="mb-6">
+            <MentorMatch mentors={mentors} />
+          </div>
+        )}
 
             <div className="mb-5">
           <input
@@ -254,17 +399,43 @@ const sortedMentors = [...filteredMentors].sort((a, b) => {
               ))}
             </div>
 
-             <button
-              onClick={() => setAvailableOnly(!availableOnly)}
-              className={`font-label text-[11px] tracking-[0.05em] uppercase flex items-center gap-2 px-4 py-1.5 rounded-full border transition ${
-                availableOnly
-                  ? "border-primary text-primary bg-primary/10"
-                  : "border-border text-muted bg-background hover:border-ink/30"
-              }`}
-            >
-              <span className={`w-2 h-2 rounded-full ${availableOnly ? "bg-primary" : "bg-border"}`}></span>
-              {availableOnly ? "Open for Booking" : "Open for Booking (Off)"}
-            </button>
+            <div className="flex items-center gap-2 flex-wrap">
+              {matchAnswers && (
+                <button
+                  type="button"
+                  onClick={() => setRecommendedOnly((prev) => !prev)}
+                  className={`font-label text-[11px] tracking-[0.05em] uppercase flex items-center gap-2 px-4 py-1.5 rounded-full border transition ${
+                    recommendedOnly
+                      ? "border-primary text-primary bg-primary/10"
+                      : "border-border text-muted bg-background hover:border-ink/30"
+                  }`}
+                >
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      recommendedOnly ? "bg-primary" : "bg-border"
+                    }`}
+                  />
+                  Recommended for You
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setAvailableOnly(!availableOnly)}
+                className={`font-label text-[11px] tracking-[0.05em] uppercase flex items-center gap-2 px-4 py-1.5 rounded-full border transition ${
+                  availableOnly
+                    ? "border-primary text-primary bg-primary/10"
+                    : "border-border text-muted bg-background hover:border-ink/30"
+                }`}
+              >
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    availableOnly ? "bg-primary" : "bg-border"
+                  }`}
+                />
+                {availableOnly ? "Open for Booking" : "Open for Booking (Off)"}
+              </button>
+            </div>
           </div>
 
           {activeFilterTabs.includes("Field") && (

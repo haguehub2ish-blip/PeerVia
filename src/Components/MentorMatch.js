@@ -22,7 +22,7 @@ const EMPTY_ANSWERS = { field: "", country: "", languages: [], help: [], availab
 const toList = (value) =>
   typeof value === "string" ? value.split(",").map((l) => l.trim()).filter(Boolean) : value || [];
 
-function scoreMentor(mentor, answers, fieldDefs) {
+export function scoreMentor(mentor, answers, fieldDefs) {
   let score = 0;
   let max = 0;
   const reasons = [];
