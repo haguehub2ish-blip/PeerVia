@@ -254,6 +254,8 @@ export async function POST(request) {
         extracurriculars: application.extracurriculars || null,
                 final_grade: application.final_grade || null,
         support_guidance: application.support_guidance || null,
+        bachelor_degree: application.bachelor_degree || null,
+        master_degree: application.master_degree || null,
         sessions: 0,
         answers: 0,
         rating: 0,

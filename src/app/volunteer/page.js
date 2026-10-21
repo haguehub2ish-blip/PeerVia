@@ -156,6 +156,7 @@ export default function VolunteerPage() {
     motivation: "",
     experience: "",
     link: "",
+    additionalComments: "",
     website: "", // honeypot: real visitors never see or fill this in
   });
   const [roles, setRoles] = useState([]);
@@ -545,6 +546,19 @@ export default function VolunteerPage() {
                 onChange={(e) => updateField("link", e.target.value)}
                 placeholder="linkedin.com/in/yourname"
                 className={inputClass}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-ink mb-1">
+                Additional comments <span className="text-muted/60 font-normal">(optional)</span>
+              </label>
+              <textarea
+                rows={3}
+                value={form.additionalComments}
+                onChange={(e) => updateField("additionalComments", e.target.value)}
+                placeholder="Anything else you'd like us to know?"
+                className={`${inputClass} resize-y`}
               />
             </div>
 

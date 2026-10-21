@@ -414,6 +414,26 @@ async function handleSubmitBooking(e) {
               </div>
             )}
 
+            {mentor.show_degrees !== false && (mentor.bachelor_degree || mentor.master_degree) && (
+              <div className="mt-10 pt-10 border-t border-border">
+                <p className="font-label text-xs uppercase tracking-[0.2em] text-muted mb-3">
+                  Degrees
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {mentor.bachelor_degree && (
+                    <span className="inline-block text-sm font-medium px-3.5 py-1.5 rounded-full border border-border text-ink bg-surface">
+                      Bachelor's: {mentor.bachelor_degree}
+                    </span>
+                  )}
+                  {mentor.master_degree && (
+                    <span className="inline-block text-sm font-medium px-3.5 py-1.5 rounded-full border border-border text-ink bg-surface">
+                      Master's: {mentor.master_degree}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
             {mentor.show_final_grade !== false && mentor.final_grade && (
               <div className="mt-10 pt-10 border-t border-border">
                 <p className="font-label text-xs uppercase tracking-[0.2em] text-muted mb-3">

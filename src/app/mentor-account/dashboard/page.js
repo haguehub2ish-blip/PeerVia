@@ -134,6 +134,9 @@ export default function MentorDashboard() {
   const [extracurriculars, setExtracurriculars] = useState("");
   const [showExtracurriculars, setShowExtracurriculars] = useState(true);
   const [finalGrade, setFinalGrade] = useState("");
+  const [bachelorDegree, setBachelorDegree] = useState("");
+  const [masterDegree, setMasterDegree] = useState("");
+  const [showDegrees, setShowDegrees] = useState(true);
   const [showFinalGrade, setShowFinalGrade] = useState(true);
     const [supportGuidance, setSupportGuidance] = useState("");
   const [showSupportGuidance, setShowSupportGuidance] = useState(true);
@@ -229,6 +232,9 @@ export default function MentorDashboard() {
         setShowSupportGuidance(profile.show_support_guidance ?? true);
                 setExtracurriculars(profile.extracurriculars || "");
         setFinalGrade(profile.final_grade || "");
+        setBachelorDegree(profile.bachelor_degree || "");
+        setMasterDegree(profile.master_degree || "");
+        setShowDegrees(profile.show_degrees ?? true);
         setShowPersonalEmail(profile.show_personal_email ?? false);
         setShowExtracurriculars(profile.show_extracurriculars ?? true);
         setShowFinalGrade(profile.show_final_grade ?? true);
@@ -378,6 +384,9 @@ export default function MentorDashboard() {
         languages,
         extracurriculars: extracurriculars.trim(),
         final_grade: finalGrade.trim(),
+        bachelor_degree: bachelorDegree.trim() || null,
+        master_degree: masterDegree.trim() || null,
+        show_degrees: showDegrees,
                 support_guidance: supportGuidance.trim(),
         show_support_guidance: showSupportGuidance,
         show_extracurriculars: showExtracurriculars,
@@ -789,6 +798,26 @@ export default function MentorDashboard() {
                 className="w-full border border-border rounded-md px-4 py-2.5 text-ink bg-background focus:outline-none focus:ring-2 focus:ring-primary mb-2"
               />
               <Toggle checked={showPersonalEmail} onChange={setShowPersonalEmail} label="Show personal email on my public profile" />
+            </div>
+
+            <div className="mb-5">
+              <label className="block text-sm text-muted mb-1">Bachelor's degree <span className="text-muted/60">(optional)</span></label>
+              <input
+                value={bachelorDegree}
+                onChange={(e) => setBachelorDegree(e.target.value)}
+                placeholder="e.g. BSc Psychology, University of Amsterdam"
+                className="w-full border border-border rounded-md px-4 py-2.5 text-ink bg-background focus:outline-none focus:ring-2 focus:ring-primary mb-4"
+              />
+              <label className="block text-sm text-muted mb-1">Master's degree <span className="text-muted/60">(optional)</span></label>
+              <input
+                value={masterDegree}
+                onChange={(e) => setMasterDegree(e.target.value)}
+                placeholder="e.g. MSc Clinical Psychology, Utrecht University"
+                className="w-full border border-border rounded-md px-4 py-2.5 text-ink bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <div className="mt-3">
+                <Toggle checked={showDegrees} onChange={setShowDegrees} label="Show my degrees on my public profile" />
+              </div>
             </div>
 
             <div className="mb-5">

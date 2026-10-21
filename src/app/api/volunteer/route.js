@@ -40,6 +40,7 @@ export async function POST(request) {
   const motivation = clean(body.motivation, 2000);
   const experience = clean(body.experience, 2000);
   const link = clean(body.link, 300);
+  const additionalComments = clean(body.additionalComments, 2000);
   const roles = (Array.isArray(body.roles) ? body.roles : [])
     .filter((r) => ROLE_LABELS[r])
     .slice(0, 8);
@@ -107,7 +108,10 @@ export async function POST(request) {
         bodyHtml:
           paragraph(`<strong>${escapeHtml(stage)}</strong>${school ? ` · ${escapeHtml(school)}` : ""}<br />${escapeHtml(email)}`) +
           paragraph(`<strong>Interested in:</strong> ${escapeHtml(roleList)}${hours ? `<br /><strong>Time:</strong> ${escapeHtml(hours)}` : ""}`) +
-          quoteBox("Why they want to help", escapeHtml(motivation).replace(/\r?\n/g, "<br />")),
+          quoteBox("Why they want to help", escapeHtml(motivation).replace(/\r?\n/g, "<br />")) +
+          (additionalComments
+            ? quoteBox("Additional comments", escapeHtml(additionalComments).replace(/\r?\n/g, "<br />"))
+            : ""),
         ctaLabel: "Open volunteer list",
         ctaUrl: `${siteUrl}/admin/volunteers`,
         footerNote: "Sent automatically when someone signs up on the PeerVia volunteer page.",

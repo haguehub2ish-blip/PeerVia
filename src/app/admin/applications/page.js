@@ -198,6 +198,8 @@ export default function AdminApplications() {
                   </Detail>
                   <Detail label="Country">{app.country}</Detail>
                   {app.final_grade && <Detail label="Final grade">{app.final_grade}</Detail>}
+                  {app.bachelor_degree && <Detail label="Bachelor's">{app.bachelor_degree}</Detail>}
+                  {app.master_degree && <Detail label="Master's">{app.master_degree}</Detail>}
                 </div>
 
                 {/* Languages */}
@@ -231,6 +233,9 @@ export default function AdminApplications() {
                 )}
                 {app.extracurriculars && (
                   <TextBlock label="Extracurriculars">{app.extracurriculars}</TextBlock>
+                )}
+                {app.additional_comments && (
+                  <TextBlock label="Additional comments">{app.additional_comments}</TextBlock>
                 )}
 
                 {app.linkedin && (

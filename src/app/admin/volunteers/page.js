@@ -203,6 +203,12 @@ export default function AdminVolunteers() {
                 <p className="text-sm text-ink/80 leading-relaxed whitespace-pre-line">{row.experience}</p>
               </div>
             )}
+            {row.additional_comments && (
+              <div className="mb-3">
+                <p className="font-label text-[10px] tracking-[0.1em] uppercase text-muted mb-1">Additional comments</p>
+                <p className="text-sm text-ink/80 leading-relaxed whitespace-pre-line">{row.additional_comments}</p>
+              </div>
+            )}
             {row.link && (
               <p className="text-sm mb-3">
                 <span className="font-label text-[10px] tracking-[0.1em] uppercase text-muted mr-2">Link</span>

@@ -245,6 +245,9 @@ export default function Apply() {
     extracurriculars: "",
     final_grade: "",
     linkedin: "",
+    bachelor_degree: "",
+    master_degree: "",
+    additional_comments: "",
         backup_email: "",
   });
   const [selectedLanguages, setSelectedLanguages] = useState(["English"]);
@@ -839,6 +842,33 @@ export default function Apply() {
             </div>
 
             <div>
+              <label className="block text-sm font-semibold text-ink mb-1">
+                Bachelor's degree <span className="text-muted/60 font-normal">(optional)</span>
+              </label>
+              <input
+                value={form.bachelor_degree}
+                onChange={(e) => updateField("bachelor_degree", e.target.value)}
+                placeholder="e.g. BSc Psychology, University of Amsterdam"
+                className="w-full border border-border rounded-lg px-4 py-2.5 text-ink placeholder-muted/60 focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-ink mb-1">
+                Master's degree <span className="text-muted/60 font-normal">(optional)</span>
+              </label>
+              <input
+                value={form.master_degree}
+                onChange={(e) => updateField("master_degree", e.target.value)}
+                placeholder="e.g. MSc Clinical Psychology, Utrecht University"
+                className="w-full border border-border rounded-lg px-4 py-2.5 text-ink placeholder-muted/60 focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <p className="text-xs text-muted/60 mt-1.5">
+                If you've completed a bachelor's or master's degree, add it here with the university. These are shown on your public profile.
+              </p>
+            </div>
+
+            <div>
               <label className="block text-sm font-semibold text-ink mb-1">Country focus</label>
               <select
                 required={!otherCountry}
@@ -1036,6 +1066,19 @@ export default function Apply() {
                 onChange={(e) => updateField("linkedin", e.target.value)}
                 placeholder="linkedin.com/in/yourname"
                 className="w-full border border-border rounded-lg px-4 py-2.5 text-ink placeholder-muted/60 focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-ink mb-1">
+                Additional comments <span className="text-muted/60 font-normal">(optional)</span>
+              </label>
+              <textarea
+                rows={3}
+                value={form.additional_comments}
+                onChange={(e) => updateField("additional_comments", e.target.value)}
+                placeholder="Anything else you'd like us to know?"
+                className="w-full border border-border rounded-lg px-4 py-2.5 text-ink placeholder-muted/60 focus:outline-none focus:ring-2 focus:ring-primary resize-y"
               />
             </div>
 
