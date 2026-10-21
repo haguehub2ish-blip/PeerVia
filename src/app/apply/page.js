@@ -309,8 +309,8 @@ export default function Apply() {
 
   const verifiedMentorsCount = allMentors.filter((m) => m.verified).length;
   const normText = (s) => (s || "").trim().replace(/\s+/g, " ").toLowerCase();
-  const schoolsCount = new Set(allMentors.map((m) => normText(m.school)).filter(Boolean)).size;
-  const countriesCount = new Set(allMentors.map((m) => normText(m.country)).filter(Boolean)).size;
+  const schoolsCount = new Set(allMentors.filter((m) => m.verified).map((m) => normText(m.school)).filter(Boolean)).size;
+  const countriesCount = new Set(allMentors.filter((m) => m.verified).map((m) => normText(m.country)).filter(Boolean)).size;
   const avgRating =
     allRatings && allRatings.length > 0
       ? (allRatings.reduce((sum, r) => sum + r, 0) / allRatings.length).toFixed(1)

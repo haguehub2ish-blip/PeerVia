@@ -310,8 +310,9 @@ export default function Home() {
   const topQuestions = [...questions].sort((a, b) => b.helpful - a.helpful).slice(0, 3);
   const previewGuide = courseGuides.find((g) => g.id === "medicine-nl") || courseGuides[0];
   const previewGuideUrl = "/course-guides/f6a57bf0-3656-42fc-9343-61e5a32c0499";
-   const verifiedMentorsCount = mentors.filter((m) => m.verified).length;
-  const questionsAnsweredCount = questions.length + answeredUserQuestionsCount;
+   const verifiedMentors = mentors.filter((m) => m.verified);
+  const verifiedMentorsCount = verifiedMentors.length;
+  const questionsAnsweredCount = questions.length + communityQuestions.length;
 
   const normText = (s) => (s || "").trim().replace(/\s+/g, " ").toLowerCase();
 
@@ -322,7 +323,7 @@ export default function Home() {
       .split(/\s*[,;/]\s*/)
       .map((x) => x.replace(/§/g, ",").trim().toLowerCase())
       .filter(Boolean);
-  const careerPathsCount = new Set(mentors.flatMap((m) => splitSubjects(m.subject))).size;
+  const careerPathsCount = new Set(verifiedMentors.flatMap((m) => splitSubjects(m.subject))).size;
 
   // Average of every individual review, not an average of averages.
   const avgRating =
@@ -331,7 +332,7 @@ export default function Home() {
       : "—";
 
   const languagesCount = new Set(
-    mentors
+    verifiedMentors
       .flatMap((m) =>
         typeof m.languages === "string"
           ? m.languages.split(",").map((l) => l.trim())
@@ -340,7 +341,7 @@ export default function Home() {
       .map(normText)
       .filter(Boolean)
   ).size;
-  const schoolsCount = new Set(mentors.map((m) => normText(m.school)).filter(Boolean)).size;
+  const schoolsCount = new Set(verifiedMentors.map((m) => normText(m.school)).filter(Boolean)).size;
 
   const statsList = [
     { value: verifiedMentorsCount, label: "Verified Mentors" },

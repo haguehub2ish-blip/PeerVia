@@ -375,7 +375,7 @@ export default function MentorDashboard() {
         calendar_visible: calendarVisible,
         subject,
         country,
-        languages: languages.join(","),
+        languages,
         extracurriculars: extracurriculars.trim(),
         final_grade: finalGrade.trim(),
                 support_guidance: supportGuidance.trim(),
@@ -407,7 +407,7 @@ export default function MentorDashboard() {
     }
 
     setSaving(false);
-    setMentorProfile((prev) => (prev ? { ...prev, subject, country, languages: languages.join(",") } : prev));
+    setMentorProfile((prev) => (prev ? { ...prev, subject, country, languages } : prev));
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   }
@@ -440,7 +440,10 @@ export default function MentorDashboard() {
 
       fetch("/api/notify-answer", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data?.session?.access_token}`,
+        },
         body: JSON.stringify({
           userQuestionId,
           question: answeredQuestion?.question,

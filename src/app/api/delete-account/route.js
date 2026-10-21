@@ -1,19 +1,19 @@
-import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin } from "@/lib/adminAuth";
 
+// Deletes the account of whoever is signed in. The user id is read from their
+// login token, never from the request body, so nobody can delete someone else.
 export async function POST(request) {
-  const { userId } = await request.json();
-
-  if (!userId) {
-    return Response.json({ error: "Missing user ID" }, { status: 400 });
+  const token = request.headers.get("authorization")?.replace("Bearer ", "");
+  if (!token) {
+    return Response.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
+  const { data, error: userError } = await supabaseAdmin.auth.getUser(token);
+  if (userError || !data?.user) {
+    return Response.json({ error: "Invalid session" }, { status: 401 });
+  }
 
-  const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
-
+  const { error } = await supabaseAdmin.auth.admin.deleteUser(data.user.id);
   if (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

@@ -146,8 +146,27 @@ export async function POST(request) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || new URL(request.url).origin;
   const ctaUrl = `${siteUrl}/community#${userQuestionId}`;
 
+  // Only a signed-in mentor who really posted this answer may trigger notification emails.
+  const token = request.headers.get("authorization")?.replace("Bearer ", "");
+  if (!token) {
+    return Response.json({ error: "Not authenticated" }, { status: 401 });
+  }
+  const { data: authData, error: authErr } = await supabaseAdmin.auth.getUser(token);
+  if (authErr || !authData?.user) {
+    return Response.json({ error: "Invalid session" }, { status: 401 });
+  }
+  const { data: postedAnswer } = await supabaseAdmin
+    .from("question_answers")
+    .select("id")
+    .eq("user_question_id", userQuestionId)
+    .eq("mentor_id", authData.user.id)
+    .limit(1);
+  if (!postedAnswer || postedAnswer.length === 0) {
+    return Response.json({ error: "No matching answer found" }, { status: 403 });
+  }
+
   // Get all users from Supabase Auth
-  const { data: usersData, error: usersError } = await supabaseAdmin.auth.admin.listUsers();
+  const { data: usersData, error: usersError } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
 
   if (usersError) {
     return Response.json({ error: usersError.message }, { status: 500 });
