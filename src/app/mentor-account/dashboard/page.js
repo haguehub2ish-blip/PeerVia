@@ -34,6 +34,46 @@ function StarIcon({ className = "w-3.5 h-3.5" }) {
   );
 }
 
+// --- Dashboard card that can be collapsed by clicking its title ---
+function CollapsibleCard({ id, dataTour, eyebrow, title, description, badge, defaultOpen = true, className = "mb-6", children }) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  // Opens by itself if the page is visited with #id in the link (e.g. #call-requests)
+  useEffect(() => {
+    if (id && typeof window !== "undefined" && window.location.hash === `#${id}`) setOpen(true);
+  }, [id]);
+
+  return (
+    <div
+      id={id}
+      data-tour={dataTour}
+      className={`bg-surface border border-border rounded-lg p-6 shadow-sm ${className}`}
+    >
+      <SectionEyebrow>{eyebrow}</SectionEyebrow>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="w-full flex items-center gap-2 flex-wrap text-left"
+      >
+        <ChevronIcon className={`w-4 h-4 text-primary transition-transform ${open ? "rotate-90" : ""}`} />
+        <span className="font-display text-xl text-ink">{title}</span>
+        {badge && (
+          <span className="font-label text-[10px] tracking-[0.08em] uppercase px-3 py-1 rounded-full bg-primary/10 text-primary">
+            {badge}
+          </span>
+        )}
+      </button>
+      {open && (
+        <>
+          {description && <p className="text-sm text-muted mt-2 mb-6">{description}</p>}
+          {children}
+        </>
+      )}
+    </div>
+  );
+}
+
 // --- Standard on/off settings switch, used in place of a plain checkbox ---
 function Toggle({ checked, onChange, label }) {
   return (
@@ -84,6 +124,7 @@ export default function MentorDashboard() {
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [calendarExpanded, setCalendarExpanded] = useState(true);
+  const [emailNotifications, setEmailNotifications] = useState(true);
 
   const [subject, setSubject] = useState("");
   const [country, setCountry] = useState("");
@@ -165,6 +206,7 @@ export default function MentorDashboard() {
       setUser(currentUser);
             if (!currentUser.user_metadata?.welcome_tour_seen) setShowTour(true);
       setPersonalEmail(currentUser.user_metadata?.personal_email || "");
+      setEmailNotifications(currentUser.user_metadata?.mentorEmailNotifications !== false);
 
       const { data: profile } = await supabase
         .from("mentorss")
@@ -270,6 +312,18 @@ export default function MentorDashboard() {
       setPhotoFile(null);
       setPhotoPreview(null);
     }
+  }
+
+  async function handleToggleEmailNotifications(value) {
+    setEmailNotifications(value); // switch updates immediately
+    const { data, error } = await supabase.auth.updateUser({
+      data: { mentorEmailNotifications: value },
+    });
+    if (error) {
+      setEmailNotifications(!value); // put it back if saving failed
+      return;
+    }
+    if (data?.user) setUser(data.user);
   }
 
   async function handleCloseTour() {
@@ -585,10 +639,12 @@ export default function MentorDashboard() {
         </div>
 
                 {/* Profile section */}
-        <div data-tour="profile" className="bg-surface border border-border rounded-lg p-6 mb-6 shadow-sm">
-          <SectionEyebrow>Public Profile</SectionEyebrow>
-          <h2 className="font-display text-xl text-ink mb-1">Your Profile</h2>
-          <p className="text-muted text-sm mb-6">Shown on your public mentor card and profile page.</p>
+        <CollapsibleCard
+          dataTour="profile"
+          eyebrow="Public Profile"
+          title="Your Profile"
+          description="Shown on your public mentor card and profile page."
+        >
 
           <div className="grid sm:grid-cols-2 gap-4 mb-4">
             <div>
@@ -772,7 +828,7 @@ export default function MentorDashboard() {
               <span className="text-sm text-primary font-medium">Saved</span>
             )}
           </div>
-        </div>
+        </CollapsibleCard>
 
                {/* Calendar section */}
         <div data-tour="calendar" className="bg-surface border border-border rounded-lg p-6 mb-6 shadow-sm">
@@ -796,19 +852,17 @@ export default function MentorDashboard() {
         </div>
 
 {/* Call requests */}
-        <div id="call-requests" className="bg-surface border border-border rounded-lg p-6 mb-6 shadow-sm">
-          <SectionEyebrow>Bookings</SectionEyebrow>
-          <div className="flex items-center justify-between gap-3 flex-wrap mb-1">
-            <h2 className="font-display text-xl text-ink">Call Requests</h2>
-            {callRequests.filter((r) => r.status !== "done").length > 0 && (
-              <span className="font-label text-[10px] tracking-[0.08em] uppercase px-3 py-1 rounded-full bg-primary/10 text-primary">
-                {callRequests.filter((r) => r.status !== "done").length} new
-              </span>
-            )}
-          </div>
-          <p className="text-sm text-muted mb-6">
-            Students who want a call with you. You also get each request by email, so you can reply there or from here.
-          </p>
+        <CollapsibleCard
+          id="call-requests"
+          eyebrow="Bookings"
+          title="Call Requests"
+          badge={
+            callRequests.filter((r) => r.status !== "done").length > 0
+              ? `${callRequests.filter((r) => r.status !== "done").length} new`
+              : null
+          }
+          description="Students who want a call with you. You also get each request by email, so you can reply there or from here."
+        >
 
           {callRequestsError ? (
             <p className="text-sm text-red-600">Couldn&apos;t load call requests: {callRequestsError}</p>
@@ -874,17 +928,26 @@ export default function MentorDashboard() {
               ))}
             </div>
           )}
-        </div>
+        </CollapsibleCard>
 
               {/* Unanswered questions */}
-        <div data-tour="questions" className="bg-surface border border-border rounded-lg p-6 shadow-sm">
-          <SectionEyebrow>Community</SectionEyebrow>
-          <h2 className="font-display text-xl text-ink mb-1">
-            Unanswered Community Questions
-          </h2>
-          <p className="text-sm text-muted mb-6">
-            Answer a student's question. It will appear publicly on the community page.
-          </p>
+        <CollapsibleCard
+          dataTour="questions"
+          className=""
+          eyebrow="Community"
+          title="Unanswered Community Questions"
+          description="Answer a student's question. It will appear publicly on the community page."
+        >
+          <div className="mb-6 pb-6 border-b border-border">
+            <Toggle
+              checked={emailNotifications}
+              onChange={handleToggleEmailNotifications}
+              label="Email me when a student posts a question in my field"
+            />
+            <p className="text-xs text-muted mt-2 ml-12">
+              On by default. Turn it off any time and you'll stop getting these emails.
+            </p>
+          </div>
 
           {unansweredQuestions.length === 0 ? (
             <div className="text-center py-8 border border-dashed border-border rounded-lg">
@@ -918,7 +981,7 @@ export default function MentorDashboard() {
               ))}
             </div>
           )}
-        </div>
+        </CollapsibleCard>
       </div>
     </div>
   );

@@ -323,6 +323,18 @@ function QAFeedContent() {
       return;
     }
 
+    // Email mentors in the matching field (runs in the background)
+    supabase.auth.getSession().then(({ data: sessionData }) => {
+      fetch("/api/notify-mentors", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sessionData?.session?.access_token}`,
+        },
+        body: JSON.stringify({ questionId: data.id }),
+      }).catch((err) => console.error("Mentor notification error:", err));
+    });
+
     setUserQuestions((prev) => [data, ...prev]);
     setAskText("");
     setAskSubjects([]);
