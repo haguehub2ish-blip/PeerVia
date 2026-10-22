@@ -476,7 +476,7 @@ export default function Apply() {
       const domain = form.email.split("@")[1]?.toLowerCase() || "";
       const ok = knownUniversityDomains.some((d) => domain === d || domain.endsWith("." + d));
       if (!ok) {
-        setError("That doesn't look like a university email address we recognise. Please check it for typos, for example @student.eur.nl rather than @eur.student.nl. If you're sure it's right, write to info.peervia@gmail.com.");
+        setError("That doesn't look like a university email address we recognise. Please check it for typos, for example @student.eur.nl rather than @eur.student.nl. If you're sure it's right, write to info@peervia.org.");
         return;
       }
     }
@@ -691,7 +691,7 @@ export default function Apply() {
                 className="w-full border border-border rounded-lg px-4 py-2.5 text-ink placeholder-muted/60 focus:outline-none focus:ring-2 focus:ring-primary"
               />
                             <p className="text-xs text-muted mt-1.5">
-                Use an address you check regularly. Some university inboxes block outside email, so if you don't hear from us within a few days, check your spam folder or write to info.peervia@gmail.com.
+                Use an address you check regularly. Some university inboxes block outside email, so if you don't hear from us within a few days, check your spam folder or write to info@peervia.org.
               </p>
             </div>
 

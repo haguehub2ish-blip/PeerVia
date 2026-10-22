@@ -94,7 +94,7 @@ export async function POST(request) {
 
       await resend.emails.send({
         from: "PeerVia <info@peervia.org>",
-        replyTo: "info.peervia@gmail.com",
+        replyTo: "info@peervia.org",
         to: mentorAccount.email,
         subject: fieldLabel
           ? `New ${fieldLabel} question on PeerVia`

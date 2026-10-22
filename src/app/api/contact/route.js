@@ -174,7 +174,7 @@ export async function POST(request) {
   try {
     await resend.emails.send({
       from: "PeerVia <info@peervia.org>",
-      to: "info.peervia@gmail.com",
+      to: "info@peervia.org",
       replyTo: email,
       subject: `New Message From ${subjectName}`,
       html: renderContactEmail({ name, email, question, replyUrl }),

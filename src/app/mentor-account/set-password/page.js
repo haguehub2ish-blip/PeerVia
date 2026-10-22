@@ -72,7 +72,7 @@ export default function MentorSetPassword() {
         ) : !ready ? (
           <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg p-4 text-sm">
             {expired
-              ? "This invite link has expired or was already used. Email info.peervia@gmail.com and we'll send you a new one."
+              ? "This invite link has expired or was already used. Email info@peervia.org and we'll send you a new one."
               : "Waiting For A Valid Invite Link. Please Use The Link From Your Invite Email."}
           </div>
         ) : (

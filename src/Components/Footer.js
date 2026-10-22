@@ -69,7 +69,7 @@ export default function Footer() {
           </a>
           <a     
           
-            href="mailto:info.peervia@gmail.com"
+            href="mailto:info@peervia.org"
             aria-label="Email PeerVia"
             className="hover:opacity-75 transition"
           >

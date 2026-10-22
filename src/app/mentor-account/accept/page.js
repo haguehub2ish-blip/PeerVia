@@ -24,7 +24,7 @@ export default function MentorAcceptInvite() {
 
     if (error) {
       setError(
-        "This invite link has expired or was already used. Email info.peervia@gmail.com and we'll send you a new one."
+        "This invite link has expired or was already used. Email info@peervia.org and we'll send you a new one."
       );
       setLoading(false);
       return;

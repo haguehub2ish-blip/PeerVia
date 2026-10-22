@@ -120,7 +120,7 @@ export async function POST(request) {
   try {
     await resend.emails.send({
       from: "PeerVia <info@peervia.org>",
-      to: "info.peervia@gmail.com",
+      to: "info@peervia.org",
       subject: `New Mentor Application: ${firstName} ${lastName}`,
       html: renderNewApplicationEmail({
         firstName,

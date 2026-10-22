@@ -274,7 +274,7 @@ export async function POST(request) {
         const resend = new Resend(process.env.RESEND_API_KEY);
         await resend.emails.send({
           from: "PeerVia <info@peervia.org>",
-          replyTo: "info.peervia@gmail.com",
+          replyTo: "info@peervia.org",
           to: application.email,
           subject: "You've Been Approved As A PeerVia Mentor 🎉",
           html: renderApprovedEmail({

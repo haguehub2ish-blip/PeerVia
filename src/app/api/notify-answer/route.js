@@ -205,7 +205,7 @@ export async function POST(request) {
       try {
         await resend.emails.send({
           from: "PeerVia <info@peervia.org>",
-          replyTo: "info.peervia@gmail.com",
+  replyTo: "info@peervia.org",
           to: askerData.user.email,
           subject: "A Mentor Answered Your Question On PeerVia",
           html: renderAnswerEmail({
@@ -237,7 +237,7 @@ export async function POST(request) {
     try {
       await resend.emails.send({
         from: "PeerVia <info@peervia.org>",
-        replyTo: "info.peervia@gmail.com",
+replyTo: "info@peervia.org",
         to: u.email,
         subject: `A Mentor Just Answered A ${withField}Question On PeerVia`,
         html: renderAnswerEmail({

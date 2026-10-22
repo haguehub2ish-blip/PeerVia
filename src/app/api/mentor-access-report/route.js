@@ -22,7 +22,7 @@ export async function POST(request) {
 
     const result=await resend.emails.send({
       from:"PeerVia <info@peervia.org>",
-      to:"info.peervia@gmail.com",
+      to:"info@peervia.org",
       subject:`PeerVia ${automatic?"automatic diagnostic":"issue report"} [${category}]`,
       text:[
         `Incident ID: ${incidentId}`,

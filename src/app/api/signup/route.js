@@ -47,7 +47,7 @@ export async function POST(request) {
     } catch (err) {
       console.error("Student profile / parent email failed:", err);
       return Response.json(
-        { error: "Your account was created, but we couldn't email your parent or guardian. Please write to info.peervia@gmail.com." },
+        { error: "Your account was created, but we couldn't email your parent or guardian. Please write to info@peervia.org." },
         { status: 500 }
       );
     }

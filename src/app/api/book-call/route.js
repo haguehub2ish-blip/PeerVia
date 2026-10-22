@@ -226,8 +226,7 @@ export async function POST(request) {
   try {
     await resend.emails.send({
       from: "PeerVia <info@peervia.org>",
-      replyTo: "info.peervia@gmail.com",
-      to: [mentorUser.user.email], // change once domain to peervia 1
+      to: [mentorUser.user.email],
       replyTo: email,
       subject: `New call request from ${email}`,
       html,
