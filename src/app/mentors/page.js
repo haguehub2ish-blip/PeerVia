@@ -84,7 +84,7 @@ const [recommendedOnly, setRecommendedOnly] = useState(false);
 
   useEffect(() => {
     async function fetchMentors() {
-      const { data, error } = await supabase.from("mentorss").select("*");
+            const { data, error } = await supabase.from("mentorss").select("*").eq("activated", true);
       if (error) {
         setFetchError(error.message || JSON.stringify(error));
       } else {

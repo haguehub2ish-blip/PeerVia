@@ -183,7 +183,7 @@ export default function Home() {
 
   useEffect(() => {
     async function fetchMentors() {
-      const { data, error } = await supabase.from("mentorss").select("*");
+            const { data, error } = await supabase.from("mentorss").select("*").eq("activated", true);
       if (error) {
         setMentorsError(error.message || JSON.stringify(error));
       } else {

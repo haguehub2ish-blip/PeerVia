@@ -155,11 +155,11 @@ export async function POST(request) {
 
   const { data: mentor, error: mentorError } = await supabaseAdmin
     .from("mentorss")
-    .select("name, user_id, available")
+    .select("name, user_id, available, activated")
     .eq("id", mentorId)
     .single();
 
-  if (mentorError || !mentor) {
+  if (mentorError || !mentor || mentor.activated === false) {
     return Response.json({ error: "Mentor not found" }, { status: 404 });
   }
   if (!mentor.available) {

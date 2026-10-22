@@ -50,7 +50,7 @@ function LoginContent() {
         if (result.switch && result.token_hash) {
           const { error: switchError } = await supabase.auth.verifyOtp({
             token_hash: result.token_hash,
-            type: "magiclink",
+            type: result.type || "magiclink",
           });
           if (!switchError) {
             window.location.href = "/mentor-account/dashboard";

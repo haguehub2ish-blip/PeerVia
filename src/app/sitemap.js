@@ -23,7 +23,7 @@ export default async function sitemap() {
   let mentorRoutes = [];
   let guideRoutes = [];
   try {
-    const { data: mentors } = await supabase.from("mentorss").select("id");
+        const { data: mentors } = await supabase.from("mentorss").select("id").eq("activated", true);
     mentorRoutes = (mentors || []).map((m) => ({
       url: `${baseUrl}/mentors/${m.id}`,
       lastModified: new Date(),

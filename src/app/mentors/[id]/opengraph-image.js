@@ -10,7 +10,8 @@ export default async function Image({ params }) {
 
   const { data: mentor } = await supabase
     .from("mentorss")
-    .select("name, subject, school, photo_url, initials, verified")
+        .select("name, subject, school, photo_url, initials, verified")
+    .eq("activated", true)
     .eq("id", id)
     .maybeSingle();
 

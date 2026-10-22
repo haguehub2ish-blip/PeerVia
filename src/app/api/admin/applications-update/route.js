@@ -257,6 +257,7 @@ export async function POST(request) {
         bachelor_degree: application.bachelor_degree || null,
         master_degree: application.master_degree || null,
         sessions: 0,
+        activated: isExistingUser,
         answers: 0,
         rating: 0,
         available: true,

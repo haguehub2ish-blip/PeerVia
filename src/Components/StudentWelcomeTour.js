@@ -278,7 +278,7 @@ export default function StudentWelcomeTour({ open, onClose, firstName, isMinor, 
     setBusy(true);
     let path = next.page;
     if (path === "profile") {
-      const { data } = await supabase.from("mentorss").select("id").eq("available", true).limit(1);
+      const { data } = await supabase.from("mentorss").select("id").eq("available", true).eq("activated", true).limit(1);
       if (!data || data.length === 0) {
         setBusy(false);
         goTo(index + dir, dir); // no mentor to show, skip this step

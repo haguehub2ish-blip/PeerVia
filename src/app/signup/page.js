@@ -58,7 +58,7 @@ export default function Signup() {
   const [selectedCountries, setSelectedCountries] = useState([]);
 
   useEffect(() => {
-    supabase.from("mentorss").select("*").then(({ data }) => {
+        supabase.from("mentorss").select("*").eq("activated", true).then(({ data }) => {
       if (data) setAllMentors(data);
     });
   }, []);

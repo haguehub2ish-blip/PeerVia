@@ -1,4 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
+import { Resend } from "resend";
+import { renderEmail, paragraph, escapeHtml } from "@/lib/emailShell";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -65,5 +69,42 @@ export async function POST(request) {
     return Response.json({ error: inviteError.message }, { status: 500 });
   }
 
-  return Response.json({ success: true });
+  // Also send a set-up link to the backup email (if there is one)
+  let backupSentTo = null;
+  const backup = (application.backup_email || "").trim();
+
+  if (backup && backup.toLowerCase() !== application.email.toLowerCase()) {
+    try {
+      const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+        type: "recovery",
+        email: application.email,
+        options: { redirectTo: `${siteUrl}/mentor-account/set-password` },
+      });
+      const link = linkData?.properties?.action_link;
+      if (linkError || !link) throw new Error(linkError?.message || "Could not generate a set-up link");
+
+      const { error: sendError } = await resend.emails.send({
+        from: "PeerVia <info@peervia.org>",
+        to: backup,
+        subject: "Set up your PeerVia mentor account",
+        html: renderEmail({
+          siteUrl,
+          preheader: "Set up your PeerVia mentor account.",
+          heading: "Set up your mentor account.",
+          greeting: `Hi ${escapeHtml(application.first_name || "there")},`,
+          bodyHtml: paragraph(
+            "Your PeerVia mentor application was approved. Click the button below to choose a password and activate your account."
+          ),
+          ctaLabel: "Set my password",
+          ctaUrl: link,
+        }),
+      });
+      if (sendError) throw new Error(sendError.message);
+      backupSentTo = backup;
+    } catch (err) {
+      console.error("Backup invite failed:", err);
+    }
+  }
+
+  return Response.json({ success: true, backupSentTo, hadBackup: !!backup });
 }

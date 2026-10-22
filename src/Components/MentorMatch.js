@@ -107,6 +107,7 @@ export default function MentorMatch({ mentors: mentorsProp }) {
     supabase
       .from("mentorss")
       .select("*")
+      .eq("activated", true)
       .then(({ data, error }) => {
         if (error) setFetchError(error.message || JSON.stringify(error));
         else setFetchedMentors(data || []);

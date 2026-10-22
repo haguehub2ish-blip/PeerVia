@@ -7,7 +7,8 @@ export async function generateMetadata({ params }) {
 
   const { data: mentor } = await supabase
     .from("mentorss")
-    .select("name, subject, course, school, about_me, bio")
+        .select("name, subject, course, school, about_me, bio")
+    .eq("activated", true)
     .eq("id", id)
     .maybeSingle();
 

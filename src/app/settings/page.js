@@ -63,7 +63,7 @@ export default function Settings() {
       }
       setPrefsLoading(false);
     });
-    supabase.from("mentorss").select("*").then(({ data }) => {
+        supabase.from("mentorss").select("*").eq("activated", true).then(({ data }) => {
       if (data) setAllMentors(data);
     });
 

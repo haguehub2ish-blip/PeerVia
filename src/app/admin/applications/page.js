@@ -83,7 +83,16 @@ export default function AdminApplications() {
 
     const result = await res.json();
     setProcessingId(null);
-    alert(result.error ? "Error: " + result.error : "Invite sent to " + app.email);
+    alert(
+      result.error
+        ? "Error: " + result.error
+        : "Invite sent to " + app.email +
+          (result.backupSentTo
+            ? " and " + result.backupSentTo
+            : result.hadBackup
+            ? " (but the backup email failed, check the logs)"
+            : "")
+    );
   }
 
   async function handleDecision(app, status) {

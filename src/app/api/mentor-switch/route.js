@@ -41,7 +41,11 @@ export async function POST(request) {
       email: user.email,
     });
     if (selfLink?.properties?.hashed_token) {
-      return Response.json({ switch: true, token_hash: selfLink.properties.hashed_token });
+      return Response.json({
+        switch: true,
+        token_hash: selfLink.properties.hashed_token,
+        type: selfLink.properties.verification_type || "magiclink",
+      });
     }
     return Response.json({ switch: false });
   }
@@ -84,5 +88,9 @@ export async function POST(request) {
     return Response.json({ error: linkError?.message || "Could not switch account." }, { status: 500 });
   }
 
-  return Response.json({ switch: true, token_hash: linkData.properties.hashed_token });
+  return Response.json({
+    switch: true,
+    token_hash: linkData.properties.hashed_token,
+    type: linkData.properties.verification_type || "magiclink",
+  });
 }

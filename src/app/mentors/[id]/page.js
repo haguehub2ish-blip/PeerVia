@@ -82,7 +82,8 @@ useEffect(() => {
     const { data } = await supabase
       .from("mentorss")
       .select("*")
-      .neq("id", id)
+            .neq("id", id)
+      .eq("activated", true)
       .order("rating", { ascending: false })
       .limit(3);
     setRecommended(data || []);
@@ -230,6 +231,7 @@ async function handleSubmitBooking(e) {
         .from("mentorss")
         .select("*")
         .eq("id", id)
+        .eq("activated", true)
         .single();
 
       if (error) setError(error.message);

@@ -220,7 +220,7 @@ export default function MentorDashboard() {
             if (response.ok && result.switch && result.token_hash) {
               const { error: switchError } = await supabase.auth.verifyOtp({
                 token_hash: result.token_hash,
-                type: "magiclink",
+                type: result.type || "magiclink",
               });
 
               if (!switchError) {
@@ -254,6 +254,13 @@ export default function MentorDashboard() {
 
       if (profile) {
         setMentorProfile(profile);
+        if (profile.activated === false) {
+          const { data: sess } = await supabase.auth.getSession();
+          fetch("/api/mentor-activate", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${sess?.session?.access_token}` },
+          }).catch(() => {});
+        }
         setBio(profile.bio || "");
         setAboutMe(profile.about_me || "");
         setAge(profile.age ?? "");

@@ -289,6 +289,7 @@ export default function Apply() {
       const { data } = await supabase
         .from("mentorss")
         .select("*")
+        .eq("activated", true)
         .order("rating", { ascending: false })
         .limit(6);
       if (data) setTeamMentors(data);
@@ -297,7 +298,7 @@ export default function Apply() {
     fetchTeam();
 
     async function fetchAllMentors() {
-      const { data } = await supabase.from("mentorss").select("*");
+            const { data } = await supabase.from("mentorss").select("*").eq("activated", true);
       if (data) setAllMentors(data);
       setStatsLoading(false);
     }
