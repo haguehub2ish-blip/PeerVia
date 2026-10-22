@@ -9,6 +9,8 @@ const supabaseAdmin = createClient(
 );
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+// Full-access key, used ONLY to read the original bounced email
+const resendAdmin = new Resend(process.env.RESEND_FULL_ACCESS_KEY);
 
 const ADMIN_EMAIL = "info.peervia@gmail.com";
 
@@ -87,18 +89,56 @@ export async function POST(request) {
     const fallback = alreadyResent ? null : await findFallbackEmail(address, app);
 
     if (fallback && fallback.toLowerCase() !== address.toLowerCase() && event.data?.email_id) {
-      try {
-        const { data: original, error: getError } = await resend.emails.get(event.data.email_id);
-        if (getError || !original?.html) {
-          throw new Error(getError?.message || "Original email has no content");
+           try {
+        let html = null;
+        let replyTo = null;
+        let fallbackSubject = subject;
+
+        // 1) Try to copy the original email
+        try {
+          const { data: original, error: getError } = await resendAdmin.emails.get(event.data.email_id);
+          if (!getError && original?.html) {
+            html = original.html;
+            replyTo = original.reply_to || original.replyTo;
+            fallbackSubject = original.subject || subject;
+          } else {
+            console.error("Could not copy original email:", getError?.message || "no html");
+          }
+        } catch (e) {
+          console.error("Could not copy original email:", e);
         }
-        const replyTo = original.reply_to || original.replyTo;
+
+        // 2) If copying failed (e.g. email was sent by Supabase Auth), build a fresh set-up link
+        if (!html) {
+          const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+            type: "recovery",
+            email: address,
+            options: { redirectTo: `${siteUrl}/mentor-account/set-password` },
+          });
+          const link = linkData?.properties?.action_link;
+          if (linkError || !link) {
+            throw new Error(linkError?.message || "Could not generate a set-up link");
+          }
+          fallbackSubject = "Set up your PeerVia mentor account";
+          html = renderEmail({
+            siteUrl,
+            preheader: "Set up your PeerVia mentor account.",
+            heading: "Set up your mentor account.",
+            greeting: `Hi ${escapeHtml(app?.first_name || "there")},`,
+            bodyHtml: paragraph(
+              "Your PeerVia mentor application was approved. Click the button below to choose a password and activate your account."
+            ),
+            ctaLabel: "Set my password",
+            ctaUrl: link,
+          });
+        }
+
         const { error: sendError } = await resend.emails.send({
           from: "PeerVia <info@peervia.org>",
           to: fallback,
           ...(replyTo ? { replyTo } : {}),
-          subject: `(Resent) ${original.subject || subject}`,
-          html: original.html,
+          subject: `(Resent) ${fallbackSubject}`,
+          html,
         });
         if (sendError) throw new Error(sendError.message);
         resentTo = fallback;
