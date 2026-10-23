@@ -9,6 +9,20 @@ import Link from "next/link";
 import { useFilterOptions } from "@/lib/useFilterOptions";
 import { getFieldGroups } from "@/lib/filterDefaults";
 
+// Shows a profile photo, or the fallback letter if there is no photo or it fails to load.
+function AvatarFill({ src, letter }) {
+  const [failed, setFailed] = useState(false);
+  if (!src || failed) return <>{letter}</>;
+  return (
+    <img
+      src={src}
+      alt=""
+      onError={() => setFailed(true)}
+      className="w-full h-full rounded-full object-cover"
+    />
+  );
+}
+
 function formatDate(dateString) {
   if (!dateString) return "";
   const date = new Date(dateString);
@@ -106,6 +120,19 @@ function QAFeedContent() {
 
   const [search, setSearch] = useState("");
 
+  const [avatars, setAvatars] = useState({});
+  const [mentorList, setMentorList] = useState([]);
+  const avatarOf = (userId) =>
+    avatars[userId] ||
+    (user && user.id === userId ? user.user_metadata?.avatar_url : null) ||
+    null;
+  const mentorPhotoById = (mentorId) =>
+    mentorList.find((m) => String(m.id) === String(mentorId))?.photo_url || null;
+  const mentorPhotoByName = (name) => {
+    const n = (name || "").trim().toLowerCase();
+    return n ? mentorList.find((m) => (m.name || "").trim().toLowerCase() === n)?.photo_url || null : null;
+  };
+
   useEffect(() => {
     async function loadInteractions() {
       const { data: userData } = await supabase.auth.getUser();
@@ -151,6 +178,35 @@ function QAFeedContent() {
       });
       setInteractions(next);
       setInteractionsLoading(false);
+
+      // Load profile photos for the people shown on this page
+      const userIds = [
+        ...new Set(
+          [
+            currentUser?.id,
+            ...(askedQuestions || []).map((uq) => uq.user_id),
+            ...(comments || []).map((c) => c.user_id),
+          ].filter(Boolean)
+        ),
+      ];
+      if (userIds.length > 0) {
+        fetch("/api/community-avatars", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userIds }),
+        })
+          .then((r) => r.json())
+          .then((d) => {
+            if (d?.avatars) setAvatars(d.avatars);
+          })
+          .catch((err) => console.error("Avatar load error:", err));
+      }
+      supabase
+        .from("mentorss")
+        .select("id, name, photo_url")
+        .then(({ data }) => {
+          if (data) setMentorList(data);
+        });
     }
     loadInteractions();
   }, []);
@@ -456,7 +512,7 @@ function QAFeedContent() {
             {/* Ask box, embedded in hero */}
             <div data-tour="community-ask" className="mt-10 bg-white/10 border border-white/15 rounded-xl px-5 py-4 flex items-center gap-3 backdrop-blur-sm">
               <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-semibold text-sm shrink-0">
-                {(user?.user_metadata?.name || "?").charAt(0).toUpperCase()}
+                <AvatarFill src={avatarOf(user?.id)} letter={(user?.user_metadata?.name || "?").charAt(0).toUpperCase()} />
               </div>
               <input
                 type="text"
@@ -642,7 +698,7 @@ function QAFeedContent() {
                 <div key={uq.id} className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
                     <div className="w-8 h-8 rounded-full bg-border text-ink flex items-center justify-center font-bold text-xs shrink-0">
-                      {(uq.author_name || "?").charAt(0).toUpperCase()}
+                      <AvatarFill src={avatarOf(uq.user_id)} letter={(uq.author_name || "?").charAt(0).toUpperCase()} />
                     </div>
                     <div>
                       {(uq.subject || uq.country) && (
@@ -762,7 +818,7 @@ function QAFeedContent() {
                           <div className="hidden sm:flex flex-col items-end gap-2 shrink-0 text-right">
                             <div className="flex items-center gap-2 bg-primary/10 rounded-full pl-1 pr-3 py-1">
                               <div className="w-6 h-6 rounded-full bg-primary text-background flex items-center justify-center font-bold text-[10px] shrink-0">
-                                {(uq.answerData?.mentor_name || "?").charAt(0).toUpperCase()}
+                                <AvatarFill src={mentorPhotoById(uq.answerData?.mentor_id)} letter=<AvatarFill src={mentorPhotoById(uq.answerData?.mentor_id)} letter=<AvatarFill src={mentorPhotoById(uq.answerData?.mentor_id)} letter={(uq.answerData?.mentor_name || "?").charAt(0).toUpperCase()} /> /> />
                               </div>
                               <p className="text-xs font-semibold text-primary">
                                 {uq.answerData?.mentor_name}
@@ -802,7 +858,7 @@ function QAFeedContent() {
                         <div className="bg-background px-5 py-3 flex items-center justify-between flex-wrap gap-2">
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-full bg-primary text-background flex items-center justify-center font-bold text-xs shrink-0">
-                              {(uq.answerData?.mentor_name || "?").charAt(0).toUpperCase()}
+                              <AvatarFill src={mentorPhotoById(uq.answerData?.mentor_id)} letter=<AvatarFill src={mentorPhotoById(uq.answerData?.mentor_id)} letter=<AvatarFill src={mentorPhotoById(uq.answerData?.mentor_id)} letter={(uq.answerData?.mentor_name || "?").charAt(0).toUpperCase()} /> /> />
                             </div>
                             <div>
                               <p className="font-semibold text-primary text-sm">
@@ -866,7 +922,7 @@ function QAFeedContent() {
                                         {data.comments.map((c) => (
                                           <div key={c.id} className="flex items-start gap-2">
                                             <div className="w-7 h-7 rounded-full bg-border text-ink flex items-center justify-center font-bold text-xs shrink-0">
-                                              {(c.author_name || "?").charAt(0).toUpperCase()}
+                                              <AvatarFill src={avatarOf(c.user_id)} letter=<AvatarFill src={avatarOf(c.user_id)} letter=<AvatarFill src={avatarOf(c.user_id)} letter={(c.author_name || "?").charAt(0).toUpperCase()} /> /> />
                                             </div>
                                             <div className="bg-background rounded-lg px-3 py-2 flex-1 flex items-start justify-between gap-2">
                                               <div>
@@ -962,7 +1018,7 @@ function QAFeedContent() {
                       <div className="hidden sm:flex flex-col items-end gap-2 shrink-0 text-right">
                         <div className="flex items-center gap-2 bg-primary/10 rounded-full pl-1 pr-3 py-1">
                           <div className="w-6 h-6 rounded-full bg-primary text-background flex items-center justify-center font-bold text-[10px] shrink-0">
-                            {q.initials}
+                            <AvatarFill src={mentorPhotoByName(q.name)} letter=<AvatarFill src={mentorPhotoByName(q.name)} letter=<AvatarFill src={mentorPhotoByName(q.name)} letter=<AvatarFill src={mentorPhotoByName(q.name)} letter={q.initials} /> /> /> />
                           </div>
                           <p className="text-xs font-semibold text-primary">{q.name}</p>
                         </div>
@@ -997,7 +1053,7 @@ function QAFeedContent() {
                       <div className="bg-background px-5 py-3 flex items-center justify-between flex-wrap gap-2">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-primary text-background flex items-center justify-center font-bold text-xs shrink-0">
-                            {q.initials}
+                            <AvatarFill src={mentorPhotoByName(q.name)} letter=<AvatarFill src={mentorPhotoByName(q.name)} letter=<AvatarFill src={mentorPhotoByName(q.name)} letter=<AvatarFill src={mentorPhotoByName(q.name)} letter={q.initials} /> /> /> />
                           </div>
                           <div>
                             <p className="font-semibold text-primary text-sm">{q.name}</p>
@@ -1061,7 +1117,7 @@ function QAFeedContent() {
                                     {data.comments.map((c) => (
                                       <div key={c.id} className="flex items-start gap-2">
                                         <div className="w-7 h-7 rounded-full bg-border text-ink flex items-center justify-center font-bold text-xs shrink-0">
-                                          {(c.author_name || "?").charAt(0).toUpperCase()}
+                                          <AvatarFill src={avatarOf(c.user_id)} letter=<AvatarFill src={avatarOf(c.user_id)} letter=<AvatarFill src={avatarOf(c.user_id)} letter={(c.author_name || "?").charAt(0).toUpperCase()} /> /> />
                                         </div>
                                         <div className="bg-background rounded-lg px-3 py-2 flex-1 flex items-start justify-between gap-2">
                                           <div>

@@ -1,6 +1,12 @@
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { renderEmail, paragraph, quoteBox, escapeHtml } from "@/lib/emailShell";
+import {
+  DEFAULT_FIELDS,
+  DEFAULT_COMMUNITY_FIELDS,
+  getFieldGroups,
+  parseKeywords,
+} from "@/lib/filterDefaults";
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -66,12 +72,41 @@ export async function POST(request) {
     .from("mentorss")
     .select("user_id, name, subject");
 
+  // Load the filter lists the admin manages (the same ones the Community and Mentors pages use).
+  const { data: filterRows } = await supabaseAdmin
+    .from("site_filters")
+    .select("kind, label, keywords")
+    .in("kind", ["community_field", "field"]);
+
+  const rowsOf = (kind) =>
+    (filterRows || [])
+      .filter((r) => r.kind === kind)
+      .map((r) => ({ label: r.label, keywords: parseKeywords(r.keywords) }));
+  const communityFilters = rowsOf("community_field").length ? rowsOf("community_field") : DEFAULT_COMMUNITY_FIELDS;
+  const mentorFilters = rowsOf("field").length ? rowsOf("field") : DEFAULT_FIELDS;
+
+  // For each field the student tagged, collect every keyword that counts as that field:
+  // the filter's own keywords, the keywords of the same-named mentor filter, and the name itself.
+  const fieldsForQuestion = questionSubjects.map((subject) => {
+    const community = communityFilters.find((f) => f.label.toLowerCase() === subject);
+    const mentorSide = mentorFilters.find((f) => f.label.toLowerCase() === subject);
+    return {
+      label: subject,
+      keywords: [...(community?.keywords || []), ...(mentorSide?.keywords || []), `=${subject}`],
+    };
+  });
+
+  const mentorMatchesQuestion = (mentorSubject) => {
+    const text = (mentorSubject || "").trim().toLowerCase();
+    return getFieldGroups(text, fieldsForQuestion).some((g) => g !== "Other");
+  };
+
   const matched = (mentors || []).filter(
     (m) =>
       m.user_id &&
       m.user_id !== q.user_id &&
       (questionSubjects.length === 0 ||
-        questionSubjects.includes((m.subject || "").trim().toLowerCase()))
+        mentorMatchesQuestion(m.subject))
   );
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || new URL(request.url).origin;

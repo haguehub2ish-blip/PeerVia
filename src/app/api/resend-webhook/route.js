@@ -61,18 +61,18 @@ export async function POST(request) {
   const event = JSON.parse(payload);
 
   // Only care about bounces
-  if (event.type !== "email.bounced") {
+  if (event.type !== "email.bounced" && event.type !== "email.suppressed") {
     return Response.json({ ok: true, ignored: event.type });
   }
 
   const recipients = Array.isArray(event.data?.to) ? event.data.to : [event.data?.to];
   const subject = event.data?.subject || "(no subject)";
-  const reason = event.data?.bounce?.message || "No reason given";
+  const reason = event.data?.bounce?.message || event.data?.suppressed?.message || "No reason given";
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || new URL(request.url).origin;
 
     for (const address of recipients) {
-    if (!address || address.toLowerCase() === ADMIN_EMAIL) continue; // avoid loops
+    if (!address || address.toLowerCase() === ADMIN_EMAIL || subject.startsWith("Action needed: ")) continue; // avoid loops
 
     // Is this address a mentor applicant? If so, we may have a backup email.
     const { data: app } = await supabaseAdmin
@@ -147,6 +147,53 @@ export async function POST(request) {
       }
     }
 
+    // If the address was suppressed, tell the applicant their university email isn't valid.
+    // It goes to their backup email, since the university address can't receive mail.
+    let noticeNote = "";
+    if (
+      (event.type === "email.suppressed" ||
+        (event.type === "email.bounced" && event.data?.bounce?.type !== "Transient")) &&
+      app &&
+      fallback &&
+      fallback.toLowerCase() !== address.toLowerCase()
+    ) {
+      const listStyle = "margin:0 0 16px 20px; padding:0; font-size:15px; line-height:1.65; color:#241A12; font-family:Helvetica, Arial, sans-serif;";
+      try {
+        const { error: noticeError } = await resend.emails.send({
+          from: "PeerVia <info@peervia.org>",
+          to: fallback,
+          subject: "Action needed: your university email isn't working",
+          html: renderEmail({
+            siteUrl,
+            preheader: "We couldn't reach your university email address.",
+            heading: "Your university email isn't working.",
+            greeting: `Hi ${escapeHtml(app.first_name || "there")},`,
+            bodyHtml:
+              paragraph(
+                `We tried to email you at <strong>${escapeHtml(address)}</strong>, but that address can't receive our emails, so it looks like it isn't valid. Here is what usually fixes this:`
+              ) +
+              `<ul style="${listStyle}">
+                <li><strong>Check for typos.</strong> The order of the domain matters, for example @student.eur.nl rather than @eur.student.nl.</li>
+                <li><strong>Check your mailbox is active.</strong> Some universities only activate student email after enrolment or a first login, and a full mailbox can also reject mail.</li>
+                <li><strong>Test it.</strong> Send an email to that address from your personal account. If it bounces, the address is the problem.</li>
+                <li><strong>Ask your IT helpdesk</strong> to allow emails from info@peervia.org if your university blocks outside senders.</li>
+                <li><strong>Send us the right address.</strong> Reply to this email or write to info@peervia.org with your correct university email and we will update your application.</li>
+              </ul>` +
+              (resentTo
+                ? paragraph("We have also sent you the original email at this address so you don't miss anything.")
+                : ""),
+            ctaLabel: "Contact PeerVia",
+            ctaUrl: "mailto:info@peervia.org",
+          }),
+        });
+        if (noticeError) throw new Error(noticeError.message);
+        noticeNote = ` We also told the applicant their university email isn't valid (sent to ${escapeHtml(fallback)}).`;
+      } catch (err) {
+        console.error("Invalid-email notice failed:", err);
+        noticeNote = " We tried to tell the applicant their university email isn't valid, but that failed. Check the logs.";
+      }
+    }
+
     const who = app
       ? `${escapeHtml(app.first_name)} ${escapeHtml(app.last_name)} applied to be a mentor.`
       : "This address doesn't match a mentor application.";
@@ -170,7 +217,7 @@ export async function POST(request) {
           bodyHtml:
             paragraph(`An email to <strong>${escapeHtml(address)}</strong> bounced.`) +
             paragraph(`Subject: ${escapeHtml(subject)}<br />Reason: ${escapeHtml(reason)}`) +
-            paragraph(`${who} ${resendNote}`),
+            paragraph(`${who} ${resendNote}${noticeNote}`),
           footerNote: "This alert is sent automatically when Resend reports a bounce.",
         }),
       });

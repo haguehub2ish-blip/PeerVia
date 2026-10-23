@@ -450,6 +450,27 @@ export default function Apply() {
 
     async function handleSubmit(e) {
     e.preventDefault();
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    const uniEmail = form.email.trim().toLowerCase();
+    const backupEmail = form.backup_email.trim().toLowerCase();
+
+    if (!emailPattern.test(uniEmail)) {
+      setError("Please enter a valid university email address.");
+      return;
+    }
+    if (!backupEmail) {
+      setError("Please enter a backup email address.");
+      return;
+    }
+    if (!emailPattern.test(backupEmail)) {
+      setError("Your backup email doesn't look like a valid email address. Please check it for typos.");
+      return;
+    }
+    if (backupEmail === uniEmail) {
+      setError("Your backup email must be different from your university email. Please use a personal address such as Gmail, Outlook or iCloud.");
+      return;
+    }
+
     if (!form.university.trim()) {
       setError("Please select your university.");
       return;
