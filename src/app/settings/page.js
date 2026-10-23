@@ -8,11 +8,12 @@ import { useFilterOptions } from "@/lib/useFilterOptions";
 import { courseGuides, allUniversityNames } from "@/data/courseGuides"
 import { getSubjectStyle, getFlag, getLanguageStyle } from "@/data/mentors";
 import MentorMatch from "@/Components/MentorMatch";
+import SavedMentors from "@/Components/SavedMentors";
 
 const sections = [
   { id: "account", label: "Account" },
   { id: "notifications", label: "Notifications" },
-  { id: "match", label: "Mentor Match" },
+  { id: "match", label: "Saved Mentors" },
   { id: "danger", label: "Danger Zone" },
 ];
 
@@ -465,9 +466,17 @@ export default function Settings() {
             {/* MENTOR MATCH */}
             {activeSection === "match" && (
               <div>
-                <h2 className="font-display text-xl text-ink mb-1">Mentor Match</h2>
+                <h2 className="font-display text-xl text-ink mb-1">Saved Mentors</h2>
                 <p className="text-muted text-sm mb-6">
-                  Answer a few questions and we'll suggest the mentors who fit you best.
+                  Your saved mentors. Remove one any time, or take the quiz below to find more.
+                </p>
+                <SavedMentors />
+
+                <div className="border-t border-border my-8" />
+
+                <h3 className="font-display text-lg text-ink mb-1">Find more mentors</h3>
+                <p className="text-muted text-sm mb-5">
+                  Answer a few questions and we'll suggest the mentors who fit you best. Save the ones you like.
                 </p>
                 <MentorMatch />
               </div>

@@ -5,6 +5,8 @@ import { supabase } from "@/lib/supabase";
 import { useFilterOptions } from "@/lib/useFilterOptions";
 import { getFieldGroups } from "@/lib/filterDefaults";
 import { getFlag } from "@/data/mentors";
+import { useSavedMentors } from "@/lib/useSavedMentors";
+import SaveMentorButton from "@/Components/SaveMentorButton";
 
 // What the student wants help with. A mentor scores points when their
 // bio / about / support text contains one of the keywords.
@@ -97,6 +99,8 @@ export default function MentorMatch({ mentors: mentorsProp }) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
+  const mentorSaver = useSavedMentors();
+  const [showAll, setShowAll] = useState(false);
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState(EMPTY_ANSWERS);
   const [results, setResults] = useState(null);
@@ -224,7 +228,8 @@ export default function MentorMatch({ mentors: mentorsProp }) {
     const scored = pool
       .map((m) => scoreMentor(m, useAnswers, fieldDefs))
       .sort((a, b) => b.percent - a.percent || (Number(b.mentor.rating) || 0) - (Number(a.mentor.rating) || 0));
-    setResults(scored.slice(0, 3));
+    setShowAll(false);
+    setResults(scored.slice(0, 6));
   }
 
   function restart() {
@@ -254,7 +259,13 @@ export default function MentorMatch({ mentors: mentorsProp }) {
   if (results) {
     return (
       <div>
-        <h3 className="font-display text-xl text-ink mb-4">Your top matches</h3>
+        <h3 className="font-display text-xl text-ink mb-1">Your top matches</h3>
+        <p className="text-muted text-sm mb-4">
+          {mentorSaver.user
+            ? "Tap Save on any mentor you like. You can save them one at a time and find them under Saved Mentors."
+            : "Log in to save the mentors you like."}
+        </p>
+        {mentorSaver.error && <p className="text-sm text-red-600 mb-3">{mentorSaver.error}</p>}
         {results.length === 0 ? (
           <div className="border border-border rounded-2xl bg-surface p-8 text-center">
             <p className="font-display text-lg text-ink mb-1">No mentors found</p>
@@ -262,7 +273,7 @@ export default function MentorMatch({ mentors: mentorsProp }) {
           </div>
         ) : (
           <div className="space-y-4">
-            {results.map(({ mentor, percent, reasons }, i) => (
+            {(showAll ? results : results.slice(0, 3)).map(({ mentor, percent, reasons }, i) => (
               <Link
                 key={mentor.id}
                 href={`/mentors/${mentor.id}`}
@@ -286,7 +297,16 @@ export default function MentorMatch({ mentors: mentorsProp }) {
                         {getFlag(mentor.country)} {mentor.school} · {mentor.subject}
                       </p>
                     </div>
-                    <span className="font-display text-primary text-lg shrink-0">{percent}%</span>
+                    <div className="flex flex-col items-end gap-2 shrink-0">
+                      <span className="font-display text-primary text-lg">{percent}%</span>
+                      <SaveMentorButton
+                        variant="pill"
+                        loggedIn={Boolean(mentorSaver.user)}
+                        saved={mentorSaver.isSaved(mentor.id)}
+                        busy={mentorSaver.pendingId !== null}
+                        onToggle={() => mentorSaver.toggleSaved(mentor.id)}
+                      />
+                    </div>
                   </div>
                   {reasons.length > 0 && (
                     <ul className="mt-2 text-xs text-muted space-y-0.5">
@@ -299,6 +319,15 @@ export default function MentorMatch({ mentors: mentorsProp }) {
               </Link>
             ))}
           </div>
+        )}
+        {results.length > 3 && !showAll && (
+          <button
+            type="button"
+            onClick={() => setShowAll(true)}
+            className="mt-4 text-sm text-primary font-medium underline underline-offset-4"
+          >
+            Show more matches
+          </button>
         )}
         <div className="flex items-center flex-wrap gap-4 mt-6">
           <button type="button" onClick={restart} className="text-sm text-muted underline underline-offset-4 hover:text-ink">

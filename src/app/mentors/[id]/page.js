@@ -6,6 +6,8 @@ import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import MentorCalendarView from "@/Components/MentorCalendarView";
 import { ChevronIcon } from "@/Components/CalendarIcons";
+import { useSavedMentors } from "@/lib/useSavedMentors";
+import SaveMentorButton from "@/Components/SaveMentorButton";
 
 export default function MentorProfile() {
   const { id } = useParams();
@@ -34,6 +36,7 @@ const [currentUser, setCurrentUser] = useState(null);
 
 const [recommended, setRecommended] = useState([]);
 const [recommendedLoading, setRecommendedLoading] = useState(true);
+const { user: savedUser, isSaved, toggleSaved, pendingId, error: saveError } = useSavedMentors();
 
 const MENTOR_CTA_PHOTO_URL = "/images/PV_MentorIdPage.jpg";
 
@@ -305,6 +308,13 @@ async function handleSubmitBooking(e) {
               <h1 className="font-display text-4xl sm:text-5xl text-ink leading-tight">
                 {mentor.name}
               </h1>
+              <SaveMentorButton
+                variant="pill"
+                loggedIn={Boolean(savedUser)}
+                saved={isSaved(id)}
+                busy={pendingId !== null}
+                onToggle={() => toggleSaved(id)}
+              />
               <button
                 type="button"
                 onClick={handleShare}
@@ -331,6 +341,7 @@ async function handleSubmitBooking(e) {
                 {shareCopied ? "Link copied ✓" : "Share"}
               </button>
             </div>
+            {saveError && <p className="text-sm text-red-600 mt-2">{saveError}</p>}
             <p className="text-muted mt-2.5 text-base">
               {mentor.school}, {mentor.year} · {mentor.subject}
             </p>

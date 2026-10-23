@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useFilterOptions } from "@/lib/useFilterOptions";
 import { getFieldGroups } from "@/lib/filterDefaults";
 import MentorMatch, { scoreMentor } from "@/Components/MentorMatch";
+import { useSavedMentors } from "@/lib/useSavedMentors";
 
 // Each group matches any subject text containing one of its keywords,
 // so "Mechanical Engineering" and "Law, Psychology" are handled correctly.
@@ -50,7 +51,8 @@ const [currentUser, setCurrentUser] = useState(null);
 const [savedMentorNames, setSavedMentorNames] = useState([]);
 const [savingMentorName, setSavingMentorName] = useState(null);
 const [matchAnswers, setMatchAnswers] = useState(null);
-const [recommendedOnly, setRecommendedOnly] = useState(false);
+const [recommendedOnly, setRecommendedOnly] = useState(false); // now means "Saved mentors only"
+const { user: savedUser, savedIds } = useSavedMentors();
 
 
   useEffect(() => {
@@ -265,7 +267,7 @@ const recommendedMentorIds = new Set(
     const matchesSearch = words.every((w) => haystack.includes(w));
     
 const matchesRecommended =
-  !recommendedOnly || recommendedMentorIds.has(String(mentor.id));
+  !recommendedOnly || savedIds.includes(String(mentor.id));
 
 return (
   matchesFilter &&
@@ -400,7 +402,7 @@ className="bg-primary text-white font-label text-[11px] tracking-[0.08em] upperc
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
-              {matchAnswers && (
+              {savedUser && (
                 <button
                   type="button"
                   onClick={() => setRecommendedOnly((prev) => !prev)}
@@ -415,7 +417,7 @@ className="bg-primary text-white font-label text-[11px] tracking-[0.08em] upperc
                       recommendedOnly ? "bg-primary" : "bg-border"
                     }`}
                   />
-                  Recommended for You
+                  Saved Mentors{savedIds.length > 0 ? ` (${savedIds.length})` : ""}
                 </button>
               )}
 
@@ -555,8 +557,16 @@ className="bg-primary text-white font-label text-[11px] tracking-[0.08em] upperc
 
         {!loading && !fetchError && sortedMentors.length === 0 && (
           <div className="border border-border rounded-2xl bg-surface p-10 text-center">
-            <p className="font-display text-xl text-ink mb-1">No mentors match those filters</p>
-            <p className="text-muted text-sm">Try a different search, or clear the filters.</p>
+            <p className="font-display text-xl text-ink mb-1">
+              {recommendedOnly && savedIds.length === 0
+                ? "You haven't saved any mentors yet"
+                : "No mentors match those filters"}
+            </p>
+            <p className="text-muted text-sm">
+              {recommendedOnly && savedIds.length === 0
+                ? "Open a mentor's profile and tap save to add them here or take the recommended mentors test."
+                : "Try a different search, or clear the filters."}
+            </p>
           </div>
         )}
 
@@ -572,7 +582,7 @@ className="bg-primary text-white font-label text-[11px] tracking-[0.08em] upperc
               key={mentor.id}
               data-tour={mentorIndex === 0 ? "mentors-first" : undefined}
               href={`/mentors/${mentor.id}`}
-              className="bg-surface border border-border rounded-2xl overflow-hidden hover:shadow-md transition"
+              className="relative bg-surface border border-border rounded-2xl overflow-hidden hover:shadow-md transition"
             >
               {mentor.photo_url ? (
                 <img
