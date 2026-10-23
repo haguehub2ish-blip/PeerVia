@@ -23,7 +23,12 @@ export async function POST(request) {
   }
 
   const user = userData.user;
-  if (user.user_metadata?.role !== "mentor") {
+  const { data: mentorRow } = await supabaseAdmin
+    .from("mentorss")
+    .select("user_id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (!mentorRow) {
     return Response.json({ error: "Only mentors can send messages from here." }, { status: 403 });
   }
 

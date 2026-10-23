@@ -66,11 +66,19 @@ export async function POST(request) {
 
   // Fallback: the mentor changed their personal email in the dashboard.
   if (!mentorEmail) {
-    const { data: usersList } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
-    const mentorUser = (usersList?.users || []).find(
-      (u) =>
-        u.user_metadata?.role === "mentor" &&
-        (u.user_metadata?.personal_email || "").trim().toLowerCase() === email
+    // Only look at accounts that have a real mentor profile (a user can edit
+    // their own metadata, so the "role" label alone can't be trusted).
+    const { data: mentorRows } = await supabaseAdmin.from("mentorss").select("user_id");
+    const mentorUsers = await Promise.all(
+      (mentorRows || [])
+        .filter((row) => row.user_id)
+        .map(async (row) => {
+          const { data } = await supabaseAdmin.auth.admin.getUserById(row.user_id);
+          return data?.user || null;
+        })
+    );
+    const mentorUser = mentorUsers.find(
+      (u) => u && (u.user_metadata?.personal_email || "").trim().toLowerCase() === email
     );
     mentorEmail = mentorUser?.email;
   }

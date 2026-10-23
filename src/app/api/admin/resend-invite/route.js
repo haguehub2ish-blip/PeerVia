@@ -53,7 +53,7 @@ export async function POST(request) {
   const { error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
     application.email,
     {
-      data: { name: fullName, role: "mentor" },
+      data: { name: fullName, role: "mentor", personal_email: application.backup_email || "" },
       redirectTo: `${siteUrl}/mentor-account/set-password`,
     }
   );
