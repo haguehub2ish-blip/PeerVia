@@ -130,7 +130,8 @@ export async function createParentRequest({
         bodyHtml:
           paragraph(`${fullName} signed up for PeerVia and gave us your email address as their parent or guardian. Because they're under 18, their account can only be used once you approve it.`) +
           paragraph("PeerVia is a free, non-profit platform where high school students ask university students about courses, universities and careers. Mentors answer public questions and offer short online calls.") +
-          paragraph(`<strong>You are required to be with ${first} during any call.</strong> Whenever ${first} asks for a call with a mentor, we will email you first, and nothing is sent to the mentor unless you approve it.`),
+          paragraph(`<strong>You are required to be with ${first} during any call.</strong> Whenever ${first} asks for a call with a mentor, we will email you first, and nothing is sent to the mentor unless you approve it.`) +
+          paragraph(`<strong>Messages:</strong> once you approve the account, ${first} can also send short written messages to mentors through PeerVia. Messages stay on PeerVia, and mentors never see ${first}'s email address. To keep everyone safe, messages may be reviewed by the PeerVia team. If you'd prefer ${first} not to use messaging, contact us and we'll turn it off for their account.`),
         ctaLabel: "Review and approve",
         ctaUrl: link,
         headerButtonLabel: "peervia.org",

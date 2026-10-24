@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Navbar from "@/Components/Navbar";
 import { getSubjectStyle, getFlag } from "@/data/mentors";
@@ -52,6 +52,8 @@ const [savedMentorNames, setSavedMentorNames] = useState([]);
 const [savingMentorName, setSavingMentorName] = useState(null);
 const [matchAnswers, setMatchAnswers] = useState(null);
 const [recommendedOnly, setRecommendedOnly] = useState(false); // now means "Saved mentors only"
+const [visibleCount, setVisibleCount] = useState(9);
+const loadMoreRef = useRef(null);
 const { user: savedUser, savedIds } = useSavedMentors();
 
 
@@ -285,6 +287,28 @@ const sortedMentors = [...filteredMentors].sort((a, b) => {
     if (!sortBy) return 0;
     return (Number(b[sortBy]) || 0) - (Number(a[sortBy]) || 0);
   });
+
+  // Only show the first batch of mentors, and add more as the visitor scrolls
+  const visibleMentors = sortedMentors.slice(0, visibleCount);
+
+  // Go back to the first 9 whenever a filter, search or sort changes
+  useEffect(() => {
+    setVisibleCount(9);
+  }, [activeFilters, activeCountries, activeLanguages, activeSchool, searchText, availableOnly, sortBy, recommendedOnly]);
+
+  // When the "Loading more" marker near the bottom comes into view, show 9 more
+  useEffect(() => {
+    const node = loadMoreRef.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) setVisibleCount((c) => c + 9);
+      },
+      { rootMargin: "300px" }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [visibleCount, sortedMentors.length, loading]);
 
   const norm = (s) => (s || "").trim().replace(/\s+/g, " ").toLowerCase();
   const uniq = (list) => [...new Set(list.filter(Boolean))].sort((a, b) => a.localeCompare(b));
@@ -577,7 +601,7 @@ className="bg-primary text-white font-label text-[11px] tracking-[0.08em] upperc
           <p className="text-muted">Loading Mentors...</p>
         ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {sortedMentors.map((mentor, mentorIndex) => (
+          {visibleMentors.map((mentor, mentorIndex) => (
                    <Link
               key={mentor.id}
               data-tour={mentorIndex === 0 ? "mentors-first" : undefined}
@@ -588,6 +612,7 @@ className="bg-primary text-white font-label text-[11px] tracking-[0.08em] upperc
                 <img
                   src={mentor.photo_url}
                   alt={mentor.name}
+                  loading="lazy"
                   className="w-full aspect-square object-cover"
                 />
               ) : (
@@ -612,6 +637,11 @@ className="bg-primary text-white font-label text-[11px] tracking-[0.08em] upperc
               </div>
             </Link>
           ))}
+          {visibleCount < sortedMentors.length && (
+            <div ref={loadMoreRef} className="col-span-full py-6 text-center text-muted text-sm">
+              Loading more mentors...
+            </div>
+          )}
        </div>
         )}
       </div>

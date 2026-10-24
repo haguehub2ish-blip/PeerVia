@@ -8,6 +8,8 @@ import MentorCalendarView from "@/Components/MentorCalendarView";
 import { ChevronIcon } from "@/Components/CalendarIcons";
 import { useSavedMentors } from "@/lib/useSavedMentors";
 import SaveMentorButton from "@/Components/SaveMentorButton";
+import MentorChat from "@/Components/MentorChat";
+import ReportMentorButton from "@/Components/ReportMentorButton";
 
 export default function MentorProfile() {
   const { id } = useParams();
@@ -22,6 +24,7 @@ const [bookError, setBookError] = useState("");
 const [submitting, setSubmitting] = useState(false);
 const [submitted, setSubmitted] = useState(false);
 const [pendingParent, setPendingParent] = useState(false);
+const [contactOpen, setContactOpen] = useState(false);
 
 const [reviews, setReviews] = useState([]);
 const [reviewsLoading, setReviewsLoading] = useState(true);
@@ -340,6 +343,7 @@ async function handleSubmitBooking(e) {
                 </svg>
                 {shareCopied ? "Link copied ✓" : "Share"}
               </button>
+              <ReportMentorButton mentorId={id} mentorName={mentor.name} />
             </div>
             {saveError && <p className="text-sm text-red-600 mt-2">{saveError}</p>}
             <p className="text-muted mt-2.5 text-base">
@@ -637,10 +641,10 @@ async function handleSubmitBooking(e) {
               </div>
 
               <h2 className="font-display text-xl text-ink mb-2">
-                Book a session with {firstName}
+                Get in touch with {firstName}
               </h2>
               <p className="text-sm text-ink/70 leading-relaxed mb-6">
-                Send a message to set up a time that works for you both. There's no cost to reach out.
+                Book a call, or send a quick message if you just have a short question. There's no cost to reach out.
               </p>
 
               {submitted ? (
@@ -689,11 +693,45 @@ async function handleSubmitBooking(e) {
               ) : (
                 <>
                   <button
-                    onClick={handleBookClick}
-                    className="w-full bg-primary text-background font-semibold py-2.5 rounded-lg hover:bg-primary-dark transition text-sm"
+                    type="button"
+                    onClick={() => setContactOpen((o) => !o)}
+                    className="w-full bg-primary text-background font-semibold py-2.5 rounded-lg hover:bg-primary-dark transition text-sm flex items-center justify-center gap-2"
                   >
-                    Book a Call
+                    Contact {firstName}
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className={`w-4 h-4 transition-transform ${contactOpen ? "rotate-180" : ""}`}
+                    >
+                      <path d="m6 9 6 6 6-6" />
+                    </svg>
                   </button>
+
+                  {contactOpen && (
+                    <div className="mt-3 space-y-2">
+                      <button
+                        type="button"
+                        onClick={handleBookClick}
+                        className="w-full text-left border border-border rounded-lg p-3 bg-background hover:border-primary transition"
+                      >
+                        <span className="block font-semibold text-ink text-sm">Book a call</span>
+                        <span className="block text-xs text-ink/70 mt-0.5">
+                          Set up a short online call to talk things through.
+                        </span>
+                      </button>
+
+                      <MentorChat
+                        mentorId={id}
+                        mentorFirstName={firstName}
+                        available={mentor.available}
+                      />
+                    </div>
+                  )}
+
                   {bookError && (
                     <p className="text-red-600 text-xs text-center mt-2">
                       {bookError}{" "}

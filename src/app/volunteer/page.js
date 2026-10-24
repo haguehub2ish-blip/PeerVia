@@ -14,7 +14,7 @@ const ROLES = [
     id: "spokesperson",
     number: "01",
     title: "Spokesperson",
-    text: "Be the face of PeerVia at your school or university. Talk to classmates, student societies and at open days.",
+    text: "Be the face of PeerVia at your school. Talk to classmates, friends and school clubs, and help out at open days.",
   },
   {
     id: "course-guides",
@@ -26,7 +26,7 @@ const ROLES = [
     id: "mentor-recruiting",
     number: "03",
     title: "Mentor Recruiter",
-    text: "Spot great students at your university and encourage them to become PeerVia mentors.",
+    text: "Know a great university student, like an older sibling or a former pupil of your school? Encourage them to become a PeerVia mentor.",
   },
   {
     id: "social-content",
@@ -44,7 +44,7 @@ const ROLES = [
     id: "events",
     number: "06",
     title: "Events",
-    text: "Help plan and run info sessions, panels and campus stands where students can meet PeerVia in person.",
+    text: "Help plan and run info sessions, panels and stands at your school where students can meet PeerVia in person.",
   },
   {
     id: "design-tech",
@@ -90,7 +90,7 @@ const PERKS = [
   },
   {
     title: "A team of students",
-    text: "Meet other motivated students from different universities who care about the same thing you do.",
+    text: "Meet other motivated high school students from different schools who care about the same thing you do.",
   },
   {
     title: "Visible impact",
@@ -105,7 +105,7 @@ const FAQS = [
   {
     question: "Do I need to be a PeerVia mentor?",
     answer:
-      "No. Volunteering is separate from mentoring. Some volunteers are mentors too, but most roles only need your time and enthusiasm. If you'd like to answer student questions or take calls, you can apply to become a mentor from the Become a Mentor page.",
+      "No. Volunteering is separate from mentoring. Mentors are university students who answer questions and take calls, while volunteers are high school students who help spread the word and build PeerVia. You don't need any special experience to volunteer, just your time and enthusiasm.",
   },
   {
     question: "Is this paid?",
@@ -118,9 +118,9 @@ const FAQS = [
       "As little as an hour a week, or a single one-off project. Tell us what suits you in the form and we will match tasks to your schedule.",
   },
   {
-    question: "I'm still in high school. Can I help?",
+    question: "Who can volunteer?",
     answer:
-      "Yes. Many roles, such as spreading the word at your school or helping with content, suit high school students well. We may ask for a parent or guardian to be aware of your involvement.",
+      "Volunteering at PeerVia is for high school students. Roles like spreading the word at your school or helping with content are made for you. If you're under 18, we may ask for a parent or guardian to be aware of your involvement.",
   },
   {
     question: "What happens after I sign up?",
@@ -271,14 +271,14 @@ export default function VolunteerPage() {
           </>
         )}
         <div className="max-w-2xl mx-auto relative">
-          <p className="font-label text-[11px] tracking-[0.15em] uppercase text-primary mb-4">Volunteer</p>
+          <p className="font-label text-[11px] tracking-[0.15em] uppercase text-primary mb-4">Volunteer · For High School Students</p>
           <h1 className="font-display text-3xl md:text-5xl text-white leading-tight mb-5">
             PeerVia is built by students.{" "}
             <span className="italic text-primary">Help us build it further.</span>
           </h1>
           <p className="text-white/70 text-lg mb-8 max-w-xl mx-auto">
-            Whether you have an hour a week or a big idea, there is a way for you to help more students make
-            honest, informed choices about their future.
+            Volunteering at PeerVia is for high school students. Whether you have an hour a week or a big idea,
+            there is a way for you to help other students make honest, informed choices about their future.
           </p>
           <button
             onClick={() => scrollToForm()}
@@ -287,7 +287,7 @@ export default function VolunteerPage() {
             Sign Up To Volunteer →
           </button>
           <p className="font-label text-[11px] tracking-[0.05em] uppercase text-white/50 mt-4">
-            Takes 3 Minutes · Flexible Hours · Open To Students
+            Takes 3 Minutes · Flexible Hours · For High School Students
           </p>
         </div>
       </section>
@@ -480,12 +480,12 @@ export default function VolunteerPage() {
               </div>
               <div>
                 <label className="block text-sm font-semibold text-ink mb-1">
-                  School or university <span className="text-muted/60 font-normal">(optional)</span>
+                  School <span className="text-muted/60 font-normal">(optional)</span>
                 </label>
                 <input
                   value={form.school}
                   onChange={(e) => updateField("school", e.target.value)}
-                  placeholder="e.g. Utrecht University"
+                  placeholder="Your school's name"
                   className={inputClass}
                 />
               </div>

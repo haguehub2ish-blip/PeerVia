@@ -47,6 +47,12 @@ const adminLinks = [
     title: "Volunteers",
     text: "See who signed up to help, and track who you've contacted.",
   },
+  {
+    href: "/admin/messages",
+    icon: "✉️",
+    title: "Messages",
+    text: "Review reported conversations, read messages, and block people from messaging.",
+  },
    {
     href: "/admin/test-mentor",
     icon: "🧪",

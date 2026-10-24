@@ -8,6 +8,7 @@ import MultiSelect from "@/Components/MultiSelect";
 import GradeInput from "@/Components/GradeInput";
 import MentorGuruMessage from "@/Components/MentorGuruMessage";
 import MentorWelcomeTour from "@/Components/MentorWelcomeTour";
+import MentorMessages from "@/Components/MentorMessages";
 
 function PencilIcon({ className = "w-3 h-3" }) {
   return (
@@ -1002,6 +1003,16 @@ export default function MentorDashboard() {
               ))}
             </div>
           )}
+        </CollapsibleCard>
+
+        {/* Student messages */}
+        <CollapsibleCard
+          id="messages"
+          eyebrow="Inbox"
+          title="Student Messages"
+          description="Quick questions from students that don't need a call. Your replies show up on your profile, and the student gets an email."
+        >
+          <MentorMessages />
         </CollapsibleCard>
 
               {/* Unanswered questions */}

@@ -527,6 +527,8 @@ export default function Apply() {
     const { error } = await supabase.from("mentor_applications").insert([
       {
         ...form,
+        email: form.email.trim().toLowerCase(),
+        backup_email: form.backup_email.trim().toLowerCase(),
         languages: selectedLanguages.join(","),
         photo_url: urlData.publicUrl,
         status: "pending",
@@ -721,6 +723,7 @@ export default function Apply() {
               <input
                 type="email"
 
+                required
                 value={form.backup_email}
                 onChange={(e) => updateField("backup_email", e.target.value)}
                 placeholder="you@gmail.com"
