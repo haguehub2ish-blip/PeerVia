@@ -11,6 +11,22 @@ import SaveMentorButton from "@/Components/SaveMentorButton";
 import MentorChat from "@/Components/MentorChat";
 import ReportMentorButton from "@/Components/ReportMentorButton";
 
+const MENTOR_CTA_PHOTO_URL = "/images/PV_MentorIdPage.jpg";
+
+function PhotoBlock({ src, alt = "", className = "", tint = 55, opacity = 100 }) {
+  if (!src) return null;
+  return (
+    <div className={`overflow-hidden ${className}`} style={{ opacity: opacity / 100 }}>
+      <img
+        src={src}
+        alt={alt}
+        className="w-full h-full object-cover grayscale contrast-[1.08]"
+      />
+      <div className="absolute inset-0 bg-primary mix-blend-multiply" style={{ opacity: tint / 100 }} />
+    </div>
+  );
+}
+
 export default function MentorProfile() {
   const { id } = useParams();
   const [mentor, setMentor] = useState(null);
@@ -41,21 +57,7 @@ const [recommended, setRecommended] = useState([]);
 const [recommendedLoading, setRecommendedLoading] = useState(true);
 const { user: savedUser, isSaved, toggleSaved, pendingId, error: saveError } = useSavedMentors();
 
-const MENTOR_CTA_PHOTO_URL = "/images/PV_MentorIdPage.jpg";
 
-function PhotoBlock({ src, alt = "", className = "", tint = 55, opacity = 100 }) {
-  if (!src) return null;
-  return (
-    <div className={`overflow-hidden ${className}`} style={{ opacity: opacity / 100 }}>
-      <img
-        src={src}
-        alt={alt}
-        className="w-full h-full object-cover grayscale contrast-[1.08]"
-      />
-      <div className="absolute inset-0 bg-primary mix-blend-multiply" style={{ opacity: tint / 100 }} />
-    </div>
-  );
-}
 
 useEffect(() => {
   async function fetchReviews() {

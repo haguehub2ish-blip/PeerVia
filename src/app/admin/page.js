@@ -42,6 +42,18 @@ const adminLinks = [
     text: "Review, edit, or remove questions, mentor answers, and comments.",
   },
   {
+    href: "/admin/mentor-email",
+    icon: "📣",
+    title: "Email Mentors",
+    text: "Send an email to all mentors, or only a group, in the PeerVia email format.",
+  },
+  {
+    href: "/admin/student-email",
+    icon: "📨",
+    title: "Email Students",
+    text: "Send an email to all student accounts, or only a group, in the PeerVia email format.",
+  },
+  {
     href: "/admin/volunteers",
     icon: "🙋",
     title: "Volunteers",

@@ -30,6 +30,7 @@ export default function Settings() {
   const [selectedMentors, setSelectedMentors] = useState([]);
   const [selectedCountries, setSelectedCountries] = useState([]);
   const [notifyOwnQuestions, setNotifyOwnQuestions] = useState(true);
+  const [notifyAnnouncements, setNotifyAnnouncements] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [prefsLoading, setPrefsLoading] = useState(true);
@@ -61,6 +62,7 @@ export default function Settings() {
         setSelectedMentors(prefs.mentors || []);
         setSelectedCountries(prefs.countries || []);
         setNotifyOwnQuestions(prefs.notifyOwnQuestions ?? true);
+        setNotifyAnnouncements(prefs.announcements ?? true);
       }
       setPrefsLoading(false);
     });
@@ -221,6 +223,7 @@ export default function Settings() {
           schools: selectedSchools,
           mentors: selectedMentors,
           countries: selectedCountries,
+          announcements: notifyAnnouncements,
           notifyOwnQuestions,
         },
       },
@@ -388,6 +391,25 @@ export default function Settings() {
                       type="checkbox"
                       checked={notifyOwnQuestions}
                       onChange={(e) => setNotifyOwnQuestions(e.target.checked)}
+                      className="w-4 h-4 accent-primary shrink-0 ml-4"
+                    />
+                  </div>
+                </div>
+
+                <div className="border border-border rounded-lg mb-8 bg-surface shadow-sm">
+                  <div className="flex items-center justify-between px-5 py-4">
+                    <div>
+                      <p className="text-sm font-medium text-ink">
+                        PeerVia news and announcements
+                      </p>
+                      <p className="text-xs text-muted mt-0.5">
+                        Occasional emails from the PeerVia team about new features and updates.
+                      </p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={notifyAnnouncements}
+                      onChange={(e) => setNotifyAnnouncements(e.target.checked)}
                       className="w-4 h-4 accent-primary shrink-0 ml-4"
                     />
                   </div>

@@ -58,6 +58,7 @@ export default async function Image({ params }) {
           {photoOk ? (
             <img
               src={mentor.photo_url}
+              alt=""
               width={300}
               height={300}
               style={{ objectFit: "cover" }}
